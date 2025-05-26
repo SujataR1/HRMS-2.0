@@ -1,0 +1,359 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL_WITH_POOLING")
+}
+
+model BiometricLog {
+    id         String     @id @default(uuid())
+    employeeId String
+    timestamp  DateTime
+    identifier Identifier
+
+    @@index([employeeId])
+    @@index([timestamp])
+	@@unique([employeeId, timestamp, identifier])
+}
+
+enum Identifier {
+    fingerprint
+    card
+	unknown
+}
+
+model Admin {
+    id              String   @id @default(uuid())
+    name            String
+    email           String   @unique
+    isEmailVerified Boolean  @default(false)
+    password        String
+    updatedAt       DateTime @updatedAt
+
+    @@index(email)
+    @@index(id)
+}
+
+model AdminSettings {
+    id        String   @id @default(uuid())
+    adminId   String
+    isTwoFA   Boolean  @default(false)
+    updatedAt DateTime @updatedAt
+}
+
+model AdminActiveSessions {
+    id        String   @id @default(uuid())
+    adminId   String
+    token     String
+    createdAt DateTime @default(now())
+    expiresAt DateTime
+
+    @@index([adminId])
+    @@index([token])
+    @@index([expiresAt])
+}
+
+enum AdminOTPPurpose {
+    twoFA
+    emailVerification
+    passwordReset
+}
+
+model AdminOTP {
+    id        String          @id @default(uuid())
+    adminId   String
+    otp       String
+    purpose   AdminOTPPurpose
+    expiresAt DateTime
+
+    @@index([adminId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
+}
+
+model Shift {
+    id                                                         String    @id @default(uuid())
+    shiftName                                                  String    @unique
+    weeklyDaysOff                                              String[]
+    weeklyHalfDays                                             String[]
+    fullShiftEarlyPunchConsiderTimeInMinutes                   Int
+    halfShiftEarlyPunchConsiderTimeInMinutes                   Int
+    fullShiftStartingTime                                      DateTime
+    fullShiftEndingTime                                        DateTime
+    halfShiftStartingTime                                      DateTime?
+    halfShiftEndingTime                                        DateTime?
+    fullShiftGraceInTimingInMinutes                            Int
+    fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int
+    halfShiftGraceInTimingInMinutes                            Int?
+    halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int?
+    fullShiftGraceOutTimingInMinutes                           Int
+    halfShiftGraceOutTimingInMinutes                           Int?
+    overtimeMaximumAllowableLimitInMinutes                     Int?
+    maximumValidShiftLengthPostRegularEndingTimeInMinutes      Int?
+    floorPercentageOfTotalFullShiftForHalfDay                  Float
+    ceilingPercentageOfTotalFullShiftForHalfDay                Float
+    floorPercentageOfTotalHalfShiftForHalfDay                  Float
+    ceilingPercentageOfTotalHalfShiftForHalfDay                Float
+
+    @@index([shiftName])
+}
+
+model Employee {
+    id            String   @id @default(uuid())
+    name          String
+    employeeId    String   @unique
+    assignedEmail String   @unique
+    password      String
+    updatedAt     DateTime @updatedAt
+
+    @@index(assignedEmail)
+    @@index(employeeId)
+    @@index(id)
+}
+
+enum BloodGroups {
+    A_positive
+    A_negative
+    B_positive
+    B_negative
+    AB_positive
+    AB_negative
+    O_positive
+    O_negative
+}
+
+enum EmploymentTypes {
+    PART_TIME
+    FULL_TIME
+    INTERN
+    CONTRACT
+    FREELANCER
+}
+
+enum EmploymentStatus {
+    EMPLOYED
+    RESIGNED
+    TERMINATED
+    SUSPENDED
+    PROBATION
+}
+
+model EmployeeDetails {
+    id                              String           @id @default(uuid())
+    employeeId                      String           @unique
+    personalEmail                   String
+    isPersonalEmailVerified         Boolean          @default(false)
+    employmentType                  EmploymentTypes
+    employmentStatus                EmploymentStatus
+    dateOfJoining                   DateTime
+    confirmationDate                DateTime?
+    phoneNumber                     String
+    emergencyContactNumber          String
+    presentAddress                  String
+    permanentAddress                String
+    aadhaarCardNumber               String
+    panCardNumber                   String
+    bloodGroup                      BloodGroups
+    medicalNotes                    String?
+    highestEducationalQualification String
+    designation                     String
+    department                      String
+    bankName                        String
+    bankAccountNumber               String
+    ifsCode                         String
+    assignedShiftId                 String?
+}
+
+model EmployeeDetailsAttachments {
+    id                      String @id @default(uuid())
+    employeeId              String @unique
+    profilePicture          String
+    bankDetailsProofs       Json
+    identityProofs          Json?
+    medicalNotesProofs      Json?
+    educationAndSkillsProof Json
+}
+
+model EmployeeSettings {
+    id                      String   @id @default(uuid())
+    employeeId              String
+    isTwoFA                 Boolean  @default(false)
+    sendOTPsToPersonalEmail Boolean  @default(false)
+    updatedAt               DateTime @updatedAt
+}
+
+model EmployeeActiveSessions {
+    id         String   @id @default(uuid())
+    employeeId String
+    token      String
+    createdAt  DateTime @default(now())
+    expiresAt  DateTime
+
+    @@index([employeeId])
+    @@index([token])
+    @@index([expiresAt])
+}
+
+enum EmployeeOTPPurpose {
+    twoFA
+    emailVerification
+    passwordReset
+}
+
+model EmployeeOTP {
+    id         String             @id @default(uuid())
+    employeeId String
+    otp        String
+    purpose    EmployeeOTPPurpose
+    expiresAt  DateTime
+
+    @@index([employeeId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
+}
+
+model Holiday {
+    id         String   @id @default(uuid())
+    date       DateTime @unique
+    name       String
+    forShiftId String?
+    isActive   Boolean  @default(true)
+
+    @@index([date])
+}
+
+model Leave {
+    id                   String      @id @default(uuid())
+    employeeId           String
+    fromDate             DateTime
+    toDate               DateTime
+    leaveType            LeaveType
+    otherTypeDescription String?
+    applicationNotes     String?
+    status               LeaveStatus
+    createdAt            DateTime    @default(now())
+    updatedAt            DateTime    @updatedAt
+
+    @@index([employeeId])
+    @@index([fromDate, toDate])
+}
+
+model LeaveAttachments {
+    id              String   @id @default(uuid())
+    leaveId         String
+    attachmentPaths String[]
+}
+
+enum LeaveType {
+    CASUAL
+    SICK
+    EARNED
+    UNPAID
+    COMP_OFF
+    MATERNITY
+    PATERNITY
+    BEREAVEMENT
+    LOP
+    OTHER
+}
+
+enum LeaveStatus {
+    pending
+    approved
+    rejected
+    cancelled
+}
+
+model AttendanceLog {
+    id             String           @id @default(uuid())
+    employeeId     String
+    punchIn        DateTime?
+    punchOut       DateTime?
+    attendanceDate DateTime
+    attendanceDay  String
+    flags          String[]
+    status         AttendanceStatus
+    comments       String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([employeeId, attendanceDate])
+    @@index([employeeId])
+    @@index([punchIn])
+    @@index([punchOut])
+}
+
+enum AttendanceStatus {
+    fullDay
+    halfDay
+    overtime
+    absent
+    approvedLeave
+    weeklyOff
+    holiday
+    anomalous
+}
+
+enum AttendanceFlags {
+    autoOut
+    singleEntry
+    late
+    earlyOut
+    insufficientHours
+    firstPunchBeyondCutoff
+    invalidOut
+    suspicious
+    overtime
+    manualEntry
+    edited
+    approvedLeave
+}
+
+model Hr {
+    id              String   @id @default(uuid())
+    employeeId      String   @unique
+    name            String
+    email           String   @unique
+    isEmailVerified Boolean  @default(false)
+    password        String
+    updatedAt       DateTime @updatedAt
+
+    @@index(email)
+    @@index(id)
+}
+
+model HrActiveSessions {
+    id        String   @id @default(uuid())
+    hrId      String
+    token     String
+    createdAt DateTime @default(now())
+    expiresAt DateTime
+
+    @@index([hrId])
+    @@index([token])
+    @@index([expiresAt])
+}
+
+enum HrOTPPurpose {
+    twoFA
+    emailVerification
+    passwordReset
+}
+
+model HrOTP {
+    id        String       @id @default(uuid())
+    hrId      String
+    otp       String
+    purpose   HrOTPPurpose
+    expiresAt DateTime
+
+    @@index([hrId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
+}

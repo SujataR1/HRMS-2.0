@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Manual Attendance Entry Created</title>
+  </head>
+  <body style="font-family: sans-serif; padding: 1rem;">
+    <h2>🆕 Attendance Entry Added Manually</h2>
+
+    <p>
+      Hello {{ name }},<br />
+      An attendance log was manually added to your record by an administrator
+      for the date <strong>{{ attendanceDate }}</strong>.
+    </p>
+
+    <h3>📄 Entry Details</h3>
+    <ul>
+      <li><strong>Punch In:</strong> {{ punchIn }}</li>
+      <li><strong>Punch Out:</strong> {{ punchOut }}</li>
+      <li><strong>Status:</strong> {{ status }}</li>
+      <li><strong>Flags:</strong> {{ flags }}</li>
+      <li><strong>Comments:</strong> {{ comments }}</li>
+    </ul>
+
+    <p>
+      This entry was created on <strong>{{ creationTimestamp }}</strong>.
+      If you have any questions or believe this is incorrect, please contact HR or your reporting manager.
+    </p>
+
+    <p>Thank you,<br />HRMS Attendance System</p>
+  </body>
+</html>

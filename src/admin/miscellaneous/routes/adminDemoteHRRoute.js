@@ -1,0 +1,36 @@
+import fp from "fastify-plugin";
+import { adminDemoteHR } from "../methods/adminDemoteHR.js";
+import { adminDemoteHRSchema } from "../schemas/adminDemoteHRSchema.js";
+
+export default fp(async function adminDemoteHRRoute(fastify) {
+	fastify.post("/admin/demote-hr", async (request, reply) => {
+		try {
+			const authHeader = request.headers.authorization;
+
+			// Let verifyAdminJWT handle header validation
+			const parsed = adminDemoteHRSchema.safeParse(request.body);
+			if (!parsed.success) {
+				return reply.code(400).send({
+					status: "error",
+					issues: parsed.error.issues,
+				});
+			}
+
+			const result = await adminDemoteHR(
+				authHeader,
+				parsed.data.employeeId
+			);
+
+			return reply.code(200).send({
+				status: "success",
+				message: result.message,
+			});
+		} catch (error) {
+			request.log.error({ err: error }, "❌ Failed to demote HR");
+			return reply.code(400).send({
+				status: "error",
+				message: error.message || "Failed to demote HR",
+			});
+		}
+	});
+});

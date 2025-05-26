@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>You’ve been promoted!</title>
+  </head>
+  <body style="font-family: sans-serif; padding: 1rem;">
+    <h2>🎉 Congratulations, {{ name }}!</h2>
+
+    <p>
+      You’ve officially been promoted to an HR role in the HRMS system. With
+      this new access, you’ll be able to manage employee records, attendance,
+      and much more.
+    </p>
+
+    <h3>🆔 Your HR Login Credentials</h3>
+    <ul>
+      <li><strong>Email:</strong> {{ email }}</li>
+      <li><strong>Password:</strong> {{ password }}</li>
+    </ul>
+
+    <p style="color: red;">
+      ⚠️ Please change your password after your first login.
+    </p>
+
+    <p>Welcome to the HR team! 🙌</p>
+    <br />
+    <p>— HRMS Admin Team</p>
+  </body>
+</html>

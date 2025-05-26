@@ -1,0 +1,10 @@
+node_modules
+.env
+package-lock.json
+migrations
+currdirstruct.txt
+schema.prisma.txt
+attendance-reports
+scratchpads
+.eslintrc.json
+.prettierrc

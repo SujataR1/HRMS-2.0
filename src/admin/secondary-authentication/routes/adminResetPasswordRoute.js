@@ -1,0 +1,36 @@
+import { adminResetPassword } from "../methods/adminResetPassword.js";
+import { adminResetPasswordSchema } from "../schemas/adminResetPasswordSchema.js";
+import fp from "fastify-plugin";
+
+export default fp(async function adminResetPasswordRoute(fastify) {
+	fastify.post("/admin/reset-password", async (request, reply) => {
+		try {
+			const parsed = adminResetPasswordSchema.safeParse(request.body);
+
+			if (!parsed.success) {
+				return reply.code(400).send({
+					status: "error",
+					issues: parsed.error.issues,
+				});
+			}
+
+			const { email, otp, newPassword } = parsed.data;
+
+			const result = await adminResetPassword(email, otp, newPassword);
+
+			return reply.code(200).send({
+				status: "success",
+				message: result.message,
+			});
+		} catch (error) {
+			request.log.error(
+				{ err: error },
+				"❌ Failed to reset admin password"
+			);
+			return reply.code(400).send({
+				status: "error",
+				message: error.message || "Password reset failed",
+			});
+		}
+	});
+});
