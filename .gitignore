@@ -9,3 +9,4 @@ scratchpads
 .eslintrc.json
 .prettierrc
 tree.txt
+schema.prisma.txt
