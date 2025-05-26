@@ -13,15 +13,15 @@ model BiometricLog {
     timestamp  DateTime
     identifier Identifier
 
+    @@unique([employeeId, timestamp, identifier])
     @@index([employeeId])
     @@index([timestamp])
-	@@unique([employeeId, timestamp, identifier])
 }
 
 enum Identifier {
     fingerprint
     card
-	unknown
+    unknown
 }
 
 model Admin {
@@ -356,4 +356,11 @@ model HrOTP {
     @@index([otp])
     @@index([purpose])
     @@index([expiresAt])
+}
+
+model HrSettings {
+    id        String   @id @default(uuid())
+    HrId      String
+    isTwoFA   Boolean  @default(true)
+    updatedAt DateTime @updatedAt
 }

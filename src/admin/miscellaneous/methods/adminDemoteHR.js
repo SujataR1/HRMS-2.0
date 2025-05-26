@@ -37,6 +37,7 @@ export async function adminDemoteHR(authHeader, employeeId) {
 			await tx.hrActiveSessions.deleteMany({ where: { hrId: hr.id } });
 			await tx.hrOTP.deleteMany({ where: { hrId: hr.id } });
 			await tx.hR.delete({ where: { id: hr.id } });
+			await tx.hrSettings.delete({ where: { hrId: hr.id } });
 			await sendAdminMail({
 				to: hr.email,
 				purpose: "demoteHR",

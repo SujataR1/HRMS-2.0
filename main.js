@@ -32,6 +32,8 @@ import adminGetSettingsRoute from "./src/admin/settings/routes/adminGetSettingsR
 import adminToggle2FARoute from "./src/admin/settings/routes/adminToggle2FARoute.js";
 
 import adminEditAnAttendanceEntryRoute from "./src/admin/attendance/routes/adminEditAnAttendanceEntryRoute.js";
+import hrLoginRoute from "./src/hr/auth/routes/hrLoginRoute.js";
+import hrLogoutRoute from "./src/hr/auth/routes/hrLogoutRoute.js";
 import hrAssignAnEmployeeAShiftRoute from "./src/hr/employee/routes/hrAssignAnEmployeeAShiftRoute.js";
 import hrCreateAnEmployeeRoute from "./src/hr/employee/routes/hrCreateAnEmployeeRoute.js";
 import hrCreateEmployeeDetailsRoute from "./src/hr/employee/routes/hrCreateEmployeeDetailsRoute.js";
@@ -105,6 +107,8 @@ await app.register(hrGetAllEmployeeProfileRoute);
 await app.register(hrGetEmployeeDetailsRoute);
 await app.register(hrGetAllShiftsRoute);
 await app.register(hrAssignAnEmployeeAShiftRoute);
+await app.register(hrLoginRoute);
+await app.register(hrLogoutRoute);
 
 const PORT = process.env.PORT || 3000;
 

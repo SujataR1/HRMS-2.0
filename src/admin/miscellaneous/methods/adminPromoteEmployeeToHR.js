@@ -63,6 +63,12 @@ export async function adminPromoteEmployeeToHR(
 				},
 			});
 
+			await tx.hrSettings.create({
+				data: {
+					HrId: hr.id,
+				},
+			});
+
 			// 5. Send credentials via mail
 			try {
 				await sendAdminMail({
