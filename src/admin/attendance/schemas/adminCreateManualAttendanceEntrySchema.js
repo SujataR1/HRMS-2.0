@@ -1,5 +1,6 @@
-import { AttendanceFlags, AttendanceStatus } from "@prisma/client";
+import pkg from "@prisma/client";
 import { z } from "zod";
+const { AttendanceFlags, AttendanceStatus } = pkg;
 
 const attendanceStatusEnum = Object.values(AttendanceStatus);
 const attendanceFlagsEnum = Object.values(AttendanceFlags);
