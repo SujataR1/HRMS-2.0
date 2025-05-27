@@ -51,6 +51,7 @@ import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
 const prisma = new PrismaClient();
 
 const app = Fastify({
+	trustProxy: true,
 	logger: {
 		level: "info",
 		transport: {
@@ -58,8 +59,6 @@ const app = Fastify({
 		},
 	},
 });
-
-app.setTrustProxy(true);
 
 app.decorate("prisma", prisma);
 
