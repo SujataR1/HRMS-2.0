@@ -3,7 +3,7 @@ import { verifyAdminJWT } from "../../admin-session-management/methods/adminSess
 
 const prisma = new PrismaClient();
 
-export async function adminLogout(authHeader = "") {
+export async function adminLogout(authHeader = "", meta = {}) {
 	try {
 		await verifyAdminJWT(authHeader);
 

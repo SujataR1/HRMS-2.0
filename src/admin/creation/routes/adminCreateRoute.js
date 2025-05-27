@@ -14,7 +14,7 @@ export default fp(async function adminCreateRoute(fastify) {
 				});
 			}
 
-			await adminCreate(parsed.data);
+			await adminCreate(parsed.data, request.meta);
 
 			return reply.code(201).send({
 				status: "success",

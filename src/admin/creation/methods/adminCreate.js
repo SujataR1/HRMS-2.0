@@ -1,10 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { auditor } from "../../../utils/logging/methods/auditor";
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
-export async function adminCreate({ name, email, password }) {
+export async function adminCreate({ name, email, password }, meta = {}) {
 	let db;
 	try {
 		db = prisma.$extends({});
@@ -15,8 +16,20 @@ export async function adminCreate({ name, email, password }) {
 				where: { email },
 			});
 
-			if (existing)
+			if (existing) {
+				auditor({
+					actorRole: "system",
+					actorId: null,
+					ipAddress: meta.ip,
+					userAgent: meta.ua,
+					referrer: meta.ref,
+					endpoint: "/admin/create",
+					action: "create",
+					status: "failure",
+					message: `Admin creation failed — duplicate email: ${email}`,
+				});
 				throw new Error("Admin with this email already exists");
+			}
 
 			const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
@@ -34,6 +47,20 @@ export async function adminCreate({ name, email, password }) {
 				},
 			});
 
+			auditor({
+				actorRole: "system",
+				actorId: null,
+				targetRole: "admin",
+				targetId: newAdmin.id,
+				ipAddress: meta.ip,
+				userAgent: meta.ua,
+				referrer: meta.ref,
+				endpoint: "/admin/create",
+				action: "create",
+				status: "success",
+				message: `New admin created: ${email}`,
+			});
+
 			return newAdmin;
 		});
 
@@ -41,6 +68,19 @@ export async function adminCreate({ name, email, password }) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreate:", err);
+
+		auditor({
+			actorRole: "system",
+			actorId: null,
+			ipAddress: meta.ip,
+			userAgent: meta.ua,
+			referrer: meta.ref,
+			endpoint: "/admin/create",
+			action: "create",
+			status: "failure",
+			message: `Unhandled error in adminCreate: ${err.message || "unknown error"}`,
+		});
+
 		try {
 			if (db) await db.$disconnect();
 		} catch (e) {

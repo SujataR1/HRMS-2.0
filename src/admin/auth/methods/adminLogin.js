@@ -113,6 +113,18 @@ export async function adminLogin({ email, password }, meta = {}) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminLogin:", err);
+
+		auditor({
+			actorRole: "system",
+			actorId: null,
+			ipAddress: meta.ip,
+			userAgent: meta.ua,
+			referrer: meta.ref,
+			endpoint: "/admin/login",
+			action: "login",
+			status: "failure",
+			message: `Unhandled error in adminLogin: ${err.message || "unknown error"}`,
+		});
 		try {
 			if (db) await db.$disconnect();
 		} catch (e) {

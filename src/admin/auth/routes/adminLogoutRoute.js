@@ -1,5 +1,5 @@
-import { adminLogout } from "../methods/adminLogout.js";
 import fp from "fastify-plugin";
+import { adminLogout } from "../methods/adminLogout.js";
 
 export default fp(async function adminLogoutRoute(fastify) {
 	fastify.post("/admin/logout", async (request, reply) => {
@@ -13,7 +13,7 @@ export default fp(async function adminLogoutRoute(fastify) {
 				});
 			}
 
-			await adminLogout(authHeader);
+			await adminLogout(authHeader, request.meta);
 
 			return reply.code(200).send({
 				status: "success",
