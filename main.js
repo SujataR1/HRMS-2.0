@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
 import path from "path";
 import { fileURLToPath } from "url";
+import requestMetaPlugin from "./plugins/requestMetaPlugin.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +59,8 @@ const app = Fastify({
 });
 
 app.decorate("prisma", prisma);
+
+app.register(requestMetaPlugin);
 
 app.register(fastifyStatic, {
 	root: path.join(__dirname, "media"),
