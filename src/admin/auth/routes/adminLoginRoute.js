@@ -1,6 +1,6 @@
+import fp from "fastify-plugin";
 import { adminLogin } from "../methods/adminLogin.js";
 import { adminLoginSchema } from "../schemas/adminLoginSchema.js";
-import fp from "fastify-plugin";
 
 export default fp(async function adminLoginRoute(fastify) {
 	fastify.post("/admin/login", async (request, reply) => {
@@ -14,7 +14,7 @@ export default fp(async function adminLoginRoute(fastify) {
 				});
 			}
 
-			const result = await adminLogin(parsed.data);
+			const result = await adminLogin(parsed.data, request.meta);
 
 			if (result.requires2FA) {
 				return reply.code(200).send({

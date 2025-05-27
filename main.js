@@ -3,7 +3,8 @@ import { PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
 import path from "path";
 import { fileURLToPath } from "url";
-import requestMetaPlugin from "./plugins/requestMetaPlugin.js";
+import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
+import { gracefulAuditShutdown } from "./src/utils/logging/methods/logQueue.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,6 +68,13 @@ app.register(fastifyStatic, {
 	prefix: "/media/",
 });
 
+process.on("SIGINT", async () => {
+	console.log("🛑 SIGINT received. Flushing audit log queue...");
+	await gracefulAuditShutdown();
+	console.log("✅ Audit queue flushed. Exiting now.");
+	process.exit(0);
+});
+
 app.get("/", async (req, reply) => {
 	return reply.code(200).send("This is the HRMS backend!");
 });
@@ -124,3 +132,10 @@ try {
 	app.log.error({ err }, "❌ Failed to start server");
 	process.exit(1);
 }
+
+process.on("SIGTERM", async () => {
+	console.log("🛑 SIGTERM received. Flushing audit log queue...");
+	await gracefulAuditShutdown();
+	console.log("✅ Audit queue flushed. Exiting now.");
+	process.exit(0);
+});
