@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { auditor } from "../../../utils/logging/methods/auditor";
+import { auditor } from "../../../utils/logging/methods/auditor.js";
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
