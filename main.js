@@ -15,7 +15,6 @@ import postBiometricLogsRoute from "./src/biometric-access-machine/routes/handle
 import adminCreateManualAttendanceEntryRoute from "./src/admin/attendance/routes/adminCreateManualAttendanceEntryRoute.js";
 import adminGenerateAndSendMonthlyReportsRoute from "./src/admin/attendance/routes/adminGenerateAndSendMonthlyReportsRoute.js";
 import adminGetEmployeeAttendanceRoute from "./src/admin/attendance/routes/adminGetEmployeeAttendanceRoute.js";
-import adminMakeOrRefreshEmployeeAttendanceRoute from "./src/admin/attendance/routes/adminMakeOrRefreshEmployeeAttendanceRoute.js";
 import adminLoginRoute from "./src/admin/auth/routes/adminLoginRoute.js";
 import adminLogoutRoute from "./src/admin/auth/routes/adminLogoutRoute.js";
 import adminCreateRoute from "./src/admin/creation/routes/adminCreateRoute.js";
@@ -102,7 +101,6 @@ await app.register(adminChangePasswordRoute);
 await app.register(adminGetProfileRoute);
 await app.register(adminUpdateProfileRoute);
 await app.register(adminRevokeAllActiveSessionsRoute);
-await app.register(adminMakeOrRefreshEmployeeAttendanceRoute);
 await app.register(adminGetEmployeeAttendanceRoute);
 await app.register(adminGenerateAndSendMonthlyReportsRoute);
 await app.register(adminPromoteEmployeeToHRRoute);
