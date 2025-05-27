@@ -59,6 +59,8 @@ const app = Fastify({
 	},
 });
 
+app.setTrustProxy(true);
+
 app.decorate("prisma", prisma);
 
 app.register(requestMetaPlugin);
