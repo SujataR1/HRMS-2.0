@@ -437,29 +437,23 @@ enum RequestStatus {
 }
 
 model UserInfraRequest {
-    id            String    @id @default(uuid())
-    requesterId   String
-    requesterRole ActorRole // employee | hr | admin
-
-    requestType InfraRequestType // enum
-    reason      String
-    createdAt   DateTime         @default(now())
-
-    maxIterations Int? // null = infinite, 0 = none
-    currentCount  Int  @default(0)
-    logRefs       Json // [{ logId: String, timestamp: DateTime }]
-
-    status         RequestStatus // pending | approved | denied
+    id             String           @id @default(uuid())
+    requesterId    String
+    requesterRole  ActorRole
+    requestType    InfraRequestType
+    reason         String
+    createdAt      DateTime         @default(now())
+    maxIterations  Int?
+    currentCount   Int              @default(0)
+    logRefs        Json
+    status         RequestStatus    @default(pending)
     resolutionNote String?
     respondedAt    DateTime?
-
-    // Delegation & Visibility Flags
-    delegatedToHr Boolean @default(false)
-    isVisibleToHr Boolean @default(false)
-
-    adminId       String? // FK to Admin who acted
-    hrId          String? // FK to HR who acted
-    lastHandledBy ActorRole? // admin or hr
+    delegatedToHr  Boolean          @default(false)
+    isVisibleToHr  Boolean          @default(false)
+    adminId        String?
+    hrId           String?
+    lastHandledBy  ActorRole?
 
     @@index([requesterId])
     @@index([status])
