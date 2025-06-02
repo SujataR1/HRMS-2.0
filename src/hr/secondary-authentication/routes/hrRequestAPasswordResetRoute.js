@@ -1,0 +1,36 @@
+import fp from "fastify-plugin";
+import { hrRequestAPasswordReset } from "../methods/hrRequestAPasswordReset.js";
+import { hrRequestAPasswordResetSchema } from "../schemas/hrRequestAPasswordResetSchema.js";
+
+export default fp(async function hrRequestAPasswordResetRoute(fastify) {
+	fastify.post("/hr/request-password-reset", async (request, reply) => {
+		try {
+			const parsed = hrRequestAPasswordResetSchema.safeParse(
+				request.body
+			);
+
+			if (!parsed.success) {
+				return reply.code(400).send({
+					status: "error",
+					issues: parsed.error.issues,
+				});
+			}
+
+			const result = await hrRequestAPasswordReset(parsed.data.email);
+
+			return reply.code(200).send({
+				status: "success",
+				message: result.message,
+			});
+		} catch (error) {
+			request.log.error(
+				{ err: error },
+				"❌ Failed to send HR password reset OTP"
+			);
+			return reply.code(400).send({
+				status: "error",
+				message: error.message || "Failed to send reset OTP",
+			});
+		}
+	});
+});
