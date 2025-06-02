@@ -45,11 +45,13 @@ import hrGetEmployeeDetailsRoute from "./src/hr/employee/routes/hrGetEmployeeDet
 import hrUpdateAnEmployeeRoute from "./src/hr/employee/routes/hrUpdateAnEmployeeRoute.js";
 import hrUpdateEmployeeDetailsRoute from "./src/hr/employee/routes/hrUpdateEmployeeDetailsRoute.js";
 import hrCreateAHolidayRoute from "./src/hr/holidays/routes/hrCreateAHolidayEntryRoute.js";
+import hrChangePasswordRoute from "./src/hr/secondary-authentication/routes/hrChangePasswordRoute.js";
 import hrRequestAPasswordResetRoute from "./src/hr/secondary-authentication/routes/hrRequestAPasswordResetRoute.js";
 import hrResetPasswordRoute from "./src/hr/secondary-authentication/routes/hrResetPasswordRoute.js";
 import hrVerify2FAAndLoginRoute from "./src/hr/secondary-authentication/routes/hrVerify2FAAndLoginRoute.js";
 import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
+
 const prisma = new PrismaClient();
 
 const app = Fastify({
@@ -128,6 +130,7 @@ await app.register(hrLogoutRoute);
 await app.register(hrVerify2FAAndLoginRoute);
 await app.register(hrRequestAPasswordResetRoute);
 await app.register(hrResetPasswordRoute);
+await app.register(hrChangePasswordRoute);
 
 const PORT = process.env.PORT || 3000;
 
