@@ -49,7 +49,6 @@ export async function hrCreateAnEmployee({
 			},
 			});
 
-
 			return created;
 		},
 		{ timeout: 30_000 }

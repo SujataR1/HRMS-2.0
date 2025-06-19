@@ -34,6 +34,12 @@ import adminVerifyEmailRoute from "./src/admin/secondary-authentication/routes/a
 import adminGetSettingsRoute from "./src/admin/settings/routes/adminGetSettingsRoute.js";
 import adminToggle2FARoute from "./src/admin/settings/routes/adminToggle2FARoute.js";
 import adminCreateAnEmployeeRoute from "./src/admin/employee/routes/adminCreateAnEmployeeRoute.js";
+import adminAssignAnEmployeeAShiftRoute from "./src/admin/employee/routes/adminAssignAnEmployeeAShiftRoute.js";
+import adminCreateEmployeeDetailsRoute from "./src/admin/employee/routes/adminCreateEmployeeDetailsRoute.js";
+import adminGetAllEmployeeProfileRoute from "./src/admin/employee/routes/adminGetAllEmployeeProfileRoute.js";
+import adminGetEmployeeDetailsRoute from "./src/admin/employee/routes/adminGetEmployeeDetailsRoute.js";
+import adminUpdateAnEmployeeRoute from "./src/admin/employee/routes/adminUpdateAnEmployeeRoute.js";
+import adminUpdateEmployeeDetailsRoute from "./src/admin/employee/routes/adminUpdateEmployeeDetailsRoute.js";
 
 import adminEditAnAttendanceEntryRoute from "./src/admin/attendance/routes/adminEditAnAttendanceEntryRoute.js";
 import hrLoginRoute from "./src/hr/auth/routes/hrLoginRoute.js";
@@ -116,6 +122,12 @@ await app.register(adminCreateManualAttendanceEntryRoute);
 await app.register(adminGetUserInfraRequestsRoute);
 await app.register(adminActOnUserInfraRequestRoute);
 await app.register(adminCreateAnEmployeeRoute)
+await app.register(adminAssignAnEmployeeAShiftRoute);
+await app.register(adminCreateEmployeeDetailsRoute);
+await app.register(adminGetAllEmployeeProfileRoute);
+await app.register(adminGetEmployeeDetailsRoute);
+await app.register(adminUpdateAnEmployeeRoute);
+await app.register(adminUpdateEmployeeDetailsRoute);
 
 await app.register(hrCreateAnEmployeeRoute);
 await app.register(hrCreateAHolidayRoute);
