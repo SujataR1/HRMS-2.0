@@ -2,8 +2,8 @@ import fp from "fastify-plugin";
 import { adminCreateAnEmployee } from "../methods/adminCreateAnEmployee.js";
 import { adminCreateAnEmployeeSchema } from "../schemas/adminCreateAnEmployeeSchema.js";
 
-export default fp(async function adminRegisterAnEmployeeRoute(fastify) {
-  fastify.post("/admin/register-employee", async (request, reply) => {
+export default fp(async function adminCreateAnEmployeeRoute(fastify) {
+  fastify.post("/admin/create-employee", async (request, reply) => {
     try {
       const parsed = adminCreateAnEmployeeSchema.safeParse(request.body);
 
