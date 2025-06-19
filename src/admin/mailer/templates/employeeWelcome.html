@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Welcome to HRMS</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f9f9f9;
+        color: #333;
+      }
+      .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+      }
+      .footer {
+        font-size: 12px;
+        color: #777;
+        margin-top: 20px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>👋 Welcome, {{ name }}!</h2>
+      <p>
+        You've been successfully registered in our HRMS system.
+        Below are your login credentials.
+      </p>
+
+      <h3>🔐 Login Credentials</h3>
+      <ul>
+        <li><strong>Assigned Email:</strong> {{ email }}</li>
+        <li><strong>Employee ID:</strong> {{ employeeId }}</li>
+        <li><strong>Temporary Password:</strong> {{ password }}</li>
+      </ul>
+
+      <p>
+        Kindly log in and complete your profile at the earliest. If you face any issues,
+        reach out to your HR representative.
+      </p>
+
+      <p>Warm regards,<br />HRMS Onboarding Team</p>
+    </div>
+
+    <div class="footer">
+      This is an automated message. Please do not reply to this email.
+    </div>
+  </body>
+</html>
