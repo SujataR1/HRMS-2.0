@@ -11,7 +11,7 @@ function generateRandomPassword(length = 12) {
 	return crypto.randomBytes(length).toString("base64url").slice(0, length);
 }
 
-export async function adminRegisterAnEmployee(
+export async function adminCreateAnEmployee(
 	{ name, employeeId, assignedEmail },
 	meta = {}
 ) {
