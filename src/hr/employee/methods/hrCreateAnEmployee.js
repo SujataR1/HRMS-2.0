@@ -41,6 +41,15 @@ export async function hrCreateAnEmployee({
 				},
 			});
 
+			await tx.employeeSettings.create({
+			data: {
+				employeeId,
+				isTwoFA: false,
+				sendOTPsToPersonalEmail: false,
+			},
+			});
+
+
 			return created;
 		},
 		{ timeout: 30_000 }
