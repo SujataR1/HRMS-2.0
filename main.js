@@ -90,6 +90,15 @@ app.register(fastifyCors, {
     "TRACE"
   ],
   credentials: true,
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+    "Origin",
+	"user-agent",
+	"referer"
+  ],
 });
 
 app.register(fastifyStatic, {
