@@ -1,6 +1,7 @@
 import fastifyStatic from "@fastify/static";
 import { PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
+import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
@@ -74,6 +75,22 @@ const app = Fastify({
 app.decorate("prisma", prisma);
 
 app.register(requestMetaPlugin);
+
+app.register(fastifyCors, {
+  origin: true,
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+    "HEAD",
+    "CONNECT",
+    "TRACE"
+  ],
+  credentials: true,
+});
 
 app.register(fastifyStatic, {
 	root: path.join(__dirname, "media"),
