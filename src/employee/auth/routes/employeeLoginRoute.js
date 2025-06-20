@@ -16,7 +16,7 @@ export default fp(async function employeeLoginRoute(fastify) {
 
 			const { assignedEmail, password } = parsed.data;
 
-			const result = await employeeLogin(assignedEmail, password);
+			const result = await employeeLogin({assignedEmail, password});
 
 			// ✅ Send token via Authorization header
 			reply.header("Authorization", `Bearer ${result.token}`);
