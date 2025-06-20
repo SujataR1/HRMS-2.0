@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
-import { createEmployeeJWT } from "../../session-management/methods/employeeSessionManagementMethods.js";
+import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js"
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
 import { employeeCreateOTP } from "../../otp/methods/employeeCreateOTP.js";
 
