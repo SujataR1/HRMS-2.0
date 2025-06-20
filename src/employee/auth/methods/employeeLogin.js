@@ -53,7 +53,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 			}
 
 			const settings = await tx.employeeSettings.findFirst({
-				where: { employeeId: employee.id },
+				where: { employeeId: employee.employeeId },
 			});
 
 			if (!settings) throw new Error("Employee settings not found");
