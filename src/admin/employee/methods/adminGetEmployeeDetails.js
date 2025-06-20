@@ -7,16 +7,20 @@ export async function adminGetEmployeeDetails(employeeId) {
     throw new Error("employeeId is required");
   }
 
-  const result = await prisma.employee.findUnique({
+  const employee = await prisma.employee.findUnique({
     where: { employeeId },
-    include: {
-      employeeDetails: true,
-    },
   });
 
-  if (!result) {
-    throw new Error("Employee not found");
+  if (!employee) {
+    throw new Error(`Employee with ID '${employeeId}' not found.`);
   }
 
-  return result;
+  const employeeDetails = await prisma.employeeDetails.findUnique({
+    where: { employeeId },
+  });
+
+  return {
+    ...employee,
+    employeeDetails: employeeDetails || null,
+  };
 }
