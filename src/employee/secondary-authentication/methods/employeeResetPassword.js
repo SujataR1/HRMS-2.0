@@ -1,0 +1,46 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { employeeVerifyOTP } from "../../otp/methods/employeeVerifyOTP.js";
+
+const prisma = new PrismaClient();
+const SALT_ROUNDS = 10;
+
+export async function employeeResetPassword(assignedEmail, otp, newPassword) {
+	let db;
+
+	try {
+		if (!assignedEmail || !otp || !newPassword) {
+			throw new Error("All fields are required");
+		}
+
+		db = prisma;
+		await db.$connect();
+
+		const result = await db.$transaction(async (tx) => {
+			const { employeeId } = await employeeVerifyOTP(assignedEmail, "passwordReset", otp);
+
+			const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+
+			await tx.employee.update({
+				where: { id: employeeId },
+				data: { password: hashed },
+			});
+
+			return {
+				success: true,
+				message: "Password reset successful",
+			};
+		});
+
+		await db.$disconnect();
+		return result;
+	} catch (err) {
+		console.error("🔥 Error in employeeResetPassword:", err);
+		try {
+			if (db) await db.$disconnect();
+		} catch (e) {
+			console.error("🧨 DB disconnect error:", e);
+		}
+		throw err;
+	}
+}

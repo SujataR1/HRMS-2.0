@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Two-Factor Authentication OTP</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f8f9fa;
+        color: #333;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+        margin: auto;
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+      .footer {
+        text-align: center;
+        font-size: 12px;
+        color: #888;
+        margin-top: 20px;
+      }
+      h1 {
+        color: #007bff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>🔐 Two-Factor Authentication</h2>
+      <p>Hello,</p>
+      <p>Your OTP for logging into the HRMS system is:</p>
+
+      <h1>{{ otp }}</h1>
+
+      <p>This OTP will expire at <strong>{{ expiresAt }}</strong>.</p>
+
+      <p>If you didn’t request this, you can ignore this email.</p>
+
+      <p>Stay safe,<br />HRMS Security Team</p>
+    </div>
+    <div class="footer">
+      This is an automated message from HRMS. Please do not reply.
+    </div>
+  </body>
+</html>

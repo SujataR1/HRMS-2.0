@@ -1,0 +1,58 @@
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { employeeVerifyOTP } from "../../otp/methods/employeeVerifyOTP.js";
+import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+
+const prisma = new PrismaClient();
+
+export async function employeeVerify2FAAndLogin(assignedEmail, password, otp) {
+	let db;
+
+	try {
+		if (!assignedEmail || !password || !otp) {
+			throw new Error("Email, password, and OTP are required");
+		}
+
+		db = prisma;
+		await db.$connect();
+
+		const result = await db.$transaction(async (tx) => {
+			const employee = await tx.employee.findUnique({
+				where: { assignedEmail },
+			});
+
+			if (!employee) {
+				throw new Error("Invalid credentials");
+			}
+
+			const isCorrect = await bcrypt.compare(password, employee.password);
+
+			if (!isCorrect) {
+				throw new Error("Invalid credentials");
+			}
+
+			const verified = await employeeVerifyOTP(
+				assignedEmail,
+				"twoFA",
+				otp
+			);
+
+			const token = await createEmployeeJWT(verified.employeeId, {
+				employeeId: verified.employeeId,
+			});
+
+			return { token };
+		});
+
+		await db.$disconnect();
+		return result;
+	} catch (err) {
+		console.error("🔥 Error in employeeVerify2FAAndLogin:", err);
+		try {
+			if (db) await db.$disconnect();
+		} catch (e) {
+			console.error("🧨 DB disconnect error:", e);
+		}
+		throw err;
+	}
+}
