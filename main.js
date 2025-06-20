@@ -61,6 +61,7 @@ import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
+import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
 import employeeChangePasswordRoute from "./src/employee/secondary-authentication/routes/employeeChangePasswordRoute.js";
 import employeeRequestAPasswordResetRoute from "./src/employee/secondary-authentication/routes/employeeRequestAPasswordResetRoute.js";
 import employeeResetPasswordRoute from "./src/employee/secondary-authentication/routes/employeeResetPasswordRoute.js";
@@ -179,6 +180,7 @@ await app.register(hrResetPasswordRoute);
 await app.register(hrChangePasswordRoute);
 
 await app.register(employeeLoginRoute);
+await app.register(employeeLogoutRoute);
 await app.register(employeeChangePasswordRoute);
 await app.register(employeeRequestAPasswordResetRoute);
 await app.register(employeeResetPasswordRoute);
