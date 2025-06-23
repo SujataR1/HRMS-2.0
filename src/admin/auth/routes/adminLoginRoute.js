@@ -28,6 +28,7 @@ export default fp(async function adminLoginRoute(fastify) {
 				.code(200)
 				.send({
 					status: "success",
+					authorization: `Bearer ${result.token}`
 				});
 		} catch (error) {
 			fastify.log.error({ err: error }, "❌ Admin login failed");

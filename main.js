@@ -100,6 +100,7 @@ app.register(fastifyCors, {
   allowedHeaders: [
     "Content-Type",
     "Authorization",
+	"authorization",
     "X-Requested-With",
     "Accept",
     "Origin",
