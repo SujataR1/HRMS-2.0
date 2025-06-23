@@ -26,7 +26,7 @@ export async function hrLogin({ email, password }) {
 			if (!passwordMatch) throw new Error("Invalid credentials");
 
 			const settings = await tx.hrSettings.findFirst({
-				where: { hrId: hr.id },
+				where: { HrId: hr.id },
 			});
 			if (!settings) throw new Error("HR settings not found");
 
