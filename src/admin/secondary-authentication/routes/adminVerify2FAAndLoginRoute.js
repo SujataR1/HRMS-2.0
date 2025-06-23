@@ -22,6 +22,7 @@ export default fp(async function adminVerify2FAAndLoginRoute(fastify) {
 
 			reply.header("Authorization", `Bearer ${token}`).code(200).send({
 				status: "success",
+				authorization: `Bearer ${token}`
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ 2FA verification failed");

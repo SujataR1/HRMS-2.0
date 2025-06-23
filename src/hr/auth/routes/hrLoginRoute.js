@@ -28,6 +28,7 @@ export default fp(async function hrLoginRoute(fastify) {
 				.code(200)
 				.send({
 					status: "success",
+					authorization: `Bearer ${result.token}`
 				});
 		} catch (error) {
 			fastify.log.error({ err: error }, "❌ HR login failed");
