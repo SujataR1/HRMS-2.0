@@ -29,14 +29,14 @@ export async function adminDemoteHR(authHeader, employeeId) {
 			});
 			if (!admin) throw new Error("Admin not found");
 
-			const hr = await tx.hR.findUnique({
+			const hr = await tx.hr.findUnique({
 				where: { employeeId },
 			});
 			if (!hr) throw new Error("HR account not found for this employee");
 
 			await tx.hrActiveSessions.deleteMany({ where: { hrId: hr.id } });
 			await tx.hrOTP.deleteMany({ where: { hrId: hr.id } });
-			await tx.hR.delete({ where: { id: hr.id } });
+			await tx.hr.delete({ where: { id: hr.id } });
 			await tx.hrSettings.delete({ where: { hrId: hr.id } });
 			await sendAdminMail({
 				to: hr.email,

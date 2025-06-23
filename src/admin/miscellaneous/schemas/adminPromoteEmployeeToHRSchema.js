@@ -2,8 +2,7 @@ import { z } from "zod";
 
 export const adminPromoteEmployeeToHRSchema = z.object({
 	employeeId: z
-		.string({ required_error: "Employee ID is required" })
-		.uuid("Employee ID must be a valid UUID"),
+		.string({ required_error: "Employee ID is required" }),
 
 	customPassword: z
 		.string()

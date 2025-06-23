@@ -37,12 +37,12 @@ export async function adminPromoteEmployeeToHR(
 
 			// 1. Get the employee
 			const employee = await tx.employee.findUnique({
-				where: { id: employeeId },
+				where: { employeeId },
 			});
 			if (!employee) throw new Error("Employee not found");
 
 			// 2. Check if already HR
-			const existingHR = await tx.hR.findUnique({
+			const existingHR = await tx.hr.findUnique({
 				where: { email: employee.assignedEmail },
 			});
 			if (existingHR) throw new Error("Employee is already HR");
@@ -53,7 +53,7 @@ export async function adminPromoteEmployeeToHR(
 			const hashedPassword = await bcrypt.hash(rawPassword, SALT_ROUNDS);
 
 			// 4. Create HR
-			const hr = await tx.hR.create({
+			const hr = await tx.hr.create({
 				data: {
 					name: employee.name,
 					employeeId,
