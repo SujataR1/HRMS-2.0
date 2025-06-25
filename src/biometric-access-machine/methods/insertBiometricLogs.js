@@ -39,6 +39,7 @@ export async function insertBiometricLogs(logs = []) {
 		await Promise.allSettled(
 			affectedDates.map((dateStr) =>
 				makeEmployeeAttendance({
+					employeeId: employeeId, 
 					date: new Date(`${dateStr}T00:00:00.000+05:30`),
 				})
 			)
