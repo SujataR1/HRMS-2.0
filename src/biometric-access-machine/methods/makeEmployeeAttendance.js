@@ -403,7 +403,7 @@ export async function makeEmployeeAttendance({
 
 			upserts.push({
 				employeeId: empId,
-				attendanceDate: new Date(istDay.format("YYYY-MM-DD")),
+				attendanceDate: istDay.tz(TIMEZONE).startOf("day").toDate(),
 				attendanceDay: dayName,
 				punchIn: pin ? pin.utc().toDate() : null,
 				punchOut: pout ? pout.utc().toDate() : null,

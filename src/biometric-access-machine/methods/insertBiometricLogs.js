@@ -7,46 +7,44 @@ import { makeEmployeeAttendance } from "./makeEmployeeAttendance.js";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const prisma = new PrismaClient();
-const IST = process.env.TIMEZONE || "Asia/Kolkata";
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
+const prisma   = new PrismaClient();
 
+/**
+ * Persist biometric punches and trigger attendance rebuilds.
+ *
+ * @param {Array<{ employeeId: string, timestamp: string, identifier: string }>} logs
+ */
 export async function insertBiometricLogs(logs = []) {
-	if (!Array.isArray(logs) || logs.length === 0) {
-		throw new Error("Logs must be a non-empty array");
-	}
+  if (!Array.isArray(logs) || logs.length === 0) {
+    throw new Error("Logs must be a non-empty array");
+  }
 
-	try {
-		await prisma.biometricLog.createMany({
-			data: logs.map(({ employeeId, timestamp, identifier }) => ({
-				employeeId,
-				timestamp: dayjs.tz(timestamp, IST).toDate(), // ✅ IST to UTC
-				identifier,
-			})),
-			skipDuplicates: true,
-		});
+  try {
+    /* 🚀 1) Bulk-insert the raw punches (stored as UTC) */
+    await prisma.biometricLog.createMany({
+      data: logs.map(({ employeeId, timestamp, identifier }) => ({
+        employeeId,
+        timestamp : dayjs.tz(timestamp, TIMEZONE).toDate(), // convert IST→UTC
+        identifier,
+      })),
+      skipDuplicates: true,
+    });
 
-		const affectedDates = Array.from(
-			new Set(
-				logs.map((log) =>
-					dayjs
-						.tz(log.timestamp, IST) // ✅ Parse as IST
-						.startOf("day")
-						.format("YYYY-MM-DD")
-				)
-			)
-		);
-
-		await Promise.allSettled(
-			affectedDates.map((dateStr) =>
-				makeEmployeeAttendance({
-					employeeId: employeeId, 
-					date: new Date(`${dateStr}T00:00:00.000+05:30`),
-				})
-			)
-		);
-	} catch (err) {
-		console.error("🔥 Transaction failed:", err);
-		throw err;
-	}
+    /* 🚀 2) For every punch, recompute that employee-day’s attendance */
+    await Promise.allSettled(
+      logs.map(({ employeeId, timestamp }) =>
+        makeEmployeeAttendance({
+          employeeId,
+          date: dayjs
+            .tz(timestamp, TIMEZONE)      // localise to env TZ
+            .startOf("day")               // midnight local
+            .toDate(),                    // JS Date (UTC under the hood)
+        })
+      )
+    );
+  } catch (err) {
+    console.error("🔥 insertBiometricLogs failed:", err);
+    throw err; // bubble up so the route returns 500
+  }
 }
-
