@@ -18,7 +18,7 @@ export async function hrGetAllShifts() {
 
 				fullShiftGraceInTimingInMinutes: true,
 				halfShiftGraceInTimingInMinutes: true,
-				fullShiftGraceOutTiminingInMinutes: true,
+				fullShiftGraceOutTimingInMinutes: true,
 				halfShiftGraceOutTimingInMinutes: true,
 
 				fullShiftEarlyPunchConsiderTimeInMinutes: true,
