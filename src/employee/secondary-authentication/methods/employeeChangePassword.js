@@ -18,7 +18,10 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 
 		const verified = await verifyEmployeeJWT(authHeader)
 
-		const employeeId = verified.id
+		const employeeId = verified.employeeId
+
+		console.log (`[Employee][employeeChangePassword.js][23][Debug] The employee ID returned from verifyEmployeeJWT is ${employeeId}`)
+		console.log (`[Employee][employeeChangePassword.js][24][Debug] The type of verified is ${verified}`)
 
 		const result = await db.$transaction(async (tx) => {
 			const employee = await tx.employee.findUnique({
