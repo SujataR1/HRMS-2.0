@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
+import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js"
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -15,9 +16,13 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 		db = prisma;
 		await db.$connect();
 
+		const verified = await verifyEmployeeJWT(authHeader)
+
+		const employeeId = verified.id
+
 		const result = await db.$transaction(async (tx) => {
 			const employee = await tx.employee.findUnique({
-				where: { id: employeeId },
+				where: { employeeId: employeeId },
 			});
 
 			if (!employee) {
@@ -33,7 +38,7 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 			const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
 			await tx.employee.update({
-				where: { id: employeeId },
+				where: { employeeId: employeeId },
 				data: {
 					password: hashed,
 				},
