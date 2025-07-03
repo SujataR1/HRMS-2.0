@@ -95,5 +95,6 @@ export async function adminGetEmployeeAttendance({
 			: null,
 		status: log.status,
 		flags: log.flags,
+		comments: log.comments,
 	}));
 }
