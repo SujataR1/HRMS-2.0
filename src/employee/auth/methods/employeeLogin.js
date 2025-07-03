@@ -60,7 +60,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 
 			if (!settings.isTwoFA) {
 				const token = await createEmployeeJWT(employee.id, {
-					employeeId: employee.id,
+					employeeId: employee.employeeId,
 				});
 
 				auditor({

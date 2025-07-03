@@ -115,7 +115,7 @@ export async function verifyEmployeeJWT(authHeader = "") {
 
 			const employeeExists = await tx.employee.findUnique({
 				where: {
-					id: decoded.employeeId,
+					employeeId: decoded.employeeId,
 				},
 			});
 
