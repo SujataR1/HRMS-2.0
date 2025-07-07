@@ -24,6 +24,7 @@ export default fp(async function employeeLoginRoute(fastify) {
 			return reply.code(200).send({
 				status: "success",
 				message: "Login successful",
+				authorization: `Bearer ${result.token}`
 			});
 		} catch (error) {
 			request.log.error(
