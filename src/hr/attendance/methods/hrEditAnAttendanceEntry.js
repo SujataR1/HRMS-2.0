@@ -38,7 +38,7 @@ export async function hrEditAnAttendanceEntry(
 
 			/* 2️⃣  Validate employee exists */
 			const employee = await tx.employee.findUnique({
-				where: { id: employeeId },
+				where: { employeeId: employeeId },
 			});
 			if (!employee) throw new Error("Employee not found");
 
