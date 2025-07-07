@@ -69,7 +69,7 @@ export const hrUpdateEmployeeDetailsSchema = z
 		bankAccountNumber: z.string().optional(),
 		ifsCode: z.string().optional(),
 
-		assignedShiftId: z.string().optional().nullable(),
+		assignedShiftId: z.string().uuid().optional().nullable(),
 	})
 	.refine((data) => Object.keys(data).length > 1, {
 		message: "At least one field other than employeeId must be provided",
