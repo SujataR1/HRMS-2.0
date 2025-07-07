@@ -1,7 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(timezone);
 
 const prisma = new PrismaClient();
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 /**
  * Fetch holiday records with optional filters.
@@ -9,8 +14,8 @@ const prisma = new PrismaClient();
  * @param {Object} params
  * @param {string} params.authHeader          – "Bearer <token>"      (required)
  * @param {string[]} [params.shiftIds]        – Array of Shift UUIDs  (optional)
- * @param {string}  [params.fromDate]         – "YYYY-MM-DD" (UTC)    (optional, must pair with toDate)
- * @param {string}  [params.toDate]           – "YYYY-MM-DD" (UTC)    (optional, must pair with fromDate)
+ * @param {string}  [params.fromDate]         – "YYYY-MM-DD" (IST)    (optional, must pair with toDate)
+ * @param {string}  [params.toDate]           – "YYYY-MM-DD" (IST)    (optional, must pair with fromDate)
  *
  * @returns {Promise<Array>}                  – Array of holiday objects
  */
@@ -39,13 +44,19 @@ export async function hrGetHolidayEntries({
 	let toISO = null;
 
 	if (fromDate && toDate) {
-		if (isNaN(Date.parse(fromDate)) || isNaN(Date.parse(toDate))) {
-			throw new Error("fromDate / toDate must be valid ISO dates (UTC)");
-		}
-		fromISO = new Date(fromDate); // UTC by default
-		toISO = new Date(toDate);
+		const fromIST = dayjs.tz(fromDate, TIMEZONE).startOf("day");
+		const toIST = dayjs.tz(toDate, TIMEZONE).endOf("day");
 
-		if (fromISO > toISO) throw new Error("fromDate cannot be after toDate");
+		if (!fromIST.isValid() || !toIST.isValid()) {
+			throw new Error("fromDate / toDate must be valid YYYY-MM-DD dates");
+		}
+
+		if (fromIST.isAfter(toIST)) {
+			throw new Error("fromDate cannot be after toDate");
+		}
+
+		fromISO = fromIST.utc().toDate();
+		toISO = toIST.utc().toDate();
 	}
 
 	/* --------------------- 3️⃣  Query Prisma ---------------------------- */
@@ -65,12 +76,13 @@ export async function hrGetHolidayEntries({
 		orderBy: { date: "asc" },
 	});
 
-	/* --------------------- 4️⃣  Return (UTC) ---------------------------- */
+	/* --------------------- 4️⃣  Return (IST format YYYY-MM-DD) ------------ */
 	return holidays.map((h) => ({
 		id: h.id,
-		date: h.date.toISOString().split("T")[0], // YYYY-MM-DD
+		date: dayjs(h.date).tz(TIMEZONE).format("YYYY-MM-DD"),
 		name: h.name,
 		forShiftId: h.forShiftId,
 		isActive: h.isActive,
 	}));
+
 }
