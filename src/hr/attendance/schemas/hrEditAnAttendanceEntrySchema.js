@@ -8,8 +8,7 @@ const attendanceFlagsEnum = Object.values(AttendanceFlags);
 
 export const hrEditAnAttendanceEntrySchema = z.object({
 	employeeId: z
-		.string({ required_error: "Employee ID is required" })
-		("Invalid employee ID format"),
+		.string({ required_error: "Employee ID is required" }),
 
 	attendanceDate: z
 		.string({ required_error: "Attendance date is required" })
