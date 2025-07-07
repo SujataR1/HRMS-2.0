@@ -1,5 +1,5 @@
 import fastifyStatic from "@fastify/static";
-import { PrismaClient } from "@prisma/client";
+import { AdminOTPPurpose, PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import path from "path";
@@ -63,6 +63,7 @@ import hrGetProfileRoute from "./src/hr/profile/routes/hrGetProfileRoute.js";
 import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
 import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAttendanceEntryRoute.js";
 import hrGetHolidayEntriesRoute from "./src/hr/holidays/routes/hrGetHolidayEntriesRoute.js";
+import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEntryRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
 import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
@@ -187,6 +188,7 @@ await app.register(hrGetProfileRoute);
 await app.register(hrGetEmployeeAttendanceRoute);
 await app.register(hrEditAnAttendanceEntryRoute);
 await app.register(hrGetHolidayEntriesRoute);
+await app.register(hrEditAHolidayEntryRoute);
 
 await app.register(employeeLoginRoute);
 await app.register(employeeLogoutRoute);
