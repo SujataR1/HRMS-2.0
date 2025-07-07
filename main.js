@@ -30,6 +30,7 @@ import adminChangePasswordRoute from "./src/admin/secondary-authentication/route
 import adminRequestAPasswordResetRoute from "./src/admin/secondary-authentication/routes/adminRequestAPasswordResetRoute.js";
 import adminRequestEmailVerificationRoute from "./src/admin/secondary-authentication/routes/adminRequestEmailVerificationRoute.js";
 import adminResetPasswordRoute from "./src/admin/secondary-authentication/routes/adminResetPasswordRoute.js";
+import adminMakeOrRefreshEmployeeAttendanceRoute from "./src/admin/attendance/routes/adminMakeOrRefreshEmployeeAttendanceRoute.js";
 import adminVerify2FAAndLoginRoute from "./src/admin/secondary-authentication/routes/adminVerify2FAAndLoginRoute.js";
 import adminVerifyEmailRoute from "./src/admin/secondary-authentication/routes/adminVerifyEmailRoute.js";
 import adminGetSettingsRoute from "./src/admin/settings/routes/adminGetSettingsRoute.js";
@@ -165,6 +166,7 @@ await app.register(adminAssignAnEmployeeAShiftRoute);
 await app.register(adminCreateEmployeeDetailsRoute);
 await app.register(adminGetAllEmployeeProfileRoute);
 await app.register(adminGetEmployeeDetailsRoute);
+await app.register(adminMakeOrRefreshEmployeeAttendanceRoute);
 await app.register(adminUpdateAnEmployeeRoute);
 await app.register(adminUpdateEmployeeDetailsRoute);
 
