@@ -30,6 +30,7 @@ export async function hrGetProfile(authHeader) {
 						name: true,
 						email: true,
 						isEmailVerified: true,
+                        employeeId: true,
 						updatedAt: true,
 					},
 				});
