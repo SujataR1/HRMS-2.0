@@ -1,4 +1,10 @@
 import { z } from "zod";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(timezone);
+
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 export const hrEditAHolidayEntrySchema = z
 	.object({
@@ -6,21 +12,21 @@ export const hrEditAHolidayEntrySchema = z
 			.string({ required_error: "Holiday ID is required" })
 			.uuid("Invalid Holiday ID format"),
 
-		name: z
-			.string()
-			.min(1, "Name cannot be empty")
-			.optional(),
+		name: z.string().min(1, "Name cannot be empty").optional(),
 
 		date: z
-			.string()
-			.regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format (UTC)")
-			.optional(),
+			.preprocess(
+				(val) => {
+					if (typeof val !== "string") return undefined;
+					const parsed = dayjs.tz(val, TIMEZONE);
+					return parsed.isValid() ? parsed : undefined;
+				},
+				z.instanceof(dayjs).optional().refine((d) => d.isValid(), {
+					message: "Invalid date",
+				})
+			),
 
-		forShiftId: z
-			.string()
-			.uuid("Invalid Shift ID")
-			.nullable()
-			.optional(),
+		forShiftId: z.string().uuid("Invalid Shift ID").nullable().optional(),
 
 		isActive: z.boolean().optional(),
 	})

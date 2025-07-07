@@ -45,14 +45,14 @@ export async function hrEditAHolidayEntry(authHeader, { holidayId, name, date, f
 				updates.forShiftId = forShiftId;
 
 			if (date) {
-				const parsedDate = new Date(date);
-				if (isNaN(parsedDate.getTime())) {
-					throw new Error("Invalid date format");
-				}
-				if (parsedDate.toISOString() !== existing.date.toISOString()) {
-					updates.date = parsedDate;
-				}
+			const istDate = date.startOf("day");
+			const utcDate = istDate.utc().toDate();
+
+			if (utcDate.getTime() !== existing.date.getTime()) {
+				updates.date = utcDate;
 			}
+		}
+
 
 			if (Object.keys(updates).length === 0) {
 				return {
