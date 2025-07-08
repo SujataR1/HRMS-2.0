@@ -231,7 +231,7 @@ model Leave {
   employeeId           String
   fromDate             DateTime
   toDate               DateTime
-  leaveType            LeaveType
+  leaveType            String[]
   otherTypeDescription String?
   applicationNotes     String?
   status               LeaveStatus
@@ -254,6 +254,7 @@ enum LeaveType {
   SICK
   EARNED
   UNPAID
+  PAID
   COMP_OFF
   MATERNITY
   PATERNITY
