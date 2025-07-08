@@ -68,6 +68,7 @@ import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEnt
 import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
+import employeeCreateLeaveRoute from "./src/employee/leave/routes/employeeCreateLeaveRoute.js";
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
 import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
 import employeeChangePasswordRoute from "./src/employee/secondary-authentication/routes/employeeChangePasswordRoute.js";
@@ -201,7 +202,8 @@ await app.register(employeeChangePasswordRoute);
 await app.register(employeeRequestAPasswordResetRoute);
 await app.register(employeeResetPasswordRoute);
 await app.register(employeeVerify2FAAndLoginRoute);
-await app.register(employeeGetAttendanceRoute)
+await app.register(employeeGetAttendanceRoute);
+await app.register(employeeCreateLeaveRoute);
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,0 +1,72 @@
+import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const prisma = new PrismaClient();
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
+
+/**
+ * Employee applies for a new leave.
+ *
+ * @param {string} authHeader - Bearer token
+ * @param {object} data - Leave application data
+ */
+export async function employeeCreateLeave(authHeader, data) {
+	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+		throw new Error("Missing or invalid Authorization header");
+	}
+
+	const session = await verifyEmployeeJWT(authHeader);
+	const employeeId = session.employeeId;
+
+	const {
+		fromDate,
+		toDate,
+		leaveType,
+		otherTypeDescription = null,
+		applicationNotes = null,
+	} = data;
+
+	const from = dayjs.tz(fromDate, TIMEZONE).startOf("day").toDate();
+	const to = dayjs.tz(toDate, TIMEZONE).endOf("day").toDate();
+
+	if (from > to) {
+		throw new Error("fromDate cannot be after toDate");
+	}
+
+	// Check for existing overlapping leave
+	const existing = await prisma.leave.findFirst({
+		where: {
+			employeeId,
+			fromDate,
+			toDate,
+		},
+	});
+	if (existing) {
+		throw new Error("A leave request already exists for this date range");
+	}
+
+	// Create the leave record
+	const created = await prisma.leave.create({
+		data: {
+			employeeId,
+			fromDate: from,
+			toDate: to,
+			leaveType,
+			otherTypeDescription,
+			applicationNotes,
+			status: "pending",
+		},
+	});
+
+	return {
+		success: true,
+		message: "Leave request submitted successfully",
+		leaveId: created.id,
+	};
+}
