@@ -69,7 +69,7 @@ import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrG
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
 import employeeCreateLeaveRoute from "./src/employee/leave/routes/employeeCreateLeaveRoute.js";
-import employeeGetLeavesRoute from "./src/employee/attendance/routes/employeeGetLeavesRoute.js";
+import employeeGetLeavesRoute from "./src/employee/leave/routes/employeeGetLeavesRoute.js";
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
 import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
 import employeeChangePasswordRoute from "./src/employee/secondary-authentication/routes/employeeChangePasswordRoute.js";
