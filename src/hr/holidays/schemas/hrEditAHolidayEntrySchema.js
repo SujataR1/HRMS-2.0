@@ -15,16 +15,19 @@ export const hrEditAHolidayEntrySchema = z
 		name: z.string().min(1, "Name cannot be empty").optional(),
 
 		date: z
-			.preprocess(
-				(val) => {
+				.preprocess(
+					(val) => {
 					if (typeof val !== "string") return undefined;
 					const parsed = dayjs.tz(val, TIMEZONE);
 					return parsed.isValid() ? parsed : undefined;
-				},
-				z.instanceof(dayjs).optional().refine((d) => d.isValid(), {
-					message: "Invalid date",
-				})
-			),
+					},
+					z
+					.instanceof(dayjs)
+					.optional()
+					.refine((d) => d === undefined || d.isValid(), {
+						message: "Invalid date",
+					})
+				),
 
 		forShiftId: z.string().uuid("Invalid Shift ID").nullable().optional(),
 
