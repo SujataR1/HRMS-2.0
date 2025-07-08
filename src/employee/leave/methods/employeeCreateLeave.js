@@ -45,6 +45,7 @@ export async function employeeCreateLeave(authHeader, data) {
 			employeeId,
 			fromDate,
 			toDate,
+			status: {not :"cancelled"}
 		},
 	});
 	if (existing) {
