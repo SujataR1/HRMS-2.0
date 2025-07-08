@@ -432,8 +432,8 @@ export async function adminGenerateAndSendMonthlyReports({
 
 	doc.end();
 
-	await sendAdminEmailWithAttachments({
-		to: admin.email,
+	await sendHrEmailWithAttachments({
+		to: hr.email,
 		purpose: "monthlyAttendanceReports",
 		payload: {
 			monthYear,
