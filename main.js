@@ -65,6 +65,7 @@ import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmploy
 import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAttendanceEntryRoute.js";
 import hrGetHolidayEntriesRoute from "./src/hr/holidays/routes/hrGetHolidayEntriesRoute.js";
 import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEntryRoute.js";
+import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
@@ -180,6 +181,7 @@ await app.register(hrUpdateEmployeeDetailsRoute);
 await app.register(hrGetAllEmployeeProfileRoute);
 await app.register(hrGetEmployeeDetailsRoute);
 await app.register(hrGetAllShiftsRoute);
+await app.register(hrGenerateAndSendMonthlyReportsRoute);
 await app.register(hrAssignAnEmployeeAShiftRoute);
 await app.register(hrLoginRoute);
 await app.register(hrLogoutRoute);
