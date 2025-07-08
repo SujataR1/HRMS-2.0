@@ -50,7 +50,7 @@ const readableFlags = {
 	approvedLeave: "Pre-approved leave",
 };
 
-export async function adminGenerateAndSendMonthlyReports({
+export async function hrGenerateAndSendMonthlyReports({
 	authHeader,
 	shiftIds = [],
 	employeeIds = [],
