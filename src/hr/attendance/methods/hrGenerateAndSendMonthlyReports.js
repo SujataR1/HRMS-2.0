@@ -445,6 +445,6 @@ export async function adminGenerateAndSendMonthlyReports({
 
 	return {
 		success: true,
-		message: `Consolidated attendance report for ${monthYear} generated and sent to admin`,
+		message: `Consolidated attendance report for ${monthYear} generated and sent to HR`,
 	};
 }
