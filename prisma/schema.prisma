@@ -240,6 +240,7 @@ model Leave {
 
   @@index([employeeId])
   @@index([fromDate, toDate])
+  @@unique([employeeId, fromDate, toDate])
 }
 
 model LeaveAttachments {
