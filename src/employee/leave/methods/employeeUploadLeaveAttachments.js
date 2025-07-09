@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import dayjs from "dayjs"; // If not already imported
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
@@ -26,6 +27,10 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 
 	if (leave.status !== "pending") {
 		throw new Error("Attachments can only be uploaded for pending leaves");
+	}
+
+	if (dayjs().isAfter(leave.toDate)) {
+	throw new Error("Cannot edit leave notes after the leave's end date");
 	}
 
 	if (!Array.isArray(files) || files.length === 0) {
