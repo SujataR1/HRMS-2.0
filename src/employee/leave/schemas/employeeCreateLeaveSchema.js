@@ -1,5 +1,14 @@
 import { z } from "zod";
-import { LeaveType } from "@prisma/client"; // ← Prisma enum import
+
+// Leave types that employees are allowed to apply for
+const EmployeeAllowedLeaveTypes = [
+	"CASUAL",
+	"SICK",
+	"BEREAVEMENT",
+	"OTHER",
+	"MATERNITY",
+	"PATERNITY",
+];
 
 export const employeeCreateLeaveSchema = z.object({
 	fromDate: z
@@ -15,10 +24,10 @@ export const employeeCreateLeaveSchema = z.object({
 		}),
 
 	leaveType: z
-		.array(z.enum([...(Object.values(LeaveType))]), {
+		.array(z.enum(EmployeeAllowedLeaveTypes), {
 			required_error: "leaveType is required",
 		})
-		.min(1, "At least one leave type must be selected"),
+		.min(1, "At least one valid leave type must be selected"),
 
 	otherTypeDescription: z
 		.string()
