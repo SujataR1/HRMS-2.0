@@ -47,7 +47,7 @@ export async function hrEditAnAttendanceEntry(
 			.tz(attendanceDate, TIMEZONE) // interpret as IST
 			.startOf("day")                // lock to midnight IST
 			.format("YYYY-MM-DD HH:mm:ss"); // as a raw string without timezone
-			
+
 			const start = dayjs
 			.tz(attendanceDate, TIMEZONE)
 			.startOf("day")
@@ -75,12 +75,8 @@ export async function hrEditAnAttendanceEntry(
 			const sanitizedFlags = Array.isArray(flags) ? [...flags] : [];
 			if (!sanitizedFlags.includes("edited")) sanitizedFlags.push("edited");
 
-			const punchInUTC = punchIn
-				? dayjs.tz(punchIn, TIMEZONE).utc().toDate()
-				: null;
-			const punchOutUTC = punchOut
-				? dayjs.tz(punchOut, TIMEZONE).utc().toDate()
-				: null;
+			const punchInUTC = punchIn ? dayjs(punchIn).utc().toDate() : null;
+			const punchOutUTC = punchOut ? dayjs(punchOut).utc().toDate() : null;
 
 			/* 5️⃣  Persist changes */
 			await tx.attendanceLog.update({
