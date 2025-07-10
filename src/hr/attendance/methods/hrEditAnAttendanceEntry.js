@@ -43,15 +43,31 @@ export async function hrEditAnAttendanceEntry(
 			if (!employee) throw new Error("Employee not found");
 
 			/* 3️⃣  Fetch existing attendance record */
-			const dateObj = dayjs(attendanceDate).startOf("day").toDate();
-			const existing = await tx.attendanceLog.findUnique({
-				where: {
-					employeeId_attendanceDate: {
-						employeeId,
-						attendanceDate: dateObj,
-					},
+			const dateObj = dayjs
+			.tz(attendanceDate, TIMEZONE) // interpret as IST
+			.startOf("day")                // lock to midnight IST
+			.format("YYYY-MM-DD HH:mm:ss"); // as a raw string without timezone
+			
+			const start = dayjs
+			.tz(attendanceDate, TIMEZONE)
+			.startOf("day")
+			.toDate();
+
+			const end = dayjs
+			.tz(attendanceDate, TIMEZONE)
+			.endOf("day")
+			.toDate();
+
+			const existing = await tx.attendanceLog.findFirst({
+			where: {
+				employeeId,
+				attendanceDate: {
+				gte: start,
+				lte: end,
 				},
+			},
 			});
+
 			if (!existing)
 				throw new Error("Attendance record not found for the given date");
 
