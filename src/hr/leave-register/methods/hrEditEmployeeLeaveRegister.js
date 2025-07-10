@@ -3,16 +3,18 @@ import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManage
 
 const prisma = new PrismaClient();
 
-const VALID_CURRENT_FIELDS = [
-  "casualCurrent",
-  "sickCurrent",
-  "bereavementCurrent",
-  "maternityCurrent",
-  "paternityCurrent",
-  "earnedCurrent",
-  "compOffCurrent",
-  "otherCurrent",
+const ALL_EDITABLE_FIELDS = [
+  "casualCurrent", "casualCarried", "casualTotal",
+  "sickCurrent", "sickCarried", "sickTotal",
+  "bereavementCurrent", "bereavementCarried", "bereavementTotal",
+  "maternityCurrent", "maternityCarried", "maternityTotal",
+  "paternityCurrent", "paternityCarried", "paternityTotal",
+  "earnedCurrent", "earnedCarried", "earnedTotal",
+  "compOffCurrent", "compOffCarried", "compOffTotal",
+  "otherCurrent", "otherCarried", "otherTotal"
 ];
+
+const CURRENT_FIELDS_ONLY = ALL_EDITABLE_FIELDS.filter(f => f.endsWith("Current"));
 
 export async function hrEditEmployeeLeaveRegister(authHeader, { employeeId, edits }) {
   if (!authHeader?.startsWith("Bearer ")) {
@@ -31,8 +33,8 @@ export async function hrEditEmployeeLeaveRegister(authHeader, { employeeId, edit
   for (const edit of edits) {
     const { field, mode, val } = edit;
 
-    if (!VALID_CURRENT_FIELDS.includes(field)) {
-      throw new Error(`Invalid field: ${field}`);
+    if (!ALL_EDITABLE_FIELDS.includes(field)) {
+      throw new Error(`Invalid editable field: ${field}`);
     }
 
     const currentVal = existing[field] ?? 0;
@@ -51,8 +53,8 @@ export async function hrEditEmployeeLeaveRegister(authHeader, { employeeId, edit
     }
   }
 
-  // Recalculate grandTotal
-  updates.grandTotal = VALID_CURRENT_FIELDS.reduce(
+  // Recalculate grandTotal using current fields only
+  updates.grandTotal = CURRENT_FIELDS_ONLY.reduce(
     (sum, field) => sum + (updates[field] ?? existing[field] ?? 0),
     0
   );
