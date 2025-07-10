@@ -63,6 +63,7 @@ import hrVerify2FAAndLoginRoute from "./src/hr/secondary-authentication/routes/h
 import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
 import hrGetProfileRoute from "./src/hr/profile/routes/hrGetProfileRoute.js";
+import hrResetEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrResetEmployeeLeaveRegisterRoute.js";
 import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
 import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAttendanceEntryRoute.js";
 import hrGetHolidayEntriesRoute from "./src/hr/holidays/routes/hrGetHolidayEntriesRoute.js";
@@ -197,6 +198,7 @@ await app.register(hrCreateEmployeeLeaveRegisterRoute);
 await app.register(hrGetEmployeeLeaveRegisterRoute);
 await app.register(hrLogoutRoute);
 await app.register(hrVerify2FAAndLoginRoute);
+await app.register(hrResetEmployeeLeaveRegisterRoute);
 await app.register(hrRequestAPasswordResetRoute);
 await app.register(hrResetPasswordRoute);
 await app.register(hrChangePasswordRoute);
