@@ -8,7 +8,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "d59c552a610b6d7b3241fa8e1ca5e4a1 ||| c36906f81c6aa03ed95b111e016296f6a34e5989aacca3eac1c863476af32e62f286a294d5787022d88a56d7c5d72607");
+				reply.header("x-auth-sign", "d9300f43703eb5d5a4d05b95cd1f6b55 ||| 6819dc0f725fa8531686080ae7626e07254d6444f6a8614c7381c2928a8833fec619e8bd64e95f65695ec4296c757a9d");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 			const parsed = employeeChangePasswordSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "b0bb0f934271c70035f786a0c7838a7e ||| 2b307bcff3a2ae85e6c04948c8c65f237a5a6bc999bebe6202e86510bb822f2c12b0111886c5542559e10318209cb910");
+				reply.header("x-auth-sign", "bece3173c796ba5a1b163fae4648050e ||| aa36fdb0dcd5b746ed0bdb070ebdc561bb211b46b5a40445ff2a710dbcaa6553ffd78a3e6c81b21f6f280bd4e16de6b2");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -33,7 +33,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 				newPassword
 			);
 
-			reply.header("x-auth-sign", "8c060cd61c242b07a6d2f3892040b3c7 ||| d0b514c549d5fc40813724262b29ed38d4fe6a9c2df18c4d41983ba20c939e233138dbe23e1309645c036b5f486d55b1");
+			reply.header("x-auth-sign", "1d6145bbd245d653c920232538b9a8f5 ||| 1e687d8d609b9c30fb36da34d148003649c004a2177c3db6a02abaed70b1b612e482430f4163e392a68ef80cd7b521e4");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -43,7 +43,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 				{ err: error },
 				"❌ Failed to change employee password"
 			);
-			reply.header("x-auth-sign", "e596ad4da256851057a7b686c0f21b7a ||| 78a84cd0db42581ea12151e45b75b3e6725264cad03ba82143e767230efe633d6ee8c42b69a51331f5257f7e5cf50d48");
+			reply.header("x-auth-sign", "6cd8a6631ce66a1adac2fc5acb2f98a4 ||| 11513f3cf08cc331a4e419a9bf60052a1973541918d5701266f0b7b7c3361b9c012c64121263c445e8a78e36c44f9e0b");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password change failed",

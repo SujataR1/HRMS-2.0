@@ -7,7 +7,7 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "8cbcbf2ea77e410faa18abfbd6ac0609 ||| 0378f1aa2755a891c061f25338c94bc5dcc5d5529390f118f56ed8c53376b41aacf739cdcf7b12ab37064d6ee52dac05");
+			reply.header("x-auth-sign", "2fb960c263041cf9542bb1abd99cdbf7 ||| 74e296023bedf433cbf38c4c9d06ff60df0d4e3dc59da93d6e2270116e5ee64d9ef5c4f0095f1b4a01e127ac057f53e8");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		const parsed = employeeEditLeaveNotesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "86bf758626904212bcc130ca2625b4ff ||| 403c4950d08437613e3c724fb30800914e7459fd9f8b4d04dded47674b450468175dd2bb1da10ab2747548b597c67ecf");
+			reply.header("x-auth-sign", "8c563b74ac8aba8a420993bfddfb122e ||| 0c53bf26de2a23fe42f22f075b6718503580f28d76eaf1b2c9bd247442e88e39b5bbfe697567401e0bafea667f79a2fe");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,14 +28,14 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		try {
 			const result = await employeeEditLeaveNotes(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "a2b8e339ab1109afd2786122452651a9 ||| be8473d140b384a6070c65c1ae6c0a4273d3fb017ead4007d921da3b7b0327c9d9107f44a5ba809d36c6691293dd9611");
+			reply.header("x-auth-sign", "27250f46afe468450166d7cd5e84734c ||| 243ce271d99a05485a4116ca3af365a7713854ce1371e6283bb89473ae702f0f4c42823267b715bad95cc676d69a4d00");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to edit leave notes");
-			reply.header("x-auth-sign", "b1d84614f67527ec0e88c9b2706dd048 ||| d00f42a15c566cd9b120aa4f449f1a523ecd7c027c902a2e1a163d22c56e4d7d03b7185671b24f9fe6026c6ce7e95a9e");
+			reply.header("x-auth-sign", "208f47ad4170a39bc012a20a8999ce4f ||| 7c6a73d40fab86c059c1a479e102ebe09b11db936336831c3d01fb2568196507426cb0d145532d709fd6fe7e333a6a17");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Could not update leave notes",

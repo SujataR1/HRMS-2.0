@@ -6,7 +6,7 @@ export default fp(async function employeeUploadLeaveAttachmentsRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "8ddd4b464eee7a887fe6293655531cbd ||| 3571d9a8bade561084f96d354f776eafbc4105ae7b86918e5ae90198368ecffeff6e2db919e594c4b39c62e4b4cdea4d");
+			reply.header("x-auth-sign", "2992c6bd5e87a87174c06f83d73962e8 ||| 4b978d0a373c362cc07e6bf2198b5ff8d1c2d28bcca95c51a0b4cfa6478fe6724056eacc3697bfee2564aecd6161b189");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -27,7 +27,7 @@ export default fp(async function employeeUploadLeaveAttachmentsRoute(fastify) {
 			}
 
 			if (!leaveId) {
-				reply.header("x-auth-sign", "31d0c3729a8707c8e64fe4a63960307b ||| ef0a8f35d6d319825e51c43e558432ed8db73b83e780df92610645d628af3c50e808e0ac2f4b459f914c95b08f69df6b");
+				reply.header("x-auth-sign", "0210e257b5b22c21827d2ff4f868ae25 ||| f65726f2b60ad05f52987b378175a920ac7095d01bb3456a95709f7b1d13c80f38771a6b1f13fdfc7118922605ffa3e1");
 				return reply.code(400).send({
 					status: "error",
 					message: "Missing leaveId field",
@@ -35,7 +35,7 @@ export default fp(async function employeeUploadLeaveAttachmentsRoute(fastify) {
 			}
 
 			if (files.length === 0) {
-				reply.header("x-auth-sign", "34a45da3b4389d54118ca1ef9ec27fef ||| 5cd6212606bd566dffd61fe84c74ed7888fd86c14152b723471a971803c3c4694e5c4c6395498a56485674b8891ab8f4");
+				reply.header("x-auth-sign", "b9b53b137d1768ec83a272b2f7b4ef52 ||| a31a9efd8f043a87f43df0045aa9d740d4f228f931042ecbee9d344595bb2a630e646ffae558d0b2ae8c6f4fc1639e5d");
 				return reply.code(400).send({
 					status: "error",
 					message: "No files uploaded",
@@ -47,7 +47,7 @@ export default fp(async function employeeUploadLeaveAttachmentsRoute(fastify) {
 				files,
 			});
 
-			reply.header("x-auth-sign", "53ebdb2a07f36a27c9865e1562c8d0f3 ||| 7dad05ee8772a89b94eff0361449640a16f2774b10bc15b21f29d89796dc1cfc9c59f22108338fcfa51422c2e7c46a4a");
+			reply.header("x-auth-sign", "13ed6440eee07fc6115c1f2d8157d811 ||| 5277922a69bd3bbff44270445b427ca91715bf9e5053be2e1a4c24dc2440d1a0cdc033621ad0773e11ecf016696ca1ba");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -55,7 +55,7 @@ export default fp(async function employeeUploadLeaveAttachmentsRoute(fastify) {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to upload leave attachments");
-			reply.header("x-auth-sign", "7606ed3002df01090ef83c46859e78d9 ||| 86dbe8bf5fc83bd7e5bef239590f4b8425bb26dfe74380c4fe96ed03f90358d26b989c8802cd3eb3678570b2285ee2d7");
+			reply.header("x-auth-sign", "b20a2c6f154dd0dc5ac57f03a579f187 ||| c839e8df3173860206df7f7ef03dbdd9c0a259d0e1c5091a098b316e6ee0b4587f70c13d2b4643d9dce3ee6d101ff4c0");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Could not upload attachments",

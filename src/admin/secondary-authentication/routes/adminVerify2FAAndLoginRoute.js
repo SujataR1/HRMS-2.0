@@ -8,7 +8,7 @@ export default fp(async function adminVerify2FAAndLoginRoute(fastify) {
 			const parsed = adminVerify2FAAndLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "7005360c8d4a9f792a53c681db4a6c0d ||| 790f9d5c15a66591070a72d060ded796ddcf20e127b7318f289e09f0d8bad1e7723d99b391115fce5eead0e9d8517d7b");
+				reply.header("x-auth-sign", "6bc574909a7b67653b5d17dfff1a12cd ||| d51263ebcaf4fe6e1958bf86e7a83642a95c4563de3dfc47d894ff9cdf64b7c2fad2ca7971c7bc36af9e9c5cf24e0976");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,7 +27,7 @@ export default fp(async function adminVerify2FAAndLoginRoute(fastify) {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ 2FA verification failed");
-			reply.header("x-auth-sign", "4a19c514a02ed406c224ae64c8157dc0 ||| 96d4c2dd2d6fe04303d7bba24539342bcc1a2808b08de1f05a8700e8ab3cf04bb1cf4f758fa7ef28f6b767edcb051c7f");
+			reply.header("x-auth-sign", "78a128a085f2357769e2f23bfa81d850 ||| 20b0b4966763c856d2a3d29227e381ad9022befa2a377a9f87ee04e7b26e8f0d9167a5db41f3b09e4f7b9bed7b3495f5");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Invalid OTP",

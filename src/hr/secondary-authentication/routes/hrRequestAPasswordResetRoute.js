@@ -10,7 +10,7 @@ export default fp(async function hrRequestAPasswordResetRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "b1c6e502c57980cb5dc3d19ea8bd0db5 ||| 8ac527fe0e87c03be46cc2020197e42378408b21c4a926c815a56d8c5b1428415ee100766198abfc782e9571a3bc2ffc");
+				reply.header("x-auth-sign", "c98843a1b611914cfd87443a296f51b2 ||| 35bf6143bec47c7380b00faf285b38256eb2b9692ed2f70c3ef0243fd4050656284d5904edfca697e13f4666809b2dcc");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function hrRequestAPasswordResetRoute(fastify) {
 
 			const result = await hrRequestAPasswordReset(parsed.data.email);
 
-			reply.header("x-auth-sign", "0641a86ec0caeda26d1ed4a19e90cb5e ||| 47e513a7c60b8e71d222afc8533700f4f5cfd237c3aa255320d90a41ef3eac77105882c397d664e4c136fde0335b77d3");
+			reply.header("x-auth-sign", "e77aeea9d162c732f7164568ef7e339a ||| 4caae43bf02d9ec824842c71a344472facbea0360ca968a900e47c6cd6749d5de454df653b6c82c4496c967213c3638e");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -29,7 +29,7 @@ export default fp(async function hrRequestAPasswordResetRoute(fastify) {
 				{ err: error },
 				"❌ Failed to send HR password reset OTP"
 			);
-			reply.header("x-auth-sign", "b5fd5d5987b35e41c9b2b2f6edaaca58 ||| 8837620ed9447205575f71289445f7d937854ff3a4b9a9d9039a4cacd5e6cbb62e0094db2d23c5d2819d4871d99f0c59");
+			reply.header("x-auth-sign", "e81c5ebba90ba01aed8d15d4ac318a1f ||| 0e5878f97c5e3dd71a17fbea0031c87cc01d1784ba0c97834c4e1f54357fd2141049200fc4894f76509b8ecaa43076f8");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to send reset OTP",

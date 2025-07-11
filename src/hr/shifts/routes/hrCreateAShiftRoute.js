@@ -6,7 +6,7 @@ export default async function hrCreateAShiftRoute(fastify) {
 		const parsed = hrCreateAShiftSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "dc2879dd736383ecaa84de78faf285da ||| 26d3e11b07b767c924d9f24a366c9098e53c025c0b9a4d65b85f0971af49d0c5e27ec4f84fed7f1493d61bf10ca0ab9a");
+			reply.header("x-auth-sign", "0d65df656f19c5e3596cdfe326b3f511 ||| 166759b29562a4edffb659f9f510534a1f2ff80c8000c24624444e63cb855dbf517360d9d65915198141ddb664f2fc28");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -16,13 +16,13 @@ export default async function hrCreateAShiftRoute(fastify) {
 
 		try {
 			const newShift = await hrCreateAShift(parsed.data);
-			reply.header("x-auth-sign", "23008ca4550829399d0a8b34a2a22903 ||| 4a82dd8c6448db36be1e66300abc4963511664bd234f807e4a4e6c94a5d9a1c5434cfa16e4a8cd5fe804377b00847152");
+			reply.header("x-auth-sign", "0cd73029577fa060edd9ca04913cbca1 ||| 2cb30bb1db983b3f964f35c578e4d35da71753499de5045b21f93e8b0109eb355ea0d0ae444a57208785e7f54d9d619d");
 			return reply.code(201).send({
 				status: "success",
 				data: newShift,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "b40123c1dd49e277e5104c06fb72ba39 ||| 7bb4649c53abf7e6d771b321580cbf123c6f30a32be14e57972342b2de4ca30dc28ed22ad29d5e730198ebe6bac57e5e");
+			reply.header("x-auth-sign", "7a186f0eb384c84c73cd6c957b7d6b74 ||| 28844d69171c0c8c7a2e3c07a46864d701da9980c77a8eb048f4dce135649a5b6bb57ac6b023ea924caf0141b1e53f5d");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Internal Server Error",

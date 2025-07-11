@@ -7,7 +7,7 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "ff2100d2f5a8edaaa4fa2ad3589b0814 ||| 73de40f726016c6451d025257e604db6f83362db35405eb702afd6505adc758a54f606b395f855eda7b20b421cf74744");
+			reply.header("x-auth-sign", "33af2d5918c8ae11aa9d85af33d92a47 ||| 32ecc246625320eb11de737d014c9d77e78348339da2292533bd6c3e9a64d27ed21aec3389639c70464208a251dd9a46");
 			return reply.code(401).send({
 				success: false,
 				error: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 		const parsed = HrGetEmployeeAttendanceSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "103acf0766daa6cd7f97a041755614bf ||| 959c579151a8ab5da529482897b13d75c1d5bd8059bfc90086e0c1dc22b32d4a4328583d67d524b4ee9f7a916e78d47e");
+			reply.header("x-auth-sign", "1d0105559ac1dc57134af06a977d4324 ||| 8a37bb4e917eaf4bd0528a876b5e5bafd241f3d9498cad42fb7a9b8d0a44e5f95a5356b99ad14b223d067d8c36675343");
 			return reply.code(400).send({
 				success: false,
 				error: "Invalid input",
@@ -30,11 +30,11 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 				authHeader,
 				...parsed.data,
 			});
-			reply.header("x-auth-sign", "4d2ba9239b01d09d8eb5e056ec59f661 ||| ef404d533480c2dd108a8fe7aaaeb50be02606f33ee070db39605faabd6e7d6ab21dfd8baf0a6d90f053de28aaf0b4a7");
+			reply.header("x-auth-sign", "0e1b61fcf8056a7d51f79592e2631e09 ||| 430b0518657baef73208c71fc2c4b271f0e2ccf4b2f9f78e12a33ba4b39ccdda7c7007703d3a9be3de3b8d791650932e");
 			return reply.code(200).send({ success: true, data });
 		} catch (err) {
 			request.log.error({ err }, "❌ Error in hrGetAttendanceLogs");
-			reply.header("x-auth-sign", "6772d50564ec8f3ea0c3826025b91cb6 ||| 5d1638f6eb2aaf68c488fa74a46b3a48646d647a00e53d016a975b80b37a9853abf79133cbffb78e52b4cb6f43db72a4");
+			reply.header("x-auth-sign", "dcedb89b09b0bb24a1f3e683e1da3fef ||| 76f6726b5419a9ef57877ab8bfbf2324fe3a1ed3ecc6bca77fa3ed88ae3f931dc8a3ba220b8f6e2bd66d06e9eb65452a");
 			return reply.code(500).send({
 				success: false,
 				error: "Failed to fetch attendance logs",

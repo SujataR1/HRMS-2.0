@@ -10,7 +10,7 @@ export default fp(async function adminGetAllUserInfraRequestsRoute(fastify) {
 			});
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "d951ac73fb037310f199ab964ec95ca8 ||| 8761a63367445007214d782bf648810e4576a23bf1f437ca92779ceaf2adff40e1d48e0d9de15ff6c49e819bfddbd45a");
+				reply.header("x-auth-sign", "04c470c1c76273c918ef8987b5ab77f4 ||| 60c8b0b847ae0b85329f93e67b67de32c4395b11d0f31e228fcaa3670565afca420595a852950b5b3fa80c2083cf7f20");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function adminGetAllUserInfraRequestsRoute(fastify) {
 
 			const authHeader = request.headers.authorization;
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "2fe1fa06a102b5ea544c0751c04b7549 ||| 7474dd4576d061d50e0c67452d317a09b75ecbbbf2bd70c4be4bb516c82a4bbed1e4b205e6edfaf8bd7d080429bf5118");
+				reply.header("x-auth-sign", "5f17cbf1496c25fc7826f2ee4bf3d9e7 ||| e372bfe23643adce21b2dd91920ca2a80fcd8431c7afa551690bed630463e5e3cb0070711735bfdba68d267338b21a01");
 				return reply.code(401).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -32,14 +32,14 @@ export default fp(async function adminGetAllUserInfraRequestsRoute(fastify) {
 				meta: request.meta || {},
 			});
 
-			reply.header("x-auth-sign", "2f736403d3131b4703db222c72ca3ec6 ||| a75a014d2ebd569bb31db85a427f595eabe8d32704a2d172703cd8b5a64221732493f381b0833c97d51e7dde2ba7558b");
+			reply.header("x-auth-sign", "ca309fb2f850ee342d7e389b2d87848f ||| 83c753f2573b6be7839ad8639c2f5d9537a5fadb2d03a3f33c48cb9d44135f2c443ad4a11ef20e2d92aaff6e2be0d77a");
 			return reply.code(200).send({
 				status: "success",
 				...result,
 			});
 		} catch (err) {
 			fastify.log.error({ err }, "❌ Failed to get infra requests");
-			reply.header("x-auth-sign", "39a0def96f2040295c333d0e80943615 ||| 70b32f6f90cc741be59a262e9b2261e107c0cdd787f8df1c87993c7acdf51253e708a6a64c330e4e71c0e63566e7624a");
+			reply.header("x-auth-sign", "ef072320cd89b2a7af61ad1e41282fe9 ||| 70f79bc40bb2b77c0247ca15e972aaa64cfb14dc25b70d3212e2caa5981f4f2469adde64a8a81a6d03d1af34321f16e4");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Unknown server error",

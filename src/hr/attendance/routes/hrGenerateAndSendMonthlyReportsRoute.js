@@ -10,7 +10,7 @@ export default fp(
                 const authHeader = request.headers.authorization;
 
                 if (!authHeader) {
-                    reply.header("x-auth-sign", "6c44a5707bd0b62b878a3c1143736d5b ||| a6a1ca4245187a670af9506d74fc77306e6382a499b32743c0d9594b8ee863c8b44ab2215e085ba12c76a91ecbdf0125");
+                    reply.header("x-auth-sign", "f9abdb95887ce17237708eda841bd7cc ||| 51fc433be4e2094a953668479df65c93c0fdc3236bcf08582147aaec0a47d6fa5ce849c045ee80e002c520c19e2b75dc");
                     return reply.code(401).send({
                         success: false,
                         error: "Authorization header missing",
@@ -23,7 +23,7 @@ export default fp(
                     );
 
                 if (!parsed.success) {
-                    reply.header("x-auth-sign", "e84a6618d2af32ebe0c2fac68dbc1247 ||| de4071e25c8b83734ed02a2512f81d6c5b9c79d6c50868109ec3d953223c4d1de1db576d48eab19e238859f4d75a4a69");
+                    reply.header("x-auth-sign", "98bc762014579480dbfb7c409ba27813 ||| 7361bc8f1992b74f0c592dceaa5a46d307fa34dbfdcf63339ec1c093e9490b0416f0e6d416231b89644d2b7db21ea7e5");
                     return reply.code(400).send({
                         success: false,
                         error: "Invalid input",
@@ -37,14 +37,14 @@ export default fp(
                         ...parsed.data,
                     });
 
-                    reply.header("x-auth-sign", "c0e4bf7b2c1bcc9d0406d5a87ea1ee0a ||| e3bbd0648bf53d867e42e6a3f9d4b84dccdc6510d11fa08f04b20b3ba42d7e4b80ad45024e4306080745b1d948b155aa");
+                    reply.header("x-auth-sign", "2dcd7c4823a31a9b954b5a4c0023aafd ||| 042b5cc9131210942ecf9bd283197a0b7d3293e596c459a5ecf9927a7dccd399c37704e52c743a884672dfa2dc31c1da");
                     return reply.code(200).send(result);
                 } catch (err) {
                     request.log.error(
                         { err },
                         "❌ Error generating/sending monthly reports"
                     );
-                    reply.header("x-auth-sign", "20a1e9f4ac20ec0cb1a42fd20bca24dc ||| a21855121043dd4ed0742571914d567386e4cfbcd4cb1f307f25834fc94cd086cdf2c3d91e7d4b6cf7601828d7ef98bb");
+                    reply.header("x-auth-sign", "f738fdb262b42da4b16ba28190cd051c ||| f463bb4861c65baaa69054827309e4158c90c837673fd8cbc78c292f32d18b974c7ba6aaced5d30dba33d6c8dc506cd8");
                     return reply.code(500).send({
                         success: false,
                         error: "Internal server error",

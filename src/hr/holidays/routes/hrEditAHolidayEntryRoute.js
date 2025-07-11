@@ -7,7 +7,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "3c9a5783d3a6e0003fa3e78e8fde99ef ||| eb85ccf63f7105bb2985e7e15eefd59310ddf79e5d036d60af47640955b902d1e9c7335d22d8f881b6990c03975d8db5");
+			reply.header("x-auth-sign", "a23c0712dafef268d4d682c181df86e0 ||| 1bb0d87393730869e6cc03700d6ec11e57136bd6fdce91a7f9e90a54e4777e395d1723196ca9cd808e12de4602793fc8");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		const parsed = hrEditAHolidayEntrySchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "e4f1bda459729dde5625b1bc6756416b ||| c962fd365341bc379395f891a02290fdac0a9d43efa63071cdfdc5f2cb9c8d6de812eec70aefc41e6178d2d9e89fea94");
+			reply.header("x-auth-sign", "6d18c6d6fe0b8894b6a44cd53c5d0556 ||| d370a6f250f305707c74c6ef64139b76d2503dff0678d1ead4fe0f9170dadffadfc334f6ccd62c8bf46184516b9c9961");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,7 +28,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		try {
 			const result = await hrEditAHolidayEntry(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "6a0097b352b7094db7586ca41d3944e2 ||| 50b152d9c7cd6902c068a6d93cb81cda1e02a6506912c4c75abf7ef79b795cb7c9b2b94763c22ea54bc8ec97f1d80a67");
+			reply.header("x-auth-sign", "8f6c551bbc4561ec86f67f67663d1e24 ||| 500d4b6727d0e847c09888c226591680b0ded0e36117ffd674e44553b6b97168efc8eabaf8b2b96616547fad1782db1d");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -36,7 +36,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "❌ Failed to edit holiday entry");
-			reply.header("x-auth-sign", "487b8a2f8391189b229002131d1c9c7e ||| 89a7e0829889d4b6406d76db5c9de7d7f5b7d5a081944a10994cd4812ceea3b40734cadccdb8c660f58f260f436faa51");
+			reply.header("x-auth-sign", "9d011354bef423f013335ba8448dcf7b ||| 353a70737085c2c6e023e703df6c57edba09af7bf95eee3728679f102ef6a5e5aa38cafdd946d041592c0deface0f715");
 			return reply.code(400).send({
 				status: "error",
 				message: err.message || "Failed to edit holiday",

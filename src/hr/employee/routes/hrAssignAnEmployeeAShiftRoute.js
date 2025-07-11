@@ -6,7 +6,7 @@ export default async function hrAssignAnEmployeeAShiftRoute(fastify) {
 		const parsed = hrAssignAnEmployeeAShiftSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "2bd376d52e6568eef6c9291101feb813 ||| 3ba74293a29694a554434088d1969d6ec541ff3f181ba97b9feda6b08728c54679f54dd27d177c882e6a181fededdbab");
+			reply.header("x-auth-sign", "26e638a9d41fe6147c30b8a8c803db3f ||| 5c4b915df7d7686c0b06b08299e5bf010b918e7f978417525dd236493733dd85b0282309924b0f91d98713215ff0755a");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -16,13 +16,13 @@ export default async function hrAssignAnEmployeeAShiftRoute(fastify) {
 
 		try {
 			const updated = await hrAssignAnEmployeeAShift(parsed.data);
-			reply.header("x-auth-sign", "f90baf7a9d46813e27d9e890dc091547 ||| ac21a5aa122f309a3b865c168ba241f67457c9fdc43e8a34c5e64446003e3dc4c0af6137153d8376490c9920c4b3688f");
+			reply.header("x-auth-sign", "32b2ee78e524560a943914bbd6a0ee9c ||| e200c86e079c7d135ba366d74984270cb470529711a67c1b082a1f3d1e1e8e42a3f8fafd04bdacb8372857b81c8d913b");
 			return reply.code(200).send({
 				status: "success",
 				data: updated,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "b26a8557c044d55ee9801441f3736a18 ||| c6f59eb771a378475a5bcdd6fd39211497941a40665b73049e1e75cd8055427a19b345e03e3d5fcb109bb2b19a111f77");
+			reply.header("x-auth-sign", "8affd49fb16d5c3dcd2e6a0194ebdeba ||| cf649bb845ea8c034925d31e3667e4cd7bf98ae36eef992cd412b4fd0c9bccb11e8dc4da65a1a740195a2883afd664ca");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to assign shift",

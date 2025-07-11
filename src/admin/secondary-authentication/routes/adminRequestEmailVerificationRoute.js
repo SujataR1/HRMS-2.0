@@ -9,7 +9,7 @@ export default fp(async function adminRequestEmailVerificationRoute(fastify) {
 				const authHeader = request.headers.authorization;
 
 				if (!authHeader || !authHeader.startsWith("Bearer ")) {
-					reply.header("x-auth-sign", "c5e186f882fb2f927802eddc04bf445f ||| e10a7182be883019227a404acd53c79a179853a929ab8da7597dfbe60237cff5da318788f23148c45f318fdc7be12eba");
+					reply.header("x-auth-sign", "fd63581f2a033d5ac4414c0890255d03 ||| 07e369f1ca7dba5de539c7f242e52948939ad102b45863896afd33dc7b133294cdfe6796918a619a9b8184d87a45444f");
 					return reply.code(400).send({
 						status: "error",
 						message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function adminRequestEmailVerificationRoute(fastify) {
 
 				const result = await adminRequestEmailVerification(authHeader);
 
-				reply.header("x-auth-sign", "766495f760c680ea3681d68cd3335ec8 ||| cbacdbd7fc156e39ad1e390bf861ba32c77ef6aa197adb0b97ef7368806db87265972db64c6eb5adf3aee37ed9fcbba1");
+				reply.header("x-auth-sign", "c879641dcdd0578c909212391aba79fd ||| a6df26c29237fe7d8a93a78837fa1f5ae2dbc261ea0279720e745ffc9c7842df7d7726c51a575ad136b885bbdef807ba");
 				return reply.code(200).send({
 					status: "success",
 					message: result.message,
@@ -28,7 +28,7 @@ export default fp(async function adminRequestEmailVerificationRoute(fastify) {
 					{ err: error },
 					"❌ Failed to send email verification OTP"
 				);
-				reply.header("x-auth-sign", "c57de78bc9c66639a910592743081b41 ||| 6038696fc0e0c7e58568d48b95660122205a1f2bcb6889c18fcdf7d5f4cede27eef3317a5ecd001a4baaed3e555acac5");
+				reply.header("x-auth-sign", "4e4c198c338f4087b67fdc76be76c9d1 ||| 36c1691bd76a72f139fad6d5a3445a0514c72a28ebded21df7411df308ce35088cfdca546b6e16b70207eb5c2e553d20");
 				return reply.code(400).send({
 					status: "error",
 					message:

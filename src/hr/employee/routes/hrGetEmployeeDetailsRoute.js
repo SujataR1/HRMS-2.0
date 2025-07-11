@@ -5,7 +5,7 @@ export default async function hrGetEmployeeDetailsRoute(fastify) {
 		const { employeeId } = request.query;
 
 		if (!employeeId) {
-			reply.header("x-auth-sign", "3b19229116e483620fd5ed504af5a777 ||| b5d9ed4008eb6a1d96cc5f40b8957cda558ab2c87fb10d48b7a43e42553ca1158a964670575a8da35bfe8367bbd7c8e2");
+			reply.header("x-auth-sign", "aee79b936d16f80bef0c58e092692329 ||| ac80c956956261e8a7639e8fe2036d69e1ef2b80bdf03aae0d2a741e9198d0d7afd262dd24f5345d18a6e68380e295ea");
 			return reply.code(400).send({
 				status: "error",
 				message: "Missing employeeId in query",
@@ -14,13 +14,13 @@ export default async function hrGetEmployeeDetailsRoute(fastify) {
 
 		try {
 			const details = await hrGetEmployeeDetails(employeeId);
-			reply.header("x-auth-sign", "490f61c7cf7e7b237f9f11d2b3a1e89a ||| 69f5c9f97910ed6ef563d2ccd7eef37acee99133a5bef5f4a0a8e0e6750b3bff6f085de2b07b7bbd948d12a8884e0878");
+			reply.header("x-auth-sign", "521e5fe95cde74e7234300308dddeb0a ||| e34fe5ff1a9c97f9444ca27fef9e1f0ffef1ac5a9b02061a5315a75dbdd13fd226e29db0388084d5eff3b0a5479fc584");
 			return reply.code(200).send({
 				status: "success",
 				data: details,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "c2184d9c49c9a973da0e94d7074d9bc1 ||| 15c6e9a6fe42e7eb7a1b07b99e7c5c962825c224403e968bbdb9a92353e3e0ec39c5bff018342142f5f05c5798e26f07");
+			reply.header("x-auth-sign", "dac118920149f99556e3ad9e6750bdb5 ||| 090fbb6ac48de451b568d585095597f552f0b9f11b05f2df7f6025b340f3706c857a88c4da68492c451445176f2d6960");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to retrieve employee details",

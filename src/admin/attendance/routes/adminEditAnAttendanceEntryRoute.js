@@ -12,7 +12,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "8f63891265b95e33782ec04ce8fd38e5 ||| db9b0e21008312a43ebeeda68c1a56b8ed9cce66fb0d1b32c44300c42960fecd8c0f6ba9d5d3caf558ea66ba009748e8");
+				reply.header("x-auth-sign", "b268aad252f119daebf33b539d1334f7 ||| 64cbe29bd200d206c3778ee60f6fbf72afed71604738825c2b8ad7ff88024a9740e94770503e466d19f58712ee922afc");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -24,7 +24,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 				parsed.data
 			);
 
-			reply.header("x-auth-sign", "63dbc546a0b07e5d6f5fe516d52e81ac ||| 8f177013c0ccbc3f92ccbc8782308a9ad638f28740716747e8adc4e7bf3ea3125b0009b00b4eb39a4530b2f29c210d90");
+			reply.header("x-auth-sign", "ee882c3630978ccf0c5fea8c4dab9b3a ||| 1367a6d46657d7339898f27a99382cbb010729c75dc5e921a6cd806524b887f47a756849939d1adb42c73adf0497c3f2");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -34,7 +34,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 				{ err: error },
 				"❌ Failed to edit attendance entry"
 			);
-			reply.header("x-auth-sign", "7a941db6d2f11bcaea0be30312422024 ||| 772dc8e8564149c124b3525196f78d3c82b96d88ae4ff85a17a973fa7aeb2619ec21edd9dab81771bada5e36b60091df");
+			reply.header("x-auth-sign", "b2f87bdb4fbfbe4b5f9957f2894988e0 ||| 0d275d4157489c5d20a3c48191fa6d3df513b9c4504c055a592d3aad79bb38c8da1c7bfaf07411da7d312277035bbad2");
 			return reply.code(400).send({
 				status: "error",
 				message:

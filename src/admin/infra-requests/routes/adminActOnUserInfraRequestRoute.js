@@ -12,7 +12,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 			adminActOnUserInfraRequestSchema.shape.body.safeParse(request.body);
 
 		if (!queryParsed.success || !bodyParsed.success) {
-			reply.header("x-auth-sign", "44807c6d0ca171a23cb7cab1eedfe3f4 ||| e1c92667eb9bc7280e9547605b3e251f73deaaddabf0e36226b3f3e9fe92dff2054d59d07bdfdcbe81ffc98fc0456246");
+			reply.header("x-auth-sign", "613c8a2693292678f84c1e23bea1c589 ||| c79f9c996de98dbbc11e21e248c509315984d666fc7b64a712186bf764f45eb2d400227fd129191046448b2d2dc87bb2");
 			return reply.code(400).send({
 				status: "error",
 				issues: {
@@ -34,7 +34,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 				meta: request.meta,
 			});
 
-			reply.header("x-auth-sign", "f54d8372d14d0c6c19d4113d636b09a9 ||| 43687af7cdf2b82d45ed4d505c33be1552e8d6d132aa18e014f5d6f2c69e3fda7eb196fc0a82df186a5c0a10744415cf");
+			reply.header("x-auth-sign", "47b99a62780d927b211c80ffb2bfceba ||| 0b54a8023f4b535ef8df65da96d80811d1ebf4694c6551c20f2e7f60f4e43def53f02d376ca6a02af4801b5ce390eb02");
 			return reply.code(200).send({
 				status: "success",
 				data: result,
@@ -44,7 +44,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 				{ err },
 				"❌ Failed to act on user infra request"
 			);
-			reply.header("x-auth-sign", "56690ed2abd64a7864f99a5328d7c3c3 ||| 68d21d0854cc0dc15b8f8c89e92a14b949dbabd3491283b4685c5eca1e637e585f34592ee33dd73bdbf5c136081357c0");
+			reply.header("x-auth-sign", "f73d0448a3f37be048287872b5018edf ||| 7f708980fd5b3c8cf68e369dc6ad68cacdc90945c93c42d5d940343b049a927126280a352c7533121181d48eed0309f0");
 			return reply.code(400).send({
 				status: "error",
 				message: err.message || "Unhandled error",

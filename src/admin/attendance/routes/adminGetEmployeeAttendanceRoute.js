@@ -7,7 +7,7 @@ export default fp(async function adminGetEmployeeAttendanceRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "65c6d9f169071168aea1ed8b52a6b0fe ||| 27b3ea3616e45cdcca05829f00e48e9671f91b131a18a495e5db4df27769247a7f92317e6daeb60c0b73491dabbe9e21");
+			reply.header("x-auth-sign", "fb34392354f95f3df699cdbc17fd5d75 ||| 733389801eff11b4bfe68ba836082d32e8f2ce74c632cdbff60d7f42b0ebd732b412082aff816072faa03839071c484a");
 			return reply.code(401).send({
 				success: false,
 				error: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function adminGetEmployeeAttendanceRoute(fastify) {
 		const parsed = AdminGetEmployeeAttendanceSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "0e27f83571b994254cc52ff4c918ebba ||| 04a49d229a0d7ad359f37e427ca9f9e04f81c37fffe5c07b863c6dd968ed4880c609597f2d8dec085362a586db5077ff");
+			reply.header("x-auth-sign", "175e1aac5e3584bf86af02f436ea65fc ||| 6e59356f05a0eec7bf18343a252b1e0e865cdd38ea804db6f4d035160e006fde49039fcf2262826f7786ae66ef74a969");
 			return reply.code(400).send({
 				success: false,
 				error: "Invalid input",
@@ -30,11 +30,11 @@ export default fp(async function adminGetEmployeeAttendanceRoute(fastify) {
 				authHeader,
 				...parsed.data,
 			});
-			reply.header("x-auth-sign", "716955e424bef373cdcb8ec5f2c15aae ||| fa439e74196f8af88fded175d02096c7d92fa10319a57fc5ec7b76e91128640c470186897ba54a825bba062079dd6374");
+			reply.header("x-auth-sign", "44a4e2244d4a55a1093d7e0423291d95 ||| 9b39d6d20497bf87881ca520b534651d1e46bcf1371344772eac1a02e06c11cb760be87e6e499990f037f95725452cea");
 			return reply.code(200).send({ success: true, data });
 		} catch (err) {
 			request.log.error({ err }, "❌ Error in adminGetAttendanceLogs");
-			reply.header("x-auth-sign", "eb34822817b0eb41df20aed0197d9c70 ||| 15426a853f08e65e869b88e25cce4a6d6ddf6ee7ceb51e4c24d8fa426eb1b7bb86ff58d646ac771aa09a5c1d5113747d");
+			reply.header("x-auth-sign", "cecd2b1b18a6c63f8d923181ec451226 ||| b0f808279cf0b1abda60536c4f2e0762387d17aa2ee0767c2e4618ffce68224290cf7d62e39cd86345804a1f4a5daf16");
 			return reply.code(500).send({
 				success: false,
 				error: "Failed to fetch attendance logs",

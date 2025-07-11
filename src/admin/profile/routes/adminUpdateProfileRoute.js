@@ -8,7 +8,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "2bcf38fd8c65bcbb9144458bec31c094 ||| 2a2b9cae2b5a49ba1c01580f60410237fb4fce8c609e14b89118b9fdd6fd226648f0e2e072e838a2845cbd3c849f728e");
+				reply.header("x-auth-sign", "2886af70c31bcac9cb9f04e5fd787ab5 ||| bc4c0f2bd8718febbb5ea7ffacedd54dcb0549b814377749036855799376436fb387a17fea232c9ffdd1f4ac18780223");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 			const parsed = adminUpdateProfileSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "8cea342e0a2634f57ef19d6348695fbd ||| 598b8835d30b56deb04eb34c3cdbe24c19b174f54b5c5a6a76aad8452eefd6de0ad8489700a6215066a6cd2ef060b007");
+				reply.header("x-auth-sign", "c801158308cacce6afede8f85bc6251b ||| c2a7f7fff6a67ce50165b9500894665fbd4b21a2fa1c030d49c44fe0fe6a0986dc519b9b40cc7a6e46b205f1f864bc67");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,7 +27,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 
 			const result = await adminUpdateProfile(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "3f879435e7c1ad4e4eed0658150ca037 ||| 58f39b8201581b53e8387e617dca9c251d654ec6640b5c8d3d7ec07b2d1bee4fc87140851fc3046690dae3ef7d89d08f");
+			reply.header("x-auth-sign", "a424a78300b4579b797ebf682b2e3da7 ||| 510e180231428bb8ac80789883f2c605326dac8e019e97c475af09cbefd958b085e648b924a72162f2b89cbf9a396fd8");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -38,7 +38,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 				{ err: error },
 				"❌ Failed to update admin profile"
 			);
-			reply.header("x-auth-sign", "6c548c274d86b95851fa21c385753f36 ||| 197a6ff0fe6e07cea0013639804397eab3d7c592de7d6cc914ec582d0f5fa6ae1e9002bd18da1d8304d59a7f4937d0d8");
+			reply.header("x-auth-sign", "a73390b21f14728dee18d2f3338c7058 ||| 6ed9779c9454063c38452a029c78ff48490a92a6919741f7b22bde8eee7be47c55f82ebfcbb4922cacae1b4608431b5a");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Profile update failed",

@@ -7,7 +7,7 @@ export default fp(async function employeeGetAttendanceRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "fcd6a1e4680a90cada48adbaff7d92eb ||| 150ec5585d5d3a6df781d675ef7014180b61185e37dc07a61477b932a344f6c4829e787989d55f9a9698b18cc32036fa");
+			reply.header("x-auth-sign", "9d87adc58c45d109f8471657df16e673 ||| 62f08498786151087aaeead58bdbaa8ec79a9506c1998bc94d88415eda30b161b0cc9156520f41d7ed2f49f11323959c");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeGetAttendanceRoute(fastify) {
 		const parsed = employeeGetAttendanceSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "2de62195bcef084f222caf6b9ae5a893 ||| 5eb8821b472c648d522becdc96f662c8ed4b4ecef5b01c8b8f93b0dec01d59cd057153fb6d8169a4db38d0750eb8f5f4");
+			reply.header("x-auth-sign", "4ca7081ad1d4b9db0f8b661908420537 ||| f98c0d9299af8cceaf98deb448b6d3687080847bbc2140b709644b7b7364b9ddb7db7a822a1e56ea5b7cb4c97f49bfc6");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -31,14 +31,14 @@ export default fp(async function employeeGetAttendanceRoute(fastify) {
 				...parsed.data,
 			});
 
-			reply.header("x-auth-sign", "a1830c3b07a3fb9d9f56bc5744180a17 ||| f2cce2b8c5319d8f44efcd4f34f3c299e070f66bd2430ef7359e1561e5a07f0cf5b759caddcf2f08514f88bb36da952f");
+			reply.header("x-auth-sign", "1f4db08fdcc3ff241030d4c2fff80202 ||| e409d58d3fc881909823c7ed17d4bb70d0a68a57048fd816f35a5eeb36bf3210158116e972bf49504f716d47e946f415");
 			return reply.code(200).send({
 				status: "success",
 				data,
 			});
 		} catch (err) {
 			request.log.error({ err }, "❌ Failed to fetch employee attendance");
-			reply.header("x-auth-sign", "5398c4b84496af54ce757def1d2e6671 ||| 437567c48779701345eb09469fb7298b623eb8c425892542902f641b8849f5f8f3b1fd6021daa8fa59c74a45da4952c8");
+			reply.header("x-auth-sign", "67e314aa4e5f8011231a475ae62a07ae ||| 4fe16a5420caaabfb3ffa2d4e6c04b35e53d559ca2184ee737552896aaa106723a2eb00e0f03c496a1dc038c124aa558");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to fetch attendance records",

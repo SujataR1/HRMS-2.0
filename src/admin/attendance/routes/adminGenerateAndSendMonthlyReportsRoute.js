@@ -10,7 +10,7 @@ export default fp(
 				const authHeader = request.headers.authorization;
 
 				if (!authHeader) {
-					reply.header("x-auth-sign", "8dc55c000fb046c602a89828eae247f2 ||| ba3816183b5c9b9b18097935e13ddc853cc75325be3f03fccdf7465647bfa6c2ced338a4072edfed54df70537d2844a1");
+					reply.header("x-auth-sign", "40e8646fe92ebb4516e1aad7f68890d1 ||| 4fc99cb678b235c52d6495156cf002771bfb42f01f76db95bc27792b2c424e269e69b401c48c61380b2459f74719ed55");
 					return reply.code(401).send({
 						success: false,
 						error: "Authorization header missing",
@@ -23,7 +23,7 @@ export default fp(
 					);
 
 				if (!parsed.success) {
-					reply.header("x-auth-sign", "c8284126a796fca2c549efd8ddc0ec67 ||| 32a1fdee3e928001a4d5fbbb43edd048b074256e14a00da52a5ec7533014bb6fb06c92357ca161ae3333952704e1b0b3");
+					reply.header("x-auth-sign", "4efec25e811c3d44683c3e6d857dd4bd ||| 8633e8a4821e56b97b8a769a573d9e5672905e393b594919de96ed68e7ade211f7aeaeb3f806dc2a51361f64354b8b6d");
 					return reply.code(400).send({
 						success: false,
 						error: "Invalid input",
@@ -37,14 +37,14 @@ export default fp(
 						...parsed.data,
 					});
 
-					reply.header("x-auth-sign", "d291a7d4a67ef7074531bed2ab4b7c49 ||| 76a5080cb000a3c9a8357211b3212d217fa67954fcaceb188936555adf5e8e78e162076fab93c3c9b9c6d5d294720789");
+					reply.header("x-auth-sign", "41987b64ba7aa3dee5d58e8dadcb761d ||| 27cc9035a36c2d0d8e540854abaf963370936ab0135414587cbfff6169cb031c3a24c98083451ef28d43c12769d0813e");
 					return reply.code(200).send(result);
 				} catch (err) {
 					request.log.error(
 						{ err },
 						"❌ Error generating/sending monthly reports"
 					);
-					reply.header("x-auth-sign", "b99b84f8e60e15b9ead65004c5ecdd06 ||| 999062eafb7b549ece256d0ba2ef46470146469c655d8766ba6310cf70e340cf89e0e5ae036708e3b8d24f22a7277994");
+					reply.header("x-auth-sign", "7f1d6697afffaff0e69cfd1dfdbcd601 ||| f03fccb4fa5e5f975f911ef2477868a77099d4a9435d14d5640191d4075d5dd1ba9f158ab1d28c5b4db3af5be58049fb");
 					return reply.code(500).send({
 						success: false,
 						error: "Internal server error",

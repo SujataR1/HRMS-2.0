@@ -7,7 +7,7 @@ export default fp(async function hrGetLeavesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "bd7f889e49c4934c73b4b7cdd9426413 ||| cd34dd7d4a7d2ee40d553aac09b2cd89f97f250ba4078c78d80da4594a617f9cff9a433752231f7c4f53b9112e05454b");
+			reply.header("x-auth-sign", "f9f179ebb6ac4841b660e8371e39a905 ||| 5e020aad641d0419c2ea409c1590bca6df986105d5509ccf093514e047eeba5a1174e42f21e41b0e80ae29abb54e2f31");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrGetLeavesRoute(fastify) {
 		const parsed = hrGetLeavesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "d70f75770837fc3b2434bd680c989b9e ||| 391641b16b2cc65325f80bc652eaa0bc00d1314a6b8525d335f45f9ca1a543f0c1895e40347d003306f780c008ba9ca6");
+			reply.header("x-auth-sign", "90d302c241f1df6bf47dea951f0705ab ||| 45e85a5250da586e5c3c365001fb67596a50312dc1462fcf8dcc893999a2dec25f71bcefa22428792e128a9043a4eb3c");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,14 +28,14 @@ export default fp(async function hrGetLeavesRoute(fastify) {
 		try {
 			const result = await hrGetLeaves(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "d8d054c620db261e70d48138bfc291df ||| bf597eed91f2da76b65cb1f0829f67cae6a1c352ac07e64054baed02742562f76537d965e2c7095140608f96d24e004f");
+			reply.header("x-auth-sign", "ef8020c59b96c52458adcb50cf87238e ||| ff21858be45fc96fe10ec30b8dd4be5e2acbdb2dc91f10ad15d93dfeddef8feb494a6e464379452c4a41166d100d901a");
 			return reply.code(200).send({
 				status: "success",
 				data: result,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to fetch leaves for HR");
-			reply.header("x-auth-sign", "3e62e4c663e45342ce593149d62741d8 ||| cfc64aaaf08e2ad9414738363eb65d5b86e00223a21b445858a62ca299595c84413becde0e47df638660bc8eb401b40e");
+			reply.header("x-auth-sign", "83940ea6d11d7bb0a61f9ed4e3a4e8cb ||| 4a01ab302bf6f0dad911f95229382c2ecb3be7a7150463c5b61fee6ed808f5ef4d081b2a1d114d95291cdd1a2b9484d7");
 			return reply.code(500).send({
 				status: "error",
 				message: error.message || "Could not retrieve leave records",

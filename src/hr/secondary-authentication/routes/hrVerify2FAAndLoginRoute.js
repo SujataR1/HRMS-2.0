@@ -8,7 +8,7 @@ export default fp(async function hrVerify2FAAndLoginRoute(fastify) {
 			const parsed = hrVerify2FAAndLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "92c26eb7d4a5c31697277639c9fa5d7d ||| 70ffa6f832e6a5d3a0721b4c6634289dfbc28674ecd71fdc74935cc269c8b59fc0c6cb295f3e7f500ed03d8e28e1d5a7");
+				reply.header("x-auth-sign", "3d655494f5de4a9326784a5113df5862 ||| d41d20b72f239477de14524897b4e1b0fd6ae33682ff6d8d969a1598389f3d89de6889264aee1145c68fb39bc852b49c");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,7 +27,7 @@ export default fp(async function hrVerify2FAAndLoginRoute(fastify) {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ HR 2FA verification failed");
-			reply.header("x-auth-sign", "38da41461adc4caa8dddde45c588b904 ||| 4a09768eec3304492949c9c0ff58ec812d9f5c494e018dad43611e6e7da6745eb25ff04f23db43b918c8b8a23be156dd");
+			reply.header("x-auth-sign", "efe559b34958add191cdfbfe1a4fc969 ||| 7c9276fb345f9eab836ce1d892ff7e96d01905b72985ed46f456d33850869f60159ea268510bf6bdeef8c9c27a5a7f13");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Invalid OTP",

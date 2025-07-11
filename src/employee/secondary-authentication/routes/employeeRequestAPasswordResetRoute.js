@@ -8,7 +8,7 @@ export default fp(async function employeeRequestAPasswordResetRoute(fastify) {
 			const parsed = employeeRequestAPasswordResetSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "59bd0166d6ef1cce6af2c1f448bdd996 ||| 3035c049a0e30f015a8545cc24d85555dc133ac2fbccad0549e4cf7802ba11b71b651e3bc576e5d827af45e238428462");
+				reply.header("x-auth-sign", "04bab40072bff7ce22bcbb7ca3134744 ||| 065a5935c078995a7d9eae5944a692bea5db5c3b72a4225895826773781eb34b3e40c441bd2681b82b8fd2f039455b57");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function employeeRequestAPasswordResetRoute(fastify) {
 
 			const result = await employeeRequestAPasswordReset(assignedEmail);
 
-			reply.header("x-auth-sign", "e1eacf1af98093522a4f0ab34133ca44 ||| d01f5e907ab4c581057ff606d12b1cab1057f8af18ea3f16f7e958c53278f4389b1b20a20f1e3cc58b72b302c926f070");
+			reply.header("x-auth-sign", "4da1912f4fb7177fc77fd3e3dd08ac83 ||| bb9c2a6ec2164b506ee21cba307c2e10f3d770b30309c29025acda16cf2bca8d7ae8ce59c0cd1dec35ed1db08c33cb85");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -29,7 +29,7 @@ export default fp(async function employeeRequestAPasswordResetRoute(fastify) {
 				{ err: error },
 				"❌ Failed to request employee password reset"
 			);
-			reply.header("x-auth-sign", "31ad4ca6999aad0c086c6d9806545298 ||| 72b406ab9a6abaaef9daae3981554c7ded2bcc6e46c3d97ff4bac3a3315e8a8820c4165ca5686e38c6cf7d3f0f038e67");
+			reply.header("x-auth-sign", "5eb2fb2dba5bffdef7a12d9e95e24cc3 ||| 93f71f859b38bf078efd6933b48527c267c622d7c3d26c4c49c6e65c4cd2d34db76bfd42ec2828e30e6d3f54b4b776a5");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password reset request failed",

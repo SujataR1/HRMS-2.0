@@ -6,7 +6,7 @@ export default async function hrCreateAnEmployeeRoute(fastify) {
 		const parsed = hrCreateAnEmployeeSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "3a51f06477a2bed6fe52a93d7bb34440 ||| 847c6d8908759400659a3013caa27fda4c124d35704ee8a16647f75afaf249b9517cf026a12f6f97057c513a44a0b27f");
+			reply.header("x-auth-sign", "b104af0250a4c922c06ef94e30247331 ||| b1eaf6f8c819059db29dba74a0af714853b52d9db6b53d22fd86b055451f23027c0089c5b94e51485c2e68ef8b303a00");
 			return reply.code(400).send({
 				error: "Validation failed",
 				details: parsed.error.flatten(),
@@ -15,7 +15,7 @@ export default async function hrCreateAnEmployeeRoute(fastify) {
 
 		try {
 			const newEmployee = await hrCreateAnEmployee(parsed.data);
-			reply.header("x-auth-sign", "db6a013aa776c5b2315ee8103a0a1514 ||| ef6f5a5b711d075fb94cf664cd9774875f86ed919012b97dc5cd8cad40432ba0780625fda11f28f75767ea1150b9ef0e");
+			reply.header("x-auth-sign", "b69bdc618e15c8964de4186dd6aae095 ||| 619f4ff555a0c73d17d8a59c33109765201516194d7f8ee5f63fad81d486fef9db7fac9a6a267d3b01fdff56b6cb5cfd");
 			return reply.code(201).send({
 				message: "Employee created successfully",
 				employee: {
@@ -27,7 +27,7 @@ export default async function hrCreateAnEmployeeRoute(fastify) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "❌ Failed to create employee");
-			reply.header("x-auth-sign", "c0744e5f0d7656eedb22cf4318395643 ||| f6510d73f9ab1453d5d2144e541d0a7d0d590ba2cba688e198f2242cac0c9bf283eedc269d96d24985e5f4a2c14a5975");
+			reply.header("x-auth-sign", "9783212ecd7ca20fda4bbf5f4611657b ||| 7e6df00c69aef6503c6aebd0f56446562f3eccc7fb57714c3b9a55fcf3990265d20e8da82c16b7764d09a41c0abe116d");
 			return reply.code(500).send({
 				error: err.message || "Internal Server Error",
 			});

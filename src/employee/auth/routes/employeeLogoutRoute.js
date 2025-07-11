@@ -7,7 +7,7 @@ export default fp(async function employeeLogoutRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "3b6c280179dd955e75a5bc49542756a5 ||| dc2a805e192eadcc695921e0be16cd7d0c545fae27e1f5a15f72460cbfffe7305018f1427bedeccc26e423870dfe30d7");
+				reply.header("x-auth-sign", "c468b43164c317c7d9ef9b8ecac79f69 ||| 5996406649f44038ae7a7bf2975ddf8a37fe0db80bdec997ffb25ff5a87d1cbde23b2dab3fb5ff10c4a2bda1c99c0489");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -16,14 +16,14 @@ export default fp(async function employeeLogoutRoute(fastify) {
 
 			await employeeLogout(authHeader, request.meta);
 
-			reply.header("x-auth-sign", "1c8bdf3c2e3f9e3afebe568378cd6de4 ||| 33712f86ebe6dab0b36594e72c414a0d1e1ca42ce2eedabb44701561dff4988defba6e4c42bfd718f4eb9098bcdaa637");
+			reply.header("x-auth-sign", "eec12ce8ee00abe27efc67cecc78c796 ||| 7a782148110d22ffd289649b676ac9e3f0b452c26f9e29b34fe21dafafea74ceae7fdce874bde898839d405264437a26");
 			return reply.code(200).send({
 				status: "success",
 				message: "Logged out successfully",
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Employee logout failed");
-			reply.header("x-auth-sign", "e61586fe924fefb3670bede24564e5cd ||| 309399a8f7f0106f393f5d3c1be210e69a73b667050eb1e56e49ff0a6d04f032c03dcd8c1304b1b491f14ca533ddec52");
+			reply.header("x-auth-sign", "a8de6fdca19811b172632ad0e0aca81c ||| 8db1f9f32442ebd583d74608371c23837a1fdc69d4dec21676c547015f02710e8f420fb2c6064ba11e0e7c2217b38917");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Logout failed",

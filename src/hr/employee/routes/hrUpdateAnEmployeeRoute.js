@@ -6,7 +6,7 @@ export default async function hrUpdateAnEmployeeRoute(fastify) {
 		const parsed = hrUpdateAnEmployeeSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "0255fd1f494a1cd49e1469b9937b4e1b ||| 667c49e27c1181d4eda76b2fa72a85fee9ad6eeefb2c255aebfd0bb88022bec165fb8a0ca4dada85903ff13083cf13c4");
+			reply.header("x-auth-sign", "f96cabb34a7a76917c91640aa5adc553 ||| 33e53bb29309bf2a39a711b00f59480a5af4749c16f3efe1f4fcff5f91c1207be1e607ce18299f94e46d2e85f88da4de");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -16,13 +16,13 @@ export default async function hrUpdateAnEmployeeRoute(fastify) {
 
 		try {
 			const updatedEmployee = await hrUpdateAnEmployee(parsed.data);
-			reply.header("x-auth-sign", "8afdbd708f523a5e962ceaacec0b5782 ||| 1f6a1434f3b95576bfca3a33e9531c80dc58e11c0599c7dea5e09132a02fb1b5557325f2d6322744368771b6abb1c085");
+			reply.header("x-auth-sign", "b74e47d154cd114fa822a8281ae21c57 ||| 3f55c2e2b295b19f8704307164ce7bfed3a75cfb5b424ac92e374abc6bc7504a07378ba64f7d9d229c49fc9e56308837");
 			return reply.code(200).send({
 				status: "success",
 				data: updatedEmployee,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "9bb28e692a4cdde6ee78ee51b3058d58 ||| 0fd326f60615645f8eb64f1db6b052b4d7a0e0f29e8271c94aee69a791d53147f5aa0c3b32d0fc8e8ed0d4964d2f8edf");
+			reply.header("x-auth-sign", "bff9459345c737f9daebdab06729c236 ||| 51a10e19af079626eb45a4f4c31ae5a0b2d6b2ce30aae5bae795b87506a9f4e391f9948840cffb3fce6cdf4b12ddf9ad");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to update employee",

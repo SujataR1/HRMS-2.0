@@ -7,7 +7,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 		try {
 			const authHeader = request.headers.authorization;
 			if (!authHeader) {
-				reply.header("x-auth-sign", "20ee882faa16aaece951af4ffedb172e ||| b440b86e25330a93e055916e906a9b336601fc23e2d396026eb474299d335db537e51fba513bca30c9565fbcb4ad2aad");
+				reply.header("x-auth-sign", "6b6743b290bd19006cb9de6632be5793 ||| 2a9d2f390729180e235e918e48b91bd4143144eecf467e7666161a88aa06f150e21ca965be02e6d9a4ed64550a194db1");
 				return reply.code(401).send({
 					status: "error",
 					issues: "No Authorization Token in the Request",
@@ -18,7 +18,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "dcddb437f588e6e31c6f4dd5ddb016c5 ||| b8f8a441527d42cb03ccb0b1a17cbf544bfb706fdf3a5f8b45722a6fae8040b4b6d9496f886a138fdd6b07d9da6d25c9");
+				reply.header("x-auth-sign", "36daac83c0b234562230627615b2f00f ||| d6a5c7f1a5d4adb0bcbd3a4c8cf8091f3eb72d7ac140789fbfa061df46a71474b18a94b609a30732a0ee2f74f049c1a3");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -31,7 +31,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				parsed.data.customPassword || null
 			);
 
-			reply.header("x-auth-sign", "1492457db6ea2c428bffd45b78309de1 ||| dafcb27ea88e0fe002c069c2c6f75969436318ec517244c632a512697ae6dbccf6ef27364e0d7003a14c1e47c9241ea0");
+			reply.header("x-auth-sign", "f8d3b763e4df585837d84ca792584690 ||| 56ec158f3e887e2f0ff73583972fd54f3f3703d163db61809d259f38e497cb9f43540e3d0768a3404f87e886daec3a58");
 			return reply.code(201).send({
 				status: "success",
 				message: result.message,
@@ -49,7 +49,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				{ err: error },
 				"❌ Failed to promote employee to HR"
 			);
-			reply.header("x-auth-sign", "a2900458c5d623827cd953ee86a1ee5c ||| f50deb2f035665a1bda63bf80726ee7ad224681a41e5aa892455ea34008e6c28c95cd66db00fa84f69e8270500039a8b");
+			reply.header("x-auth-sign", "2b78ec6918b04d0d2e55c75e1325134c ||| de045065326f1c0d20be7b95dec156e77553b6f9623c8751a3f1cc44ec703fde8b5ac9f5608219ed39688c13144f25d2");
 			return reply.code(400).send({
 				status: "error",
 				message:
