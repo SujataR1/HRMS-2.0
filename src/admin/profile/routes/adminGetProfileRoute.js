@@ -7,7 +7,7 @@ export default fp(async function adminGetProfileRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+				reply.header("x-auth-sign", "dz/TEY7KMHVYzoEOCMHNutl/lZLbua6JcA6Z7Dbw8PbEAryRCAeN74TlFCYGagGcGzViz2rLmwTtZ4KVHbJmcA==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -16,7 +16,7 @@ export default fp(async function adminGetProfileRoute(fastify) {
 
 			const profile = await adminGetProfile(authHeader);
 
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "ok4sUUnsfBrnH8qeYAyotpsmk1TwyCIcomCMRBVA7dgtUtgKI2HiP3qZ3l2x1AAhaHoPUHziEPJfThP72TZYCA==");
 			return reply.code(200).send({
 				status: "success",
 				data: profile,
@@ -26,7 +26,7 @@ export default fp(async function adminGetProfileRoute(fastify) {
 				{ err: error },
 				"❌ Failed to fetch admin profile"
 			);
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "PXlqYiPjrWc3l8ByZrNtDrCXD9X8dfSQ15VmEygCEeI6RG5N933BkC6oR1sx0TF9NYTL+hLHoWZpBatVqYT8qQ==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to fetch profile",

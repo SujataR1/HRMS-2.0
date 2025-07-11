@@ -8,7 +8,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+				reply.header("x-auth-sign", "4H4leFmVxxZVY25LSS5zLSVHBCk26seTpiVR4plA/qVp96QMXskFXlysVYnjAp9WipD8R7WpD9cYNrpE+XWttQ==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -20,7 +20,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+				reply.header("x-auth-sign", "UrkV/gVCoo4SpAEvHFoaluujY+YRdCr0XsA+Zu4CskwGm+h2c+lWCT8RuyIv8bZL5ZH4PianoHeUzweUErsELA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -32,7 +32,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				parsed.data.password
 			);
 
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "qnER6HB0xoMMVxmWGyYHPySP5x7facWGtz7B1xdjjjZMuLwRIuHPiMtsUkv0mgOte7mDlNz2ctlpHAIRGnssmQ==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -42,7 +42,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				{ err: error },
 				"❌ Failed to revoke admin sessions"
 			);
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "YIbXZwLOQQjH22vJmSOiiLQSlAaSqG9vjHpRvWk4sRsQfcAv5KpbpN8R2j/j7ciSssXnNXtCPruq3NRXpCNNYw==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to revoke sessions",

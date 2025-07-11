@@ -12,7 +12,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 			adminActOnUserInfraRequestSchema.shape.body.safeParse(request.body);
 
 		if (!queryParsed.success || !bodyParsed.success) {
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "F8DNcv74RswUtNevprAp7+56+A/pdZD4TRjmqaqCTTkGf6EAahEncRhoBZPZ/dhe0FROP85A3bm+Niq8ap4sEQ==");
 			return reply.code(400).send({
 				status: "error",
 				issues: {
@@ -34,7 +34,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 				meta: request.meta,
 			});
 
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "1z7+j3SdpqX7VVZYMNWevyEVc7/JACQJEMkdScMBcNVbnLZQYvsq9moJQKOanHmlCaL20eN9yl731XZBDNSrAg==");
 			return reply.code(200).send({
 				status: "success",
 				data: result,
@@ -44,7 +44,7 @@ export default fp(async function adminActOnUserInfraRequestRoute(fastify) {
 				{ err },
 				"❌ Failed to act on user infra request"
 			);
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "qmJ9uoaj0m/YvU3DmZFuk32OQrjKEiYRbIr18phaxMEZ6MkbOixDA1tTRaOma8JA3sy/j9peUGgNFITygYhBAA==");
 			return reply.code(400).send({
 				status: "error",
 				message: err.message || "Unhandled error",

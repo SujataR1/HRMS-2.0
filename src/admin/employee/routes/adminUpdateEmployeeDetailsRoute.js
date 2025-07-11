@@ -8,7 +8,7 @@ export default fp(async function adminUpdateEmployeeDetailsRoute(fastify) {
       const parsed = adminUpdateEmployeeDetailsSchema.safeParse(request.body);
 
       if (!parsed.success) {
-        reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+        reply.header("x-auth-sign", "3s3+NFHPHXTAGfMWOZMLrGL0LPbPmmtlEwOXtvpX3bcn0uV41AdAkpNQbRR20BX0gi/Jf57yjReS9NsQBr/bNQ==");
         return reply.code(400).send({
           status: "error",
           issues: parsed.error.issues,
@@ -17,14 +17,14 @@ export default fp(async function adminUpdateEmployeeDetailsRoute(fastify) {
 
       const result = await adminUpdateEmployeeDetails(parsed.data);
 
-      reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+      reply.header("x-auth-sign", "+Jxqw4UIZMIKiV/cG5Vc4eCj8PULPH8S8LLex8Zq72xIVMfrtjSnpJMxpzDLntaFufWoXXKV75J1OyZesdW4ZQ==");
       return reply.code(200).send({
         status: "success",
         data: result,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to update employee details");
-      reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+      reply.header("x-auth-sign", "Zj1wEZK9WwHym3cRa6pHwiFcVdhDnuf7pCqXzwPy/7WUzlHoY+pBuy+nKoJK6vUM1j7Bxd89jfCoXbCLJqqS/g==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to update employee details",

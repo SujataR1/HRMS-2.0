@@ -8,7 +8,7 @@ export default fp(async function adminVerify2FAAndLoginRoute(fastify) {
 			const parsed = adminVerify2FAAndLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+				reply.header("x-auth-sign", "KWKHQtqimHbi4OQCaITHj7u/hhhjdsFyMaMmoo3OjAS7FaqC0iTKhKziQzLJlSoNh1DDd69DvQjaClqJTBIbXA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,7 +27,7 @@ export default fp(async function adminVerify2FAAndLoginRoute(fastify) {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ 2FA verification failed");
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "q/QBVg2NrC5yqaPkQjDKhBVawLSUvLW0tvTzA8xYawdOHEx+bpmDODOdqpVfMqxdHs0o4ejUIhYUf+h3uSVO5Q==");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Invalid OTP",

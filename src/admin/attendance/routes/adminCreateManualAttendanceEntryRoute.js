@@ -16,7 +16,7 @@ export default fp(
 						);
 
 					if (!parsed.success) {
-						reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+						reply.header("x-auth-sign", "dfENTAsq5JVHwTysjAuj4jjb4nK2gFiv0TLCL9d7p98DUMrkm6dcfyz4LSstofjf8AhGHdHhcwTzwaSP+WP9dg==");
 						return reply.code(400).send({
 							status: "error",
 							issues: parsed.error.issues,
@@ -28,7 +28,7 @@ export default fp(
 						parsed.data
 					);
 
-					reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+					reply.header("x-auth-sign", "KMd5SPA/3DkXRy0mJTfwkQpgOsA02LK5zUdWU/jecP1xnKER+bLA5n4vJJU9tUmgMjoYlE3mS3jdQWQL5jRnHA==");
 					return reply.code(201).send({
 						status: "success",
 						message: result.message,
@@ -38,7 +38,7 @@ export default fp(
 						{ err: error },
 						"❌ Failed to create manual attendance entry"
 					);
-					reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+					reply.header("x-auth-sign", "tbBfnwIPz/LRxWZqk3u6Ez5qauer0BEyG8GugulMDlB5co39Vd2JbYFGsDTNzSm5jqN5p8FFWdnWr6WTac0Gzw==");
 					return reply.code(400).send({
 						status: "error",
 						message:

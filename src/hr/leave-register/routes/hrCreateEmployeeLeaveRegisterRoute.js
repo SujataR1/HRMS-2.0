@@ -9,7 +9,7 @@ export default fp(async function hrCreateEmployeeLeaveRegisterRoute(fastify) {
 
 			const parsed = hrCreateEmployeeLeaveRegisterSchema.safeParse(request.body);
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+				reply.header("x-auth-sign", "xaxRmLyGJERbBwcXALBwwGlxvY7onufVHSmusf1HUHkkRZIKHHjtVCKmACMhetF3VW8y9VIwj5AhnpPqVx+Kcg==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -18,7 +18,7 @@ export default fp(async function hrCreateEmployeeLeaveRegisterRoute(fastify) {
 
 			const result = await hrCreateEmployeeLeaveRegister(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "ZkYzyzeEm+wqJoHAk2zBnCO1qeTiyBBk9AJipf1W4yGg8QcPHRyVm3xnXxcGK+Kvp4ZZLIWmofjktR/hmqIyHQ==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -26,7 +26,7 @@ export default fp(async function hrCreateEmployeeLeaveRegisterRoute(fastify) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "🔥 Failed to create leave register");
-			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
+			reply.header("x-auth-sign", "sec1ABRaTX1BwAt7mocxweCCIc3ePOXDM4Iu2HTdNQiMXrP8HzZ5ro+HJZ2mOLoNi9EREMn4xMHd4et06jiK4A==");
 			return reply.code(400).send({
 				status: "error",
 				message: err.message || "Unexpected error occurred",
