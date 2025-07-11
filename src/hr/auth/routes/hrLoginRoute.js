@@ -8,7 +8,7 @@ export default fp(async function hrLoginRoute(fastify) {
 			const parsed = hrLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "DsZfrFGi6my9rPPuLZ7dS+oltFlg/gwuVZesjxGnv83qGe/X7S0dRuhqgoK4zLbd7+W+JfAQ/GMtTYG89hhOVQ==");
+				reply.header("x-auth-sign", "ec9d419973a8a29387021f9fdc535d74 ||| 7d661aa725cf39b439c84e6b839cbcc06795b81fb6aeb7f33306fed52d9b1664349a6ac12e74ba6e24362569ed4e52fb");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -18,7 +18,7 @@ export default fp(async function hrLoginRoute(fastify) {
 			const result = await hrLogin(parsed.data);
 
 			if (result.requires2FA) {
-				reply.header("x-auth-sign", "jwxLAKz5cVhnasTOMO0beXoAnF7ZIYlDd5ry6dA8IxtMM5qnRk/yvF/gdQ3ZWUGRp0wifUKNCsy3x/fkprdqOw==");
+				reply.header("x-auth-sign", "6d8a799a6f3eddb96e45b7788fd2c6ee ||| 7ebefa24be320b950b4d7b66b8f1c1a8321e32b51d10a01c6e5caf26922d7e2c6e5919eb923a412cd7bd1ed0fbc1365b");
 				return reply.code(200).send({
 					status: "success",
 					requires2FA: true,
@@ -34,7 +34,7 @@ export default fp(async function hrLoginRoute(fastify) {
 				});
 		} catch (error) {
 			fastify.log.error({ err: error }, "❌ HR login failed");
-			reply.header("x-auth-sign", "u3LC5Kjzhf3yCNSFPB26004zpz21OjBLWaQ/yVUhMOaJYCjhTA6gqeAZdwwopsxl8KtMBInz/B5gVFxBMD2dmQ==");
+			reply.header("x-auth-sign", "4fd4444debc331afdae3273242822c22 ||| c7d57a9faaa0d720002ca84a403620cd0f11c6cc92aee6da9a9448cf784ec41016cdc6bd264e326293132b810c8a16e5");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Invalid credentials",

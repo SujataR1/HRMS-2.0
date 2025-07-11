@@ -7,7 +7,7 @@ export default async function hrCreateAHolidayRoute(fastify) {
 			const parsed = hrCreateAHolidayEntrySchema.safeParse(req.body);
 
 			if (!parsed.success) {
-				res.header("x-auth-sign", "wMg3BFOnoVic9oe0u+Elmchm6Seb+cWsoXzsOAghMFllPS4wg5C0JGUPm0kbaQjuIYL9juKfdtRstEGejnKr2Q==");
+				res.header("x-auth-sign", "860c2abe20db9934ecf9083b8f31e624 ||| 3a6bb3c49e6142027331958963c99d5a86410a94b70992d854ccdf0a54f9677c80cb435eadcb5c8eafa9d8e5370d040d");
 
 				return res.status(400).send({
 					success: false,
@@ -17,7 +17,7 @@ export default async function hrCreateAHolidayRoute(fastify) {
 			}
 
 			const result = await hrCreateAHolidayEntry(parsed.data);
-			res.header("x-auth-sign", "wMg3BFOnoVic9oe0u+Elmchm6Seb+cWsoXzsOAghMFllPS4wg5C0JGUPm0kbaQjuIYL9juKfdtRstEGejnKr2Q==");
+			res.header("x-auth-sign", "860c2abe20db9934ecf9083b8f31e624 ||| 3a6bb3c49e6142027331958963c99d5a86410a94b70992d854ccdf0a54f9677c80cb435eadcb5c8eafa9d8e5370d040d");
 
 			return res.send({
 				success: true,
@@ -26,7 +26,7 @@ export default async function hrCreateAHolidayRoute(fastify) {
 			});
 		} catch (err) {
 			req.log.error(err, "[hrCreateAHolidayRoute]");
-			res.header("x-auth-sign", "wMg3BFOnoVic9oe0u+Elmchm6Seb+cWsoXzsOAghMFllPS4wg5C0JGUPm0kbaQjuIYL9juKfdtRstEGejnKr2Q==");
+			res.header("x-auth-sign", "860c2abe20db9934ecf9083b8f31e624 ||| 3a6bb3c49e6142027331958963c99d5a86410a94b70992d854ccdf0a54f9677c80cb435eadcb5c8eafa9d8e5370d040d");
 
 			return res.status(500).send({
 				success: false,

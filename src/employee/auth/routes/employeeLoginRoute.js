@@ -8,7 +8,7 @@ export default fp(async function employeeLoginRoute(fastify) {
 			const parsed = employeeLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "cuOw1D5ROLX2B2umVPLsevRsNK2GXMXNfxxMZhttZCCxd36dHIlJHhY8WEYHoXDzutGj0OiDJXT6NTYgfYsUrQ==");
+				reply.header("x-auth-sign", "f2746abeebfe8f96ecb707764eb0839e ||| 1e74731ea0a701ec100ee37cdff4cd8773efd0bae7f50a62c782ede3becf6570990efec586527c1251e4756deb83fcf4");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -22,7 +22,7 @@ export default fp(async function employeeLoginRoute(fastify) {
 			// ✅ Send token via Authorization header
 			reply.header("Authorization", `Bearer ${result.token}`);
 
-			reply.header("x-auth-sign", "iLxYrfVGr+wRaHpW2lhp9V5fwLDcHIrWZDgCcUCtLudcH0EG99/IWzLJ2rtUUOJf68Aev6DuGbfoIOQQvuDZbQ==");
+			reply.header("x-auth-sign", "71e0d3d56872480d80dfd8ba63f358af ||| c46782f9b5f09e7e81be78272a98985cdd71de01da6c26d4099069b0fb0a1958e319c591cefa2f619908632d341231a7");
 			return reply.code(200).send({
 				status: "success",
 				message: "Login successful",
@@ -33,7 +33,7 @@ export default fp(async function employeeLoginRoute(fastify) {
 				{ err: error },
 				"❌ Failed to login employee"
 			);
-			reply.header("x-auth-sign", "yDcgx/EYRsD4mStxHvtBIV1OBKtCf41XlLEGC75NkBkwv26+PtC6gD8IKV6uW0tumqi0yV5nT6Yl2X76KVi+cg==");
+			reply.header("x-auth-sign", "4d6a85e51d43898626167cb4dc0406b9 ||| cf4f23fc15cba0bc4ce701f3a988ad74604b01490acdb99272e1360bfee5402e4b98e9acb515956155943cd62435e54e");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Login failed",

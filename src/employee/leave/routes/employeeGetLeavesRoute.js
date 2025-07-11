@@ -7,7 +7,7 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "IYknk5PJzpn4Z//8aOI1lnDuCS55WLYRU4+K+CnTCbEQDq8smirz64XAbN3v/eeOVOXzxiVfcUJW/cwzxtZC9g==");
+			reply.header("x-auth-sign", "9d84114da9d9ae25a310db1d28bbb86a ||| 55a4d70bc20d88e120577501f35cbb8598be36c716a656099d6f78c9d823a308ea21816d5c79008c13dd801e7626c8ce");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		const parsed = employeeGetLeavesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "pwsbg37uMUtt88bU8trLexwMjDlm0BH8jSk1IU6/IX8EWhjD3lsvKcSd/B09fr3Ysmk20vLat8XkSsgBZ5BiWQ==");
+			reply.header("x-auth-sign", "173814bd319b92433326b8ca6dc64f55 ||| d0dc5c5dbe0c8e3837a0474ae37a9d5f06a6eee7a607c5b547444662424f2e840e7b084786aea3f0df4650ac7ed8218f");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,14 +28,14 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		try {
 			const result = await employeeGetLeaves(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "0LzcqkjOUnMQIC8rol9oarWpoMITC1MIZLxySo5eFbYwPIyGumyXAGamuE3/FdqhQBz0DRGJn586aOSjAUBZvg==");
+			reply.header("x-auth-sign", "0a93cd56aed451754a2762ec0d84aef2 ||| 403cae2086558de8b0f3d8c0b6cce211b2f201bd036bc47b56d78e9d1717e8fef24736d32a1888072b7d0eb77942932b");
 			return reply.code(200).send({
 				status: "success",
 				data: result,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to fetch employee leaves");
-			reply.header("x-auth-sign", "ehEbQPF7/XdXB4u5AEjeQEqtRhWJWO7o6SbufAOsQpVDCr8G7nWXsfAX4ysmgQ+hg8iRmXvw3Ewzt3MttUhymg==");
+			reply.header("x-auth-sign", "0cf0a354bcb2c0f965ea6e11cf2d0555 ||| 892ebdee5349503d39df734263125c8b09cce74e830a6c1b01b9f72bd257edb5e0e4b1e8babca7d09299aa7ed86d7cd8");
 			return reply.code(500).send({
 				status: "error",
 				message: error.message || "Could not retrieve leave records",

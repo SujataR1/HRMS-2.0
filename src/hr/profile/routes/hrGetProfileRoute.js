@@ -7,7 +7,7 @@ export default fp(async function hrGetProfileRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "DlPjAz4hD/tPhmXxOaW89axUxHzNtbsN0M73LM5c4yGpP81T8p2Ur7e/SUqeQcG5/G81eXOhH/v5FkN0ypV+VQ==");
+				reply.header("x-auth-sign", "af1da9318252bf2e3b80d671bfe49dc0 ||| 16011bbc519d30ea309d1fb56f9f46e8dcfdaae210026090395ddb879012b12e89181fb9cf057147b1a56c9e12329a40");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -16,14 +16,14 @@ export default fp(async function hrGetProfileRoute(fastify) {
 
 			const profile = await hrGetProfile(authHeader);
 
-			reply.header("x-auth-sign", "5B1qm1tq4XpFIixeWxvRwKJ18HRcp1Li7CYbrjCTxxnwgZeu2RHa10rNNWLUK9LZPnbFTERRPoTvEMLMOgbD6g==");
+			reply.header("x-auth-sign", "faf397648e175323bb9261bb4e4e1e61 ||| dff3f659baa14ef62f33ea89f32430bbd05f0a3e918577d036014f5319ef78705f2ef65d83fd5295973de67cbfbd3c01");
 			return reply.code(200).send({
 				status: "success",
 				data: profile,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to fetch HR profile");
-			reply.header("x-auth-sign", "SJa4Xz1T+PU5DnzYpkodvol++FSYQ5imgobsp73OZpLrvYQKiQiZW0RwYRccDZd8gNxZPpohajCsfnPWetxy3Q==");
+			reply.header("x-auth-sign", "0d5facac1151b0408c656c89c45d0a35 ||| dd1fc42a7fb002558722be95a4d21bd5ddb07eb0ead93934f0735dcbbc416f0ede1e00d0d5fbcabb5a204b07247f6064");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to fetch HR profile",

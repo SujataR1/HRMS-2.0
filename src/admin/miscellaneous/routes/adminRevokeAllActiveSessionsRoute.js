@@ -8,7 +8,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "VSBwc7aqe2/XYNsLOFfhNMjM59oHz6l3vMpit25E9rZWm9TYF6sZSCs8rbSP5SEMUos336TO9I1wpH+uQc0GdA==");
+				reply.header("x-auth-sign", "dc15d3b93c678435b1d0c703afe212ad ||| 9e4a7ec1e8d71494b12d46484415475c499aaa3885a2f5376a542ecdf2602ec552d80e757a8e91594bb48cc81b938b33");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -20,7 +20,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "C2z7g1w31KlAaGETHrcmUf6A3vSGQN4eVFHt/8uJVyfl8pMH78Kk55/45fEwsL1pshSLFTUNfaRtyPVqieF8CA==");
+				reply.header("x-auth-sign", "692b9e0ac485a24bc1d766ea155f61ea ||| ed3fb8332e22e499f23bbe073a722d0d8658c0796008f1433b8e0ff005c192bc0fd9196565caa511c29c9b578009d160");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -32,7 +32,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				parsed.data.password
 			);
 
-			reply.header("x-auth-sign", "yjh3qKvycbSs5B/NIyQc+0L9t/IRnVpqAgreJDpRUdQiqKgjNINMnrgVx3HW96Ino4tjZq+qJLJHW7HzQl4lRA==");
+			reply.header("x-auth-sign", "4ef97c659b9319e9b864c87adf65a538 ||| 88f144f5b0f3fdc3d73f875fe4a4ed2fbcd7622cb6536f48dee99247940d479535d23132e01ed550abebc13241d5e409");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -42,7 +42,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				{ err: error },
 				"❌ Failed to revoke admin sessions"
 			);
-			reply.header("x-auth-sign", "iWwcJeCR7at0tCIMwu/4/4HxGTmenJAnpuFoLbKBLzSZDPyH/4APziIKi5G+m88Y+KmuJhO3VqNVG8BeGYh+IA==");
+			reply.header("x-auth-sign", "d52855484dfb9b240bd911d8ceee8628 ||| 1e10b374ad4d9498026532ca927e93733ed5f947c00fc6085c885e5bee15e39725c761c7836d439667e1aed1492e3f79");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to revoke sessions",

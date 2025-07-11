@@ -7,7 +7,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 		try {
 			const authHeader = request.headers.authorization;
 			if (!authHeader) {
-				reply.header("x-auth-sign", "HAlnjGsN80XUHnZz47eYXTJM1zVIznddwdq6vQFZykdTQsxUe/7z/XK5tCHLcOYz2FuCUIezf2im9JnJuMGrzg==");
+				reply.header("x-auth-sign", "20ee882faa16aaece951af4ffedb172e ||| b440b86e25330a93e055916e906a9b336601fc23e2d396026eb474299d335db537e51fba513bca30c9565fbcb4ad2aad");
 				return reply.code(401).send({
 					status: "error",
 					issues: "No Authorization Token in the Request",
@@ -18,7 +18,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "CuEyaMAYSgvjcZXywxbIhyVN5P72CbGwZTvAK64p8ia+CFvIrQlyFKrhcVoZp4MI1MTTXHmEkMPdVkOq9aaT2w==");
+				reply.header("x-auth-sign", "dcddb437f588e6e31c6f4dd5ddb016c5 ||| b8f8a441527d42cb03ccb0b1a17cbf544bfb706fdf3a5f8b45722a6fae8040b4b6d9496f886a138fdd6b07d9da6d25c9");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -31,7 +31,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				parsed.data.customPassword || null
 			);
 
-			reply.header("x-auth-sign", "BaB76D7b9YeiFEB4vtBoe8DIQpOJY8uDkwhI/OZh4K+UTFXhSLR0Sb2sw2cSF/Fw4P+JPEpHEE7qvZAvEmFzWw==");
+			reply.header("x-auth-sign", "1492457db6ea2c428bffd45b78309de1 ||| dafcb27ea88e0fe002c069c2c6f75969436318ec517244c632a512697ae6dbccf6ef27364e0d7003a14c1e47c9241ea0");
 			return reply.code(201).send({
 				status: "success",
 				message: result.message,
@@ -49,7 +49,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				{ err: error },
 				"❌ Failed to promote employee to HR"
 			);
-			reply.header("x-auth-sign", "a1/ktJrAQWs4x7qf9OMo5WS8WzlMAYk1Slbp1vaLEgt0GeeQcEzAKDI0lmLd4Lwv/GNfAoj9DMFymNK7rO/o4A==");
+			reply.header("x-auth-sign", "a2900458c5d623827cd953ee86a1ee5c ||| f50deb2f035665a1bda63bf80726ee7ad224681a41e5aa892455ea34008e6c28c95cd66db00fa84f69e8270500039a8b");
 			return reply.code(400).send({
 				status: "error",
 				message:

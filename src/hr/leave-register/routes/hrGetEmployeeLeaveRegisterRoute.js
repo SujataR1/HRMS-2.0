@@ -9,7 +9,7 @@ export default fp(async function hrGetEmployeeLeaveRegisterRoute(fastify) {
       const query = hrGetEmployeeLeaveRegisterSchema.safeParse(request.query);
 
       if (!query.success) {
-        reply.header("x-auth-sign", "gpFS1pmtt4VH7F4SiM0GgohUtER+o9aVmzu++crk+4JpAPlxAwz5QxgXh4PPmYEhs83EjaAdbLlYqw1LUMgyrQ==");
+        reply.header("x-auth-sign", "183e58d5e9c3bd64c51e2e355fb5c022 ||| f797db79ee5956eb998e5e417d974f21be9bca938f0b77c5baff1a070d2787386bd860f33883d483e2f1f5164f281281");
         return reply.code(400).send({
           status: "error",
           issues: query.error.issues,
@@ -18,14 +18,14 @@ export default fp(async function hrGetEmployeeLeaveRegisterRoute(fastify) {
 
       const result = await hrGetEmployeeLeaveRegister(authHeader, query.data.employeeId);
 
-      reply.header("x-auth-sign", "vDl1ydhF5i2GSqemniezoj6g7s14J+2kazQnab7NAac9MjnxuR1MLPakQP0kVoqZmT6Mocmkvaox/zFbB7P16Q==");
+      reply.header("x-auth-sign", "6b1b3ca3ea7bb368c4dc116caef16d2c ||| 89c4263aef9ee4f67fff488690a776215b545d40546ec81c21819a59626db9792fb95c25b72c571b14a83490befa0d37");
       return reply.code(200).send({
         status: "success",
         data: result.data,
       });
     } catch (err) {
       request.log.error({ err }, "🔥 Failed to fetch leave register");
-      reply.header("x-auth-sign", "RD0V99N3+Iczdm6hC5pEi8qqIVPDg/6HcR6GtF2H8he2yvwF8WOetgCKPSu60Hb7cB8snbngT1NiLsWlx0GF+w==");
+      reply.header("x-auth-sign", "c4faa19d08f8966cc5f21ea964f10051 ||| 04b38d8ebed423eecc960aee881d9b131475d49ac1080ad9b87829d3f3c02a3b5078c2c89445b2d780399b383efbec5c");
       return reply.code(400).send({
         status: "error",
         message: err.message || "Unexpected error occurred",

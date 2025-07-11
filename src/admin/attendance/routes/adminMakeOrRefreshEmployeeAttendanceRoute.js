@@ -10,7 +10,7 @@ export default fp(
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "RUjeyecGQ9DQt6FvW5msY3t4HnEXIuVvoHU7mrjsStqVVoJIBg/U9qb95oEjWOVVlIIN9GH7uLabXYZbvQoy7A==");
+				reply.header("x-auth-sign", "02854f017a31c79cca685c5b1102bcf4 ||| fcae81f5af36e6b589c544f07ff745a2e9b1cfd065f511d1c04a766726937a4e52925c4825879d4f39982f35ca79c48a");
 				return reply.code(400).send({
 					success: false,
 					error: "Invalid input",
@@ -25,7 +25,7 @@ export default fp(
 					authHeader,
 					...parsed.data,
 				});
-				reply.header("x-auth-sign", "6h1nHbbZf+XnFHR1wsQ90TQAmT7zrEmsBF0wtTWGsI7JMRW7QpGVCc5aQoOOs+OD0cq8hmZXM5XnzTsrJDe4Gw==");
+				reply.header("x-auth-sign", "4d56bc3a80f8daed74f9543cf430e0dd ||| 50f9ddef9ed53b80dd1572b6d051a6a5c57d0d78339a8a30ca8101d5e6ff1385d70295e3895eb96050bda60f866bd32d");
 				return reply.code(200).send(result);
 			} catch (err) {
 				request.log.error(
