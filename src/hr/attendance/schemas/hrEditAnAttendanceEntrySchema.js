@@ -16,8 +16,8 @@ export const hrEditAnAttendanceEntrySchema = z.object({
 			message: "Invalid date format",
 		}),
 
-	punchIn: z.string().datetime().optional(),
-	punchOut: z.string().datetime().optional(),
+	punchIn: z.string(),
+	punchOut: z.string(),
 
 	status: z.enum([...attendanceStatusEnum]).optional(),
 
