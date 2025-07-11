@@ -100,7 +100,6 @@ const app = Fastify({
 
 app.decorate("prisma", prisma);
 
-app.register(verifyAuthPlugin);
 app.register(requestMetaPlugin);
 
 app.register(fastifyCors, {
@@ -129,6 +128,8 @@ app.register(fastifyCors, {
 	"x-auth-sign",
   ],
 });
+
+app.register(verifyAuthPlugin);
 
 app.register(fastifyStatic, {
 	root: path.join(__dirname, "media"),
