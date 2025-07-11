@@ -24,7 +24,7 @@ export default async function verifyAuthPlugin(fastify, opts) {
 
 			return payload;
 		} catch (err) {
-			request.log.warn({ err }, "🧨 Failed to inject signature into response");
+			request.log.warn({ err }, "Auth Failed");
 			return payload;
 		}
 	});
