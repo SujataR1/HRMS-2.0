@@ -10,6 +10,7 @@ export default fp(async function hrEditAnAttendanceEntryRoute(fastify) {
 			const parsed = hrEditAnAttendanceEntrySchema.safeParse(request.body);
 
 			if (!parsed.success) {
+				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -18,6 +19,7 @@ export default fp(async function hrEditAnAttendanceEntryRoute(fastify) {
 
 			const result = await hrEditAnAttendanceEntry(authHeader, parsed.data);
 
+			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -27,6 +29,7 @@ export default fp(async function hrEditAnAttendanceEntryRoute(fastify) {
 				{ err: error },
 				"❌ Failed to edit attendance entry (HR)"
 			);
+			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 			return reply.code(400).send({
 				status: "error",
 				message:

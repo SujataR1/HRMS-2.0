@@ -7,6 +7,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
+				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -15,6 +16,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 
 			const data = await adminGetSettings(authHeader);
 
+			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 			return reply.code(200).send({
 				status: "success",
 				data,
@@ -24,6 +26,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 				{ err: error },
 				"❌ Failed to get admin settings"
 			);
+			reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to get settings",

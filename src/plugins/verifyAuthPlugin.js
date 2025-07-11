@@ -1,5 +1,5 @@
 export default async function verifyAuthPlugin(fastify, opts) {
-	const { signature = "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" } = opts;
+	const { signature = "No signature set" } = opts;
 
 	fastify.addHook("preHandler", async (request, reply) => {
 		try {

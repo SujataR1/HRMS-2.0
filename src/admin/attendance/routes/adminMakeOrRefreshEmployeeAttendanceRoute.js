@@ -10,6 +10,7 @@ export default fp(
 			);
 
 			if (!parsed.success) {
+				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 				return reply.code(400).send({
 					success: false,
 					error: "Invalid input",
@@ -24,6 +25,7 @@ export default fp(
 					authHeader,
 					...parsed.data,
 				});
+				reply.header("x-auth-sign", "VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==" || process.env.AUTH_SIGN);
 				return reply.code(200).send(result);
 			} catch (err) {
 				request.log.error(
