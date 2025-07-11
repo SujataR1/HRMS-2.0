@@ -7,7 +7,7 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "LkUyeA/opTFqauHfQTVN7e7Ch27rmdsgGUFnuRTdveiY0RHRbmioKKgPJ95CuQ8KSddMGnY8eI585vMpt4y1ZQ==");
+			reply.header("x-auth-sign", "IYknk5PJzpn4Z//8aOI1lnDuCS55WLYRU4+K+CnTCbEQDq8smirz64XAbN3v/eeOVOXzxiVfcUJW/cwzxtZC9g==");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		const parsed = employeeGetLeavesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "Cmng6pnYKusZ4UFXe+g+v6uRRGhjT9SGYol5LzCCAz84Z7E9aziIOlnPPX4JrFPTr5jDL2A+vBkyQlHm/DR+cg==");
+			reply.header("x-auth-sign", "pwsbg37uMUtt88bU8trLexwMjDlm0BH8jSk1IU6/IX8EWhjD3lsvKcSd/B09fr3Ysmk20vLat8XkSsgBZ5BiWQ==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,14 +28,14 @@ export default fp(async function employeeGetLeavesRoute(fastify) {
 		try {
 			const result = await employeeGetLeaves(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "osT3DLT3UboufH/UyATNZDVsVB99uLK8LWdY4OELW8k0dndRWABY8i0gA2U5ijwmDm95Zt/x5JrSd1O736L2Ng==");
+			reply.header("x-auth-sign", "0LzcqkjOUnMQIC8rol9oarWpoMITC1MIZLxySo5eFbYwPIyGumyXAGamuE3/FdqhQBz0DRGJn586aOSjAUBZvg==");
 			return reply.code(200).send({
 				status: "success",
 				data: result,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to fetch employee leaves");
-			reply.header("x-auth-sign", "M2ObpxlJIuB4GkHK/cI8FXB6zQDwRhy+AKGEtWc5pDk3twTzvhNnc/44Opymd0LsUkxDuAy52OB7ZiUzMaXFUQ==");
+			reply.header("x-auth-sign", "ehEbQPF7/XdXB4u5AEjeQEqtRhWJWO7o6SbufAOsQpVDCr8G7nWXsfAX4ysmgQ+hg8iRmXvw3Ewzt3MttUhymg==");
 			return reply.code(500).send({
 				status: "error",
 				message: error.message || "Could not retrieve leave records",

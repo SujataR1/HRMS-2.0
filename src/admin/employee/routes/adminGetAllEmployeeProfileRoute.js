@@ -6,14 +6,14 @@ export default fp(async function adminGetAllEmployeeProfileRoute(fastify) {
     try {
       const result = await adminGetAllEmployeeProfile();
 
-      reply.header("x-auth-sign", "KVT9vHo0S1/AQr5mg/bKPF1vFB9ub88GMOCggNzbftboux3M6bque7YyaIfDoCsI7KDv36v67AqPpDwoehig+A==");
+      reply.header("x-auth-sign", "rBdd62UvasR4wYMuxAUBWZwXNXcsppPsIdPaLh2pn59Yu61MMHYqHIY91it8m4Vm2HSg0p4JubYKbXSDsZDxsA==");
       return reply.code(200).send({
         status: "success",
         data: result,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to fetch employee profiles");
-      reply.header("x-auth-sign", "Z7pbC+AJSWLun01scik6s9O6Lf54voe+betO7noyJnGy/Zfe/x9Do+KaE68Eb5gMndIsajAiQyksPbdyw531EA==");
+      reply.header("x-auth-sign", "E1F2guIlcW0MLDi1L8DHyqqs1plFwTOZlfrVdjcQLMh/XX686CUbMZl21Hj3izU0up/s6Uqi34Oxnw+ogpBCGA==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to fetch employee profiles",

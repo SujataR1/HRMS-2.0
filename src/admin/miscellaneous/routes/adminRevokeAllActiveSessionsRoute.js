@@ -8,7 +8,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "4H4leFmVxxZVY25LSS5zLSVHBCk26seTpiVR4plA/qVp96QMXskFXlysVYnjAp9WipD8R7WpD9cYNrpE+XWttQ==");
+				reply.header("x-auth-sign", "VSBwc7aqe2/XYNsLOFfhNMjM59oHz6l3vMpit25E9rZWm9TYF6sZSCs8rbSP5SEMUos336TO9I1wpH+uQc0GdA==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -20,7 +20,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "UrkV/gVCoo4SpAEvHFoaluujY+YRdCr0XsA+Zu4CskwGm+h2c+lWCT8RuyIv8bZL5ZH4PianoHeUzweUErsELA==");
+				reply.header("x-auth-sign", "C2z7g1w31KlAaGETHrcmUf6A3vSGQN4eVFHt/8uJVyfl8pMH78Kk55/45fEwsL1pshSLFTUNfaRtyPVqieF8CA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -32,7 +32,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				parsed.data.password
 			);
 
-			reply.header("x-auth-sign", "qnER6HB0xoMMVxmWGyYHPySP5x7facWGtz7B1xdjjjZMuLwRIuHPiMtsUkv0mgOte7mDlNz2ctlpHAIRGnssmQ==");
+			reply.header("x-auth-sign", "yjh3qKvycbSs5B/NIyQc+0L9t/IRnVpqAgreJDpRUdQiqKgjNINMnrgVx3HW96Ino4tjZq+qJLJHW7HzQl4lRA==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -42,7 +42,7 @@ export default fp(async function adminRevokeAllActiveSessionsRoute(fastify) {
 				{ err: error },
 				"❌ Failed to revoke admin sessions"
 			);
-			reply.header("x-auth-sign", "YIbXZwLOQQjH22vJmSOiiLQSlAaSqG9vjHpRvWk4sRsQfcAv5KpbpN8R2j/j7ciSssXnNXtCPruq3NRXpCNNYw==");
+			reply.header("x-auth-sign", "iWwcJeCR7at0tCIMwu/4/4HxGTmenJAnpuFoLbKBLzSZDPyH/4APziIKi5G+m88Y+KmuJhO3VqNVG8BeGYh+IA==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to revoke sessions",

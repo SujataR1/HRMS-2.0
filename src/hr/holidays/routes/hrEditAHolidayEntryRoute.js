@@ -7,7 +7,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "8my8fb9lC7gUzehV3Z/Q+HBuUqTDiIhQzBhoy3X9hgvRhCZdaGup2iLxl54vjBfdDANkjRXb0fKCzQUz7Ubhrg==");
+			reply.header("x-auth-sign", "wrgF6HgPXbhVhhQf6qwdk9gayN1y8OXr8UcqwZo4kQK4WDvveHoKMOZme4EZfAVgXjumcTXJ1h5x7rz20/ZTsw==");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		const parsed = hrEditAHolidayEntrySchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "kYba3b0m8ptGrQB9P+SB+hFhMCdDiT+UYGcTjeL7vWoI0J4MSTF+BTrB9k6LUPUGNjo+bhcs2/Nt/CtWBDu/CA==");
+			reply.header("x-auth-sign", "t7rqj4BGcoghINzYieU4wsZYFinrQA0ZBFIi8maq3PhRKvScLA+Dkuq75fuvfaZuJjrRLF+NLSb/or/eDx5alA==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,7 +28,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 		try {
 			const result = await hrEditAHolidayEntry(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "zlcfivvp1CtuTfoBmo1jCDKgtuk0DaMtHPpQwqHOoVAHkKAWF/LqCvaFK6UgV3Huo3l99Vcfu2XXoMPvW4+Xqg==");
+			reply.header("x-auth-sign", "dY2V03b2KbyWwE+dVqOxqvNR++ahTQ9gI+7GmK6MflVT2IraGo5PUVnLlMAZ3ioUyMo103CefH61O7+ZK5Hl9Q==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -36,7 +36,7 @@ export default fp(async function hrEditHolidayRoute(fastify) {
 			});
 		} catch (err) {
 			request.log.error({ err }, "❌ Failed to edit holiday entry");
-			reply.header("x-auth-sign", "KDXnSVIcPf7wzzWcskvKAS+zWgzKSg//8NfAtHsirfqmlUcxRWSk4Yvo8X+Z/WvYmWrNDSwNAaLq31/ki7RPPQ==");
+			reply.header("x-auth-sign", "UurZ4k0OpDthjvkJJRtR+wqPBAuHv/ulsiWw0rwxiIL1pjhUBArZv6xuDUta4mdEr54Ezgk/cO/Bs3/WDZUdKA==");
 			return reply.code(400).send({
 				status: "error",
 				message: err.message || "Failed to edit holiday",

@@ -10,7 +10,7 @@ export default fp(
                 const authHeader = request.headers.authorization;
 
                 if (!authHeader) {
-                    reply.header("x-auth-sign", "+mNiCYGuFswLbMgt+RJZWTtvjXkVSp6zrC0rw6FKtwPo2fpLeRE05lJtzz1+cWvZ1rsqFwaJRAciguJHP92TzA==");
+                    reply.header("x-auth-sign", "2++Eh07cybs0aN8m2ZDB+VrxCGjBx1GZ1Z1irKhApy6l+Njysxhmrx0dQzvJOHrkSg2tr1wEDCuLt2Yh8EwjHw==");
                     return reply.code(401).send({
                         success: false,
                         error: "Authorization header missing",
@@ -23,7 +23,7 @@ export default fp(
                     );
 
                 if (!parsed.success) {
-                    reply.header("x-auth-sign", "E5vgSSRCm62BU6Y7BeLVeEW9fY5gEqd604EyIkLNj8iTGPa0fuPPlvGwY/zjw0vFvnKgD9wqVMoj+2cZWZNBkA==");
+                    reply.header("x-auth-sign", "IZ6QZ5hF94yS+W9AT4//1yN2LBJLvIf1juCQ9mpkLQWLShmhyuJYcwcZZJGZTUEcV/ER1LcoXxnOqW1UycKHBg==");
                     return reply.code(400).send({
                         success: false,
                         error: "Invalid input",
@@ -37,14 +37,14 @@ export default fp(
                         ...parsed.data,
                     });
 
-                    reply.header("x-auth-sign", "Yu3ftp53+WA8Iv3OavmStoK6d5CKvhNEV+jjEwmxpCEGhbwszhQ+MKYqWXoDHBTWvd4esoCKmFilAJV4j7jzPg==");
+                    reply.header("x-auth-sign", "ZBmO9WXFXKID2jM5NLVU1sMSQzaBhfaNyPXH62RNN3HeaSXDv74fwmBhbXqBHJlNvMKMN5x8LFuggwXUhE/J9A==");
                     return reply.code(200).send(result);
                 } catch (err) {
                     request.log.error(
                         { err },
                         "❌ Error generating/sending monthly reports"
                     );
-                    reply.header("x-auth-sign", "2/tGQP7EImKdACyy9U0Lotbm94qMbfqEn5+rKda23R1LruaXXc4ePMq/SpbKAQUvXDw+uaXD0uO6pTQD4ZkB+g==");
+                    reply.header("x-auth-sign", "5oWEWb9MOJxRIwvxns/fC6sEyE+XlA6hpJ3wU7my5Z6Zc3qDGhijj+ysmuDwao370dLeiqMxz+/zkFN+qMhidg==");
                     return reply.code(500).send({
                         success: false,
                         error: "Internal server error",

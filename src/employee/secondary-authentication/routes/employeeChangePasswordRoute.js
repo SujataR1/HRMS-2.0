@@ -8,7 +8,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "d96r0LDioRFEwLXfb4qJ2vxhvnhGLBL2A6pMRwh2618XlTTua3h1czjWyOVi5uGTB0VcJDOppmCidJnjO8sDgw==");
+				reply.header("x-auth-sign", "nHwCNe+g/uAd9mpy6HpfjKu5WXJ3mKcVNQhUegKMOhrE3SbYsI7TZMRsB7EVQCa/URwjINMq2ZXCpH8AE4npHg==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 			const parsed = employeeChangePasswordSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "zfqmzfhEIQW12YO0p2DPQwcy1hLz/+cLT4RTqdqqpfAN8wCz6B90fqx0LYzKFY2dep7DILLJCjupuQHASnvb5Q==");
+				reply.header("x-auth-sign", "O0035kG0/csvp2QicRNA2har+QCXXlfctDjwitZXdpNIqmrFtLDKy/jxKuBDvmPKd2Q3p6cycaijH3/RsrILVg==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -33,7 +33,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 				newPassword
 			);
 
-			reply.header("x-auth-sign", "l1mHki9A9oiZrtcPfpVgCpewwsF/Qii1cSb90frec3+c8vD4qJC3qfGJp83MrXbhPx+4ey3TMuRVJchgfr+8ng==");
+			reply.header("x-auth-sign", "BZB4zXrXyKQoZOYX41gUFOAfvbpgAkZ279YiKXvxoc4UpM4/mx/krmT2QlMiLw6pOkr841z42DoGQJt80PIVXg==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -43,7 +43,7 @@ export default fp(async function employeeChangePasswordRoute(fastify) {
 				{ err: error },
 				"❌ Failed to change employee password"
 			);
-			reply.header("x-auth-sign", "W1uLrVue/6voy8uaVitYGX3sFwczmFQqJ6b1aBxMTONIQL+Lt5chWzdVn7sLi0bOFUbtN/4WsjDOWVO4iuXC5g==");
+			reply.header("x-auth-sign", "pPXAVxXiMJVDuoEBSLV8MYfiXLCQNkJopJWMOx6Tw6bp4iKs+IKeriUKJ9wE2wPYi8mqybp0/No6zh0U0df92A==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password change failed",

@@ -7,7 +7,7 @@ export default fp(async function hrLogoutRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "dYwrOy8/CnO3MqQ2UmKQ4nZY1oawWjkfppm5LpzLJ9KAqDXa2KAlj4W03oJYFBja3M6j72tTbWu37Pj33RQeqQ==");
+				reply.header("x-auth-sign", "UuxNRsau5xbbgaXAwfDvGKNFuds8rsVl7VagIRBJZbSgZPG7US8aHltci+HaeGuAc1KV57jIrMPXuCU9JSlyDQ==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -16,14 +16,14 @@ export default fp(async function hrLogoutRoute(fastify) {
 
 			await hrLogout(authHeader);
 
-			reply.header("x-auth-sign", "MRguon5QxnW5tTfP1kNmZ9Ssda1gWJCHnXMxU3l6E/ODBartGIL9uMTmBfBoWH2XywMXw5cE8uQaw0ngMg4tJA==");
+			reply.header("x-auth-sign", "5omkGDStxOtLyiddUqqDcapL+Fj9DM2eY/OCuhgc4bkwbr/mWAv1C7NZYvjpJ3d6ljkMcpoBl8itJn2n3crELA==");
 			return reply.code(200).send({
 				status: "success",
 				message: "Logged out successfully",
 			});
 		} catch (error) {
 			fastify.log.error({ err: error }, "❌ HR logout failed");
-			reply.header("x-auth-sign", "R9sR/O63Bn6EJNzMKhXQWjypsSHVj8nkT5B6z7xZsTZilis3OQFJR5cx4/81GFfPgbp2LTi8NwOs9h0mSZt04w==");
+			reply.header("x-auth-sign", "J9Ua6epySbD4nyqfHqZd5Y6qc/UjFwoDclpPqEAoh4m9Xr+C0YWkYTK09kF4pT/AKEZqPPMFtXtLHYyhSgdo8g==");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Logout failed",

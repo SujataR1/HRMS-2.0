@@ -5,7 +5,7 @@ export default async function hrGetEmployeeDetailsRoute(fastify) {
 		const { employeeId } = request.query;
 
 		if (!employeeId) {
-			reply.header("x-auth-sign", "2MsSrCmJ5Sv+xBfdhlfCwJM/vkBe8BB9dcy3e3jL3/U4zsNGCX4a9h1ylX23+mVGGuMkqLZ2tH4MIaMeg1ivug==");
+			reply.header("x-auth-sign", "zP9117GWEDuVj4XJe4Z5cz9qnqxQL4XKwcyuGTEMjArREhDI1PRbAbSXRSJEY/2F20OB5BKZ0vS6eZMX9E41Qg==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Missing employeeId in query",
@@ -14,13 +14,13 @@ export default async function hrGetEmployeeDetailsRoute(fastify) {
 
 		try {
 			const details = await hrGetEmployeeDetails(employeeId);
-			reply.header("x-auth-sign", "/Ye6qGpb/XVVLX2Wfe988Mq5DO5jqiPK+D3eHcRstyp6KS/g3enyhT/PAfyfCD4LjUCMDAr8KrgzhwWcTBPQ+w==");
+			reply.header("x-auth-sign", "fu8pC0YwBa9ewubuYRGb7OSfbMwNLoiKdtuJZIzDhUmTvv9K0Lmxo/DpGhQf0SDIRvcKd+Ss3s03u62t2LV61g==");
 			return reply.code(200).send({
 				status: "success",
 				data: details,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "tBFaRToY5wNAL6MME8lROXB0oYHnwBbYnzk27eFEyrxwIs1litL9UixuZ+wCKiTj5D0HHE0bl41HkyhB/kzaSw==");
+			reply.header("x-auth-sign", "raVbnLhNwEuPl9NtGWrd7go7C6bQhQNqvtHbnEqZoLsYrHorWXbqEKAXHFVdmTNkT8YO4UUlmOdrWrIT3S88UQ==");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to retrieve employee details",

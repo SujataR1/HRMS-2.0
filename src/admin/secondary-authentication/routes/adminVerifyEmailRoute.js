@@ -8,7 +8,7 @@ export default fp(async function adminVerifyEmailRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "2kQE0seYw1/Zdu+wmkN6cmzhlDlAwb5QqA+2vgbjHTSo9cH9ZbgI+sAUFzhTLTbpzUyQsIgqFWTXfUm6U3eHtw==");
+				reply.header("x-auth-sign", "vjdBxeVxuxzfsvki6ewKMmCsFpXmSppvvLNUu3bhwUj9HGjEUjUIIr5lzgbBgsAYDfavKph1is0MlaZB/u7USQ==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function adminVerifyEmailRoute(fastify) {
 			const parsed = adminVerifyEmailSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "1cUB2bqNGOMw3GjFAppmn/P2gEMPrNKNDKTzg7XqzAECH/BBHbQ5YURWUcGqEXoZBPdOiDQmSgW9UYRgIu65wQ==");
+				reply.header("x-auth-sign", "OJ6ge1hLYJYmlxN1U8HSVj+4TD4qt/Bt6Za3SQs9lhE9DBrX+L1Ictu974hWYnEioJZL+TQ3rwwyjxf5gbCnMQ==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,14 +27,14 @@ export default fp(async function adminVerifyEmailRoute(fastify) {
 
 			const result = await adminVerifyEmail(authHeader, parsed.data.otp);
 
-			reply.header("x-auth-sign", "wC876Es/IEcQjlSCTWcfW4Cq3zNiyVk9yIlE2cpc74REeZFvijG78TWSg5W1EHtedsdxQaqFwKA/ZVRvD61i7w==");
+			reply.header("x-auth-sign", "IzRDu5QpJYZZ5N+BJi+mKd94LljzuDBokrSOdHXoIfz5wVKmWF/jf8o9JXADHoDbYmH7YcxQwd9AwZ0Gjoj4zg==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Email verification failed");
-			reply.header("x-auth-sign", "VTr0y6b1/lGQ7igWOJbcllj3cqfi/sS1RHGgPxxHW13OI0nEaFbsrCZ/tjbF9Ky/VWZZeazsmOSS9RhwcjCb8w==");
+			reply.header("x-auth-sign", "Zwg27S3wHc0fdYPCl5dpfooZ4dud1Ax+Vm30vmWpGkoVty9N7zkcHvAXjLGjbQ965Hxap17eItVHma9FakB1ZA==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Email verification failed",

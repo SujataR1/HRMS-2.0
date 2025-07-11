@@ -7,7 +7,7 @@ export default fp(async function employeeCreateLeaveRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "5fAnDY3jYPCq0TeZoYaakn58Zl8ujCxyleGQ/a+hJBF7P4n4DzwBXk7sGMoGEluY/lnTMCdkjAWpNn8oM6WCZQ==");
+			reply.header("x-auth-sign", "aX6HHuRQzKy17+nHdSypq+t9EGaeD4SM+rBZwltFTh+WeWFC83WOg5JB9O2IhpZ4BwxiS7PIE2XQ8Lua9YauyA==");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeCreateLeaveRoute(fastify) {
 		const parsed = employeeCreateLeaveSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "sbQWaGLwRfz53PAImEsoTSiqQLibupCI9h8rbWtR3iqcTTuJ7WLvj521zzXZzdnFRmHKG29039ZVKYS4hfSMTQ==");
+			reply.header("x-auth-sign", "dVxo9cUPAw/l+xhN28Lnke9gaclahTZeXQjXkPYDrMGQwE5Wbs3x8Tv68UUubqmQkTsGPiM23yQzAXGObgL5Tg==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,7 +28,7 @@ export default fp(async function employeeCreateLeaveRoute(fastify) {
 		try {
 			const result = await employeeCreateLeave(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "nVisFo1jlfwlbaSW3LMnTgWxqRk+eBS93IQGLKI/uVUccELpY/DMSJznaOg2I4KVxbXcuPBiM3VD+nAy0jkKTw==");
+			reply.header("x-auth-sign", "5cFHuJ34awNNa76sdVcVnEIRhQGi9tKouVS1fa+BBLuPw7T03NDBydz5BGTyySssyopk91+xcqRlWBeYjZVTvA==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -36,7 +36,7 @@ export default fp(async function employeeCreateLeaveRoute(fastify) {
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to apply for leave");
-			reply.header("x-auth-sign", "tH22+0pVWu+wAyQOUOUB0qfdi4knvh1MJH10uXDDhX+0c4Eo1b32Xr5WcDl+kPjWRZAJtLYltq7oKzntK+37Fw==");
+			reply.header("x-auth-sign", "wImIgl8/rnGX4iqPQaiBwALWwml+5/jGM2XVlr5YsJbCXU8oGVilhuT/tNkOWUeySt52UNbAtXlQTJpWnqT34w==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Could not apply for leave",

@@ -8,7 +8,7 @@ export default fp(async function adminCreateAnEmployeeRoute(fastify) {
       const parsed = adminCreateAnEmployeeSchema.safeParse(request.body);
 
       if (!parsed.success) {
-        reply.header("x-auth-sign", "IUoW/z+9pQqUgeJ1ptTrDEgFHBuPia9P2GyRN9oiGr40aSAagudMwE2Pi+9HoS4bKjvbmPRNJGKxsheRCIRUHg==");
+        reply.header("x-auth-sign", "WbunDdEQK391cMaARkR/zgOnns9KTQ//zYxtwBFlJOMfJDEnnuGZ8o0IUtKK3hLjSWsyol0evqkYG3UJP4sFJQ==");
         return reply.code(400).send({
           status: "error",
           issues: parsed.error.issues,
@@ -17,14 +17,14 @@ export default fp(async function adminCreateAnEmployeeRoute(fastify) {
 
       const result = await adminCreateAnEmployee(parsed.data, request.meta);
 
-      reply.header("x-auth-sign", "POw3Bx9Im+3K8yhmvgLhbSCU1cw1syU1IZ9iZ0uBNk4fIjNMom88dn/tcN2RjjbsziF2C4iP709wCP2nC3xi3w==");
+      reply.header("x-auth-sign", "w3Ty65IRP5XnAof4sy1/f6MU2DxSWAYvkbyBOFgbmqAo5FgJn6XG0v47NjbppYXFdTlaV2lOBhKIkRgBWMxSTA==");
       return reply.code(200).send({
         status: "success",
         message: result.message,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to register employee");
-      reply.header("x-auth-sign", "eToyYQ5E97z1C/L3Zdq+26EZ4tSA7KG4EBet8/iqrM1VlW/JmtROiKUiHYom6/x7ymbQxqoPi0A9nhVi8dmYfA==");
+      reply.header("x-auth-sign", "OBRe3LCYe3CGk6wIkNoO3EipH4HB4yDewVeE2bnS8YhTAlDEcdeBwC4RCP6YZo/o4CsR4Lbipfmp4HX/drWl7g==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to register employee",

@@ -7,7 +7,7 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "143d8KNHrK93Z6DJK+IlWvfz+VAQ63LlOAAI7hn6NZbkb3iKw8YMMfDLdGe2kPAXZK9EfJFXsEwNYjJrtEMNMw==");
+			reply.header("x-auth-sign", "w6VffV06u3G+vAEaDSPPKXcz4kDDSRvPAiYuMko/qNYDGqRoBKbR738ni4tvKThuT0zM9VwCEE3vSrYUnab9eA==");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		const parsed = employeeEditLeaveNotesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "q1GiKg6TOOdL4VmGgsicD4ekbVqe+e5naQd7YtxZPAFfMvvGKS6kcgSp6NVa5EE81gYjzNAIfrg/2mp/Us6Phw==");
+			reply.header("x-auth-sign", "5LVM9Uw329EROLIXItlPwxLneggeYFn0rKdLT9VR8y/2Tm2X/ND91QUQ4lYtZrLbeedVeUV6cyY/srgv6dGWPQ==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -28,14 +28,14 @@ export default fp(async function employeeEditLeaveNotesRoute(fastify) {
 		try {
 			const result = await employeeEditLeaveNotes(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "ALyvjdBN/2BZF5I0uUmaddql+MpDG6vmmdJ8ONKMWcOmVtfUwRvp3WKbhqoAwhHd+XPP/DrahP55WQxbtg+YCw==");
+			reply.header("x-auth-sign", "o9oPlpj1IVBc9PgTNmxC/7H0WhG/n793F2i9/m+vChKoZCyYBQ6k2quP4ackt0DgjQMjHUbwHL6tTlbxfmHtUg==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to edit leave notes");
-			reply.header("x-auth-sign", "ofdhi6dpn0ixFzU6wt6LQrCQ/0bZWhXCmeJEHrjbotchbxhu7xlJZFGcTMcuQVEw1NhqQEFpiIfBoEnrbaLlvQ==");
+			reply.header("x-auth-sign", "nqBZDpyCCKhQw+0JIqh5JHPYt5dHbXpR/J3MvuMObKv2LCtCbtOf6E8zUZtES5W42A3NezZSag6AJ65O5navGQ==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Could not update leave notes",

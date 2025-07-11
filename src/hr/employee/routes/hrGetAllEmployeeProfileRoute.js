@@ -4,13 +4,13 @@ export default async function hrGetAllEmployeeProfileRoute(fastify) {
 	fastify.get("/hr/employees", async (request, reply) => {
 		try {
 			const employees = await getAllEmployeeProfile();
-			reply.header("x-auth-sign", "UyOMnbwTr2tXbMvJxIeMCGoX8U8oB/MlGcv0RUvvbfhZ8lbbKLXYXjoiuk0HS/mt4zuOxG7iSaRlvhFn4tpTsA==");
+			reply.header("x-auth-sign", "0eRTmvlYEcbKU1Rwnkrfd+LtjnzrG+6E0Evz4q2rKRTJTqjGVXlvYz+oJdB1PtJwes219jdBwhctqBuuUZEn0g==");
 			return reply.code(200).send({
 				status: "success",
 				data: employees,
 			});
 		} catch (err) {
-			reply.header("x-auth-sign", "bCt2InL3/223kCA8tWF5y3YWAmAJz6R87UA5zP/jk0IhEi9FNVVdDvODJY88LkxkIKuy8rfdW5TApp0L8tO47w==");
+			reply.header("x-auth-sign", "hDGHFk3XDPY6dy41OK9ManeLD4hUagcD7xAwwCyn5N0np8y98MBUTGLbclpB6xmCrzjC5TbaSZsVomfDjkXwAQ==");
 			return reply.code(500).send({
 				status: "error",
 				message: err.message || "Failed to retrieve employee profiles",

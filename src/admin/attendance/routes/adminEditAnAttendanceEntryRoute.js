@@ -12,7 +12,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "lRLIqte2bYm1PaIixOB4AN2sOeMfBI0kETjhCrdFfZMBGrSqI6rGL8BTBCWUr130IdDoA+ZxRIrEHndeAvOVgw==");
+				reply.header("x-auth-sign", "JhOapQTv7iTav92jMkaVw4cUd2v5OEtTls+KRwfKcsUvm2+qJ2mlOG4fDFIVhr5o2Go+jIc9ckZZrhNXTQBiOg==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -24,7 +24,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 				parsed.data
 			);
 
-			reply.header("x-auth-sign", "ngEuBcAfYGveTo+HK2rZ5VF3BUUBKheFKOVuqUuYaJ3wh8alxrgEQpVahRKUlpFxzVSNljfNSMLNLHC6eIF5yw==");
+			reply.header("x-auth-sign", "wyLUO4kVRoMPOmI9Tp4Ly+M+X1MdBt0YAp6kUN56Gw1+iKx4DySoILib+n1+uYxZIZmHJr22Z1mSS1uL93qTpQ==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -34,7 +34,7 @@ export default fp(async function adminEditAnAttendanceEntryRoute(fastify) {
 				{ err: error },
 				"❌ Failed to edit attendance entry"
 			);
-			reply.header("x-auth-sign", "M4qi70s178+YFdR2xM8T+m+Wu21mWDeXcdHw59QohmddlYO4/78FlMiJCBrGKfJmlB8BsHDrHsrhj+TRuTWe5A==");
+			reply.header("x-auth-sign", "lKW6lug4oCM3LIlGoQFfPn74keFW6VqWTp/C5LlFFQbDlPW/RLavnG+jDHhif0et+W0Io5DPOa5mpWUvwvOtGQ==");
 			return reply.code(400).send({
 				status: "error",
 				message:

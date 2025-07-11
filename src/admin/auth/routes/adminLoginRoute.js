@@ -8,7 +8,7 @@ export default fp(async function adminLoginRoute(fastify) {
 			const parsed = adminLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "c1VgHvooSajqpidng4UqWWjCCPrioiSDF+FKbUyDHoXGiyyhQD+CcrorSGZmbLDJsSsMhjnHoQ0ij0QX+6Xtfg==");
+				reply.header("x-auth-sign", "33kkxQViU11Y5hD8P600eAi65k1ye7cgiM8OE4BWNHkyPLsuHLt3Oy5tDf39coqteTzOKmePiLM4IKoTYdkFTQ==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -18,7 +18,7 @@ export default fp(async function adminLoginRoute(fastify) {
 			const result = await adminLogin(parsed.data, request.meta);
 
 			if (result.requires2FA) {
-				reply.header("x-auth-sign", "F654zs153vxnRfNy5YYXIKjTmFrHQ3JotkcPZCn2L890C+YF+9my2knBVoqTF961+JXcdjUWIWE2z1+AJULLCQ==");
+				reply.header("x-auth-sign", "Kq8PTkkXFlZtHHRcH5wzygfj1jVr7D5epwY1t0/oGsUN456dy4PPQQcabzr9OHiFnEOIMMAbVjjUmEG8nQlj2Q==");
 				return reply.code(200).send({
 					status: "success",
 					requires2FA: true,
@@ -34,7 +34,7 @@ export default fp(async function adminLoginRoute(fastify) {
 				});
 		} catch (error) {
 			fastify.log.error({ err: error }, "❌ Admin login failed");
-			reply.header("x-auth-sign", "tutHJQu1K8RpQDzlb+wZlzJgaGyMZSfZLW5leG9wxyWY4UE9jFq8nP4Y1v5vGbW1uowajErvGYNoMIVITsl5YA==");
+			reply.header("x-auth-sign", "+/9Iwmy/bu1/xVhCEIbNF+PkGKCDrOt0YrnZa6KNIPVzCPaciOTcTPhEwg4ZcuL4v7RJ58MJ/zO34LY0rOk6pA==");
 			return reply.code(401).send({
 				status: "error",
 				message: error.message || "Invalid credentials",

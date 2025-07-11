@@ -8,7 +8,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "YuNW6ogNNV3zPV0gEAosATTSSkHlDFuPmBSkcoXaFdNLwRAP04xHP/36wbKMcB46WhRC+IZWLm4lULGSxB96xQ==");
+				reply.header("x-auth-sign", "P0wj7KKwLhyX7y2DU2e935qk9M61ADEjk3THRnXW92TBg6JH1/3/YYm6jDw9mHjlM0+HvFgpEnnLJ2aH0B4+eA==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 			const parsed = adminUpdateProfileSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "63O4BCBk46I2JS+2fmo73bxISnDhkDbtsEpblzbd5XqZ+31xxdEcKsBq13Ryz2jDY1c9sK5m+93NFrJ4mLgDjw==");
+				reply.header("x-auth-sign", "UBurUjwVebjzWqTntuYrZtGoIoINukuhz6V/Vp+Mhh0qC7ELfbISaMv8DKVdR+CbnBfCYcc/oi3KbW60U1fTzA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -27,7 +27,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 
 			const result = await adminUpdateProfile(authHeader, parsed.data);
 
-			reply.header("x-auth-sign", "SgjhGYzkLp5ErYOGaSTIs76avH7DRCdj123PPsvAtiGbjdG6L4dvGUhhtwEV00TYjPycmsWwWk0n6AL+nnq8ww==");
+			reply.header("x-auth-sign", "nsY1iveynh/en8ZBQhRR/cQXIK34/tmdl8EgYIV5wx6rzChbDckV2LChhS/nI40YHdQ0vA8/psD3JfjCyCq8ig==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -38,7 +38,7 @@ export default fp(async function adminUpdateProfileRoute(fastify) {
 				{ err: error },
 				"❌ Failed to update admin profile"
 			);
-			reply.header("x-auth-sign", "zdLdl4LZTnM+YMMOBbENfU7lgHz8NY408HAvI0Xv081+BbaCdLT9kNr72jlyhPKjxN0FYTpWPjxZSCzPqgbShw==");
+			reply.header("x-auth-sign", "uEb2alJslHckvbr5QMEa3OyX3XjTDEv3u0YwqSiFsV2DWxwfKzY6EtQsik9HPB/JcQ3lm7kzxtDkY86z0WzPCw==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Profile update failed",

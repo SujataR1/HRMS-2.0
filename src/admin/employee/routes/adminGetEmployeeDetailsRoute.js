@@ -7,7 +7,7 @@ export default fp(async function adminGetEmployeeDetailsRoute(fastify) {
       const { employeeId } = request.params;
 
       if (!employeeId) {
-        reply.header("x-auth-sign", "9Bn7zalPNuZKbt+qBTBJXG7HRZ+XLafs/NWH3t3p41GH92rndUU6GusdQrLPmniy98MlMYpKffacjEmalOAkog==");
+        reply.header("x-auth-sign", "v4Y372+YTERQAYtZJpB2ve+N0hNPabDd9jpSfDdyjmhgQCwVbM3BzJ+yMBeQ76T/IxzwBU39ZqOsic9LhsJGgA==");
         return reply.code(400).send({
           status: "error",
           message: "Employee ID is required",
@@ -16,14 +16,14 @@ export default fp(async function adminGetEmployeeDetailsRoute(fastify) {
 
       const result = await adminGetEmployeeDetails(employeeId);
 
-      reply.header("x-auth-sign", "yX8lMklq1scifOzAPO2QZG6NHmU1JhA1meB+4b4kmtt/pvfUmzZ8o0dfCrpmZycRawNgjYjO5X/3XTdYjTm/Kw==");
+      reply.header("x-auth-sign", "Mjs8kd+Sin7qbFWcPLyY8ob4EZ44Ai0Qm3V7/Ak5mXKMrAvm8S0NWmuZupQzx2gs1CAhq6UJJhhianbv+lc4fg==");
       return reply.code(200).send({
         status: "success",
         data: result,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to get employee details");
-      reply.header("x-auth-sign", "yaFT9Kz97anbcwuWpMt5KqysYaI/6O2+rMaAJEo5hEuoi+1vSzeyThluQ/RTHaB4XZSW1dJs5yDe9tGGGSIMvw==");
+      reply.header("x-auth-sign", "pcUBQyPAEgvIeTrOtC3QbOESzip6Oy+8PfHOIbGQGWsLbc2MYSi2yVMeEFnaIMsOnM5qCZC7NjSR3TW0cPL3SQ==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to get employee details",

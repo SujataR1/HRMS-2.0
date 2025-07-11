@@ -7,7 +7,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "pLVmHQjYsgcq6JidcLf0EQRoA6jU4T1aOOGS0i2Zl2guu2gnYCSmzcVBVDSpxt5XU7PJ9fjpmMnkHkfI8BNyGw==");
+				reply.header("x-auth-sign", "+qfplIgYJ1zUhCjrgn6Q5dtRUjFklAUDvEokgcAf16RoJWQWiievCz6cXji5A7Wf9hJbJ+rTCz/BBdSo17UUXw==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -16,7 +16,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 
 			const data = await adminGetSettings(authHeader);
 
-			reply.header("x-auth-sign", "2LZXWzbGi1cCR1NDHQuzFAs8IIupMu4qSLoqFNcU0oVRUi1BmkocfcLM+ZYY0FXTjS7qdOl26zxXlK1z/yZ4dw==");
+			reply.header("x-auth-sign", "mUDTVMgfeV8mSaSQsdg+CfNn/Mz+vbQeV4OgzSMy0chxbigE3fA55o5jwiehWgid6ez0hyw6a6zosiGNFjfLhw==");
 			return reply.code(200).send({
 				status: "success",
 				data,
@@ -26,7 +26,7 @@ export default fp(async function adminGetSettingsRoute(fastify) {
 				{ err: error },
 				"❌ Failed to get admin settings"
 			);
-			reply.header("x-auth-sign", "TnPZHzSAlQJ+vQDea3LG0FeqWN6+yPE7tKgfADXEkY072pzZIXIzpwBJ7rayJ6nyrS2oPXA8R/FBIBknBz08Pg==");
+			reply.header("x-auth-sign", "Te8LnoPdBfVxfl2kRVpTBU5IbTkjUtByCYE3m/VUU+27+BEPMu/SULR1JmQ5YtDgnkAiRaLrncjXvxxiPReklg==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to get settings",

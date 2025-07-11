@@ -8,7 +8,7 @@ export default fp(async function employeeResetPasswordRoute(fastify) {
 			const parsed = employeeResetPasswordSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "+msXNaaD7xVUNuz6mpUFw6HVaSLnFZNITVQ5mycOghB4UNksfV5vMdq0W36vNlg0jTKdrVRwflshlFCkvaN53A==");
+				reply.header("x-auth-sign", "u/lEQ+7ERqU8hf9GVNdGctSmZj9EQJSrmujTqw6qnQNTQZbWNP7Ozm/PpSyXT2VxsoZ+tj1zwKihA5xZxsjXlA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function employeeResetPasswordRoute(fastify) {
 
 			const result = await employeeResetPassword(assignedEmail, otp, newPassword);
 
-			reply.header("x-auth-sign", "ZG/CSkkWGBw2hF6eaC/cCHL+/HJ0BhQxODfW79qoGybuWa/2cd94IxLGrxztlwirnsf7Fsyp8p2SxjHFFy8JCg==");
+			reply.header("x-auth-sign", "+43+veC3mWRgV0j5T2R12eaWyj/EU5sw56cib0FsKoav6tLWMFcoVYRdYXMQYux9tHRGBIculSUWSAIPumhtcg==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -29,7 +29,7 @@ export default fp(async function employeeResetPasswordRoute(fastify) {
 				{ err: error },
 				"❌ Failed to reset employee password"
 			);
-			reply.header("x-auth-sign", "ZQskhOGTQ1+VwrM7166ELqEMxSb5JI3fvhBdZxNo7wHGgcamtQcv6dZ7bvKaZs+YHiTlZv5i91qrqqMZUtdvhw==");
+			reply.header("x-auth-sign", "YLTU6QFV9JhTZ0Bh9vqi4Ng5n96l4L/3A8rnazniFJ3AdvgE4mUSLI9fYV9Z3l8cXk3/ppK9Fr/L90+b3rtpsA==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password reset failed",

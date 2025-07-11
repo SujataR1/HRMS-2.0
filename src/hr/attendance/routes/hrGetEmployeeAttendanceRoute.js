@@ -7,7 +7,7 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "y72vAC8Sx9k6p1Bd9ahNyUZPPaLxrjP8A7JaHsU47UdHtAbxJRxT/Q8SowFJAn62LLcRZ4ykNuhZBJ6064OEww==");
+			reply.header("x-auth-sign", "+RQQDYHj0tXtC0IN/04thxPNQjI1RzkTh7zww7KJBKyY3n7ZnIeN2SDnrUv+iCy1dPeHDcugapd20Rh5ZuJfmg==");
 			return reply.code(401).send({
 				success: false,
 				error: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 		const parsed = HrGetEmployeeAttendanceSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "kUQBl+F3Vf8cthtR5Fal92OrPAQgpRhyf4kPfZDYoC25O37JK4tNlzXu5su0hYI346q1xZoWfeC5meMt68gocg==");
+			reply.header("x-auth-sign", "/B++dzunfSw0SnWXw9j0i8FlfxNRurlJpOEXQ7EjoygIMzDPiWdhdMwbRHPwl54LM1mgNo/Zj3aHzhYYOOhekA==");
 			return reply.code(400).send({
 				success: false,
 				error: "Invalid input",
@@ -30,11 +30,11 @@ export default fp(async function hrGetEmployeeAttendanceRoute(fastify) {
 				authHeader,
 				...parsed.data,
 			});
-			reply.header("x-auth-sign", "bUOzodPU7Lumw0KBQ0cJYZaEpUiuRffnD9jAJxy2OIXYCDoWSF7NADtAzyUQKyz8StoRPpxsYp/eYlg3RohbPQ==");
+			reply.header("x-auth-sign", "+L6cR6dD0SfhLfY3masQVqTcAOp3QMCtyUG4fet5x457hL7Jpf8e64YNEDd983BXkSvA4//WYBe2y0di8SyxMA==");
 			return reply.code(200).send({ success: true, data });
 		} catch (err) {
 			request.log.error({ err }, "❌ Error in hrGetAttendanceLogs");
-			reply.header("x-auth-sign", "0UXI+dJls4Zc9jHngmxHKpVMc0trqCVLiHPAkI665xJCZb9W0YissX85Uv+OSs7wA7zQsHjkUZsxXWsQc0J+UQ==");
+			reply.header("x-auth-sign", "RXU9VvRWlOVcSHKxIFcx+IeXL0yJ3Hl4QcwEdOTz4KHfE4+riIpguUMC2F+guuXED0KKynuroMwBISXq1T4XKQ==");
 			return reply.code(500).send({
 				success: false,
 				error: "Failed to fetch attendance logs",

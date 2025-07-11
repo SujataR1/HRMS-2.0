@@ -8,7 +8,7 @@ export default fp(async function employeeVerify2FAAndLoginRoute(fastify) {
 			const parsed = employeeVerify2FAAndLoginSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "uzrFxevWDOl3FWj63kezXPOZNOm7pRgoZ++KAo425NBfzMl5bh8Fjtv9BBugg2S9hP5I3q1qUROSk+GITcsW7g==");
+				reply.header("x-auth-sign", "dz+O2VQhcyzqFdvejQwzzbFHvcMA9dlFmcTIqFixrC3/RPsfPleQ6PsOwv9845EkuFeEvalOoCK8srFwSEyYrA==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -22,7 +22,7 @@ export default fp(async function employeeVerify2FAAndLoginRoute(fastify) {
 			// ✅ Send token via Authorization header
 			reply.header("Authorization", `Bearer ${result.token}`);
 
-			reply.header("x-auth-sign", "y8cOOjzlLJW4cBwUXBmsdRwNx4Wvc+rkmVZeMW1poKIkGPa2HNm8la/omkkpNb78bj10tmQ6h/x9in5mj8++Dw==");
+			reply.header("x-auth-sign", "2fhRjOdUGjHaflE3D1TDmyRAlvtph9ymw0LQwk02zx1zpJcJVmdgbo7lPBsOAl+qtafTqGliT/9TLg4GFQO3jA==");
 			return reply.code(200).send({
 				status: "success",
 				message: "Login successful",
@@ -32,7 +32,7 @@ export default fp(async function employeeVerify2FAAndLoginRoute(fastify) {
 				{ err: error },
 				"❌ Failed to verify 2FA and login employee"
 			);
-			reply.header("x-auth-sign", "VxXVWD0mQ+15XVag5zv+vYn2LXXa1uQkrYV6U1l9N6yqvhApuylMLe3IW7xmiOYjPX1diIP/w1DM+8c/IOaOsA==");
+			reply.header("x-auth-sign", "qi8z3/W57oRFUmtD2QN1pXJYeOx3BvweJWa1/csbvwGcJsfWfTzCpL36UIlM3cvnHpTEhHrXiDY1nzWx/aIHZQ==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "2FA verification failed",

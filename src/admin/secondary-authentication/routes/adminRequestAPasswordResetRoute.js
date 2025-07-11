@@ -10,7 +10,7 @@ export default fp(async function adminRequestAPasswordResetRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "atfAJGzq5YBkdKOCTiCbp32prD2di0WVyR5sRakNWNUIVY7sO8cxBSjZ9t4fbuhUgG9dCf+9pzV6eIZvYg8EFw==");
+				reply.header("x-auth-sign", "x8f/S+m1VlM6YPHAYUx7kIVLwpbXrsshRA0KWwDTpwIIogFpE2tLHQr/HL5WCrhXloB+mD3a2gX0q13PlAvT2g==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function adminRequestAPasswordResetRoute(fastify) {
 
 			const result = await adminRequestAPasswordReset(parsed.data.email);
 
-			reply.header("x-auth-sign", "m7gakTlYjX9l+CUW1ipZu2HSrzVHgTptj+bfG0hju3DV3C4owwcPros7qfC9tM2WPWbAo1a9PjC1QlnV3QU+jQ==");
+			reply.header("x-auth-sign", "/vqEkmfUyQLSRA2FQVfxgZ6IueWML3K1PHNKBJCW24NKY5wB0Gh+qCjIE76alqUDsTfSGshBucYV+NZo81ys5A==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -29,7 +29,7 @@ export default fp(async function adminRequestAPasswordResetRoute(fastify) {
 				{ err: error },
 				"❌ Failed to send password reset OTP"
 			);
-			reply.header("x-auth-sign", "uIP1JC4J3NqJccOer5jMK+TUkH07AYyPC0zQ3vQErgpf1ytePjpgeHJXfrTaVmw8irpr3C35Ev6FnP+4FiUbRw==");
+			reply.header("x-auth-sign", "MKcYUNCXdPRqF9R3evr/NGmzFz/LCszY6uqDUL+9X9u+KGpwsoJZL/u0SGUs01m8QcTEkwTzPZP/7QALyLaXVA==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Failed to send reset OTP",

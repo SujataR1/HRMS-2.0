@@ -7,7 +7,7 @@ export default fp(async function hrGetHolidayEntriesRoute(fastify) {
 		const authHeader = request.headers.authorization;
 
 		if (!authHeader) {
-			reply.header("x-auth-sign", "Lw7MUObt8ewrm2cpx4AlJ8FJHu7vP7/enXFbnfsvMKKYcBmYP101BExyHGQC3mAyl1TkTdB0XYK61OXSyYI2Qw==");
+			reply.header("x-auth-sign", "kloGBwmj36pe+OVVgrF2sFqRYB0Gd6avtPuDaqulx0uqrLO6D5YvGvcAPO/4rwmQF6hiDIitbH+FdbiwChbsvQ==");
 			return reply.code(401).send({
 				status: "error",
 				message: "Authorization header missing",
@@ -17,7 +17,7 @@ export default fp(async function hrGetHolidayEntriesRoute(fastify) {
 		const parsed = hrGetHolidayEntriesSchema.safeParse(request.body);
 
 		if (!parsed.success) {
-			reply.header("x-auth-sign", "nPgjijzu6UPeuq/qP3d7dLj2USUqgeXY7ZglZOBXyZDLqh7GFvMtCBH4vzOulqD6ZOafcd/2L8j+ylfiQVyg1Q==");
+			reply.header("x-auth-sign", "wABCkQwxKiyfoPFJkQofDU3tPF4BoumOLSobXVWRTCmZE/C4oZvSa5Lkxt2H3PJ4qTIkJWq8kTnfe80N/z89Bw==");
 			return reply.code(400).send({
 				status: "error",
 				message: "Invalid input",
@@ -31,14 +31,14 @@ export default fp(async function hrGetHolidayEntriesRoute(fastify) {
 				...parsed.data,
 			});
 
-			reply.header("x-auth-sign", "NW0zH8QSfRNO+kQs4VlUEr5tQY6pFLXf0Y8XR0AfZr5gR6LnZh1hTH79EjGZhgxubHx2DHofuzi4al21MrvEPQ==");
+			reply.header("x-auth-sign", "B1bLHQAZ22RX3637IgfQ9MnQv/2AhtEQKP/DlJhjMEjasjiyYa3eOyZdApxFIwMOrRrZrKTLymyo44IiOjUohg==");
 			return reply.code(200).send({
 				status: "success",
 				data: holidays,
 			});
 		} catch (error) {
 			request.log.error({ err: error }, "❌ Failed to fetch holidays");
-			reply.header("x-auth-sign", "rbMxrb+Z4s5ftP8uKV1R+/DI23Ok/jzKtfhBJFmE+NVVXWBZS/t470lTUTBlEBLQUiW1PymWn2xWru6h0zY3zw==");
+			reply.header("x-auth-sign", "H79lEXU/pj2W8G6uZ/cOV6DEtLVWDoR/eZu/uMRLC/K/BeszekkA9wsWu1BATKwC12EX4rUKuA99G03oxMJmzA==");
 			return reply.code(500).send({
 				status: "error",
 				message: "Failed to fetch holiday entries",

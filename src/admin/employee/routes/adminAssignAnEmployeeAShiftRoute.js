@@ -8,7 +8,7 @@ export default fp(async function adminAssignAnEmployeeAShiftRoute(fastify) {
       const parsed = adminAssignAnEmployeeAShiftSchema.safeParse(request.body);
 
       if (!parsed.success) {
-        reply.header("x-auth-sign", "paDUBVEtzcr6n+m0+xlt7iU+upO2u8tzwN7AkPuQb2sluS4AgX+DTCTIAoU7mr27ZXrH2qjkREDzMKZ1AoYLLQ==");
+        reply.header("x-auth-sign", "V69LU/4kcu0D0drWMXqir33w2OCDMNw0IowXUvuUW+oYdKAzRpogKBWlLX7CpwaAmXmvbupAGRr3Vnenx4leww==");
         return reply.code(400).send({
           status: "error",
           issues: parsed.error.issues,
@@ -17,14 +17,14 @@ export default fp(async function adminAssignAnEmployeeAShiftRoute(fastify) {
 
       const result = await adminAssignAnEmployeeAShift(parsed.data);
 
-      reply.header("x-auth-sign", "QOahYfuhPTUKGq43jXJobPRh1zQUcIdQsvzjH1Mpk/9AgBEhCF8QbG+3ANH22Z2y3tVJwQ0RL2YGDDu2YWWt0Q==");
+      reply.header("x-auth-sign", "pkF6rygEq/s5EK+Lu9npUXgszguBNbj+opLkBf/sKFxsAnt+hSHCSZ+gOzsnJIMvIUT3zaIU1QjW8QxgV0BUaA==");
       return reply.code(200).send({
         status: "success",
         data: result,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to assign shift");
-      reply.header("x-auth-sign", "MhM4YYliljjEIWqVxtY8+P9LcWa9TXe91WLmvu6XDNmNIkXiw33ujQVwHnm7SCFu/NpBfBEL8tt3cZZGQB11cw==");
+      reply.header("x-auth-sign", "rwzN/JvT5mocTiHO0TxgyzUtxUdfOW6MaYow2rX1TZFhHYGHxjljVT6Poe85JgjsubL/rJ+fkCYfLYnyFj2Dsg==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to assign shift",

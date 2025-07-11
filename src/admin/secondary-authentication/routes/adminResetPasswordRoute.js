@@ -8,7 +8,7 @@ export default fp(async function adminResetPasswordRoute(fastify) {
 			const parsed = adminResetPasswordSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "aGfPm0dH3pAL37fwXYqH4bRNJoS2lMHxvIWO4rqtj6Rxtz9jVtQfbfCqJAqIGSF+gLBmE6rRKa/whsQ5OFOU0Q==");
+				reply.header("x-auth-sign", "PxssRsdzfMR10U23UosNDnGuq2FWNzpfAQ0zIhpzzzMUsp5FVNNxK71EpDhfpy5voYq2TmhBcwi81r3JFm1opw==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -19,7 +19,7 @@ export default fp(async function adminResetPasswordRoute(fastify) {
 
 			const result = await adminResetPassword(email, otp, newPassword);
 
-			reply.header("x-auth-sign", "ALqS66KCkM2b4YBSRn7GEMrJDXqXxDjHvhZfHnYzo6NZjCjc+JmsoKyw7jR8qiL6+Z1UGYzc4XmpzumABnwNFg==");
+			reply.header("x-auth-sign", "pC4r+OXPqJJhPbcg8YbYgPRaoGsWS4fz2Xu4aSCb1BhFwjyVF4gsRPVPCTQIjV/SafUiS1ILUCq7VXYXcXuUdA==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -29,7 +29,7 @@ export default fp(async function adminResetPasswordRoute(fastify) {
 				{ err: error },
 				"❌ Failed to reset admin password"
 			);
-			reply.header("x-auth-sign", "P3SJjZ4ZYdZntuZWTA9/299k5dzOFM1m6FcspgBAvi2/9WqmeAokZ2dClopROpzH/NxexdOge0NQEpaLb3zkYw==");
+			reply.header("x-auth-sign", "BT6apYOITf3lKQWonUorhWCxkTdQFfkE8mAN5M6NOAGYAHp+mFY8tb6d9D1ZrKc0TwGhY1OvV7J7MxHJK03e+A==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password reset failed",

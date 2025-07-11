@@ -8,7 +8,7 @@ export default fp(async function adminChangePasswordRoute(fastify) {
 			const authHeader = request.headers.authorization;
 
 			if (!authHeader || !authHeader.startsWith("Bearer ")) {
-				reply.header("x-auth-sign", "WRYgKVFHwsnE7FdRMbEiDzsA9Slayb4yJFcyQ1PJOoEGL8dH/f07Sy6aDDK88tbNxjYHiUrYtoJfwhHBOyLQmg==");
+				reply.header("x-auth-sign", "GI2IPyd98BoMGQKbTkOD508E9f3LIOLAX139umLG6v3uqDm7O0T8HG50BoRsuVHg0an09YjE5jnQwu2ZlDRgPQ==");
 				return reply.code(400).send({
 					status: "error",
 					message: "Authorization header missing or invalid",
@@ -18,7 +18,7 @@ export default fp(async function adminChangePasswordRoute(fastify) {
 			const parsed = adminChangePasswordSchema.safeParse(request.body);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "g85VLUMlJ9wBYFyXLhy8GJZODwEvC55pJf0mFujbO+jfT8u5Od7FgGSr7X3nBWgjxNXvN+qfMXBDZp0GXP1/aA==");
+				reply.header("x-auth-sign", "9B42c/VktevXzZ8CP+Z7+479MLQNx6FBhhbAvKmGeWSF0w7e34O69t0yZzdIeywoybc44t9Hn6Pr4SEfF2X5YQ==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -33,7 +33,7 @@ export default fp(async function adminChangePasswordRoute(fastify) {
 				newPassword
 			);
 
-			reply.header("x-auth-sign", "t4ijZjWaiNz++gzScqVsBslATGpB2V2s7FOYVtgF3QbB5ad/FBi5rJxbjwJgCQCzxTQ9a+fHNmK66EIfKjWDOA==");
+			reply.header("x-auth-sign", "1NJQqvgmylAoKeIZ5i79W5/trEjSyynZvhnsS4PbdlRHSCcOGuuiLJfXk/2xNOG8e4IUjONPmFyBpRx7rRcHmw==");
 			return reply.code(200).send({
 				status: "success",
 				message: result.message,
@@ -43,7 +43,7 @@ export default fp(async function adminChangePasswordRoute(fastify) {
 				{ err: error },
 				"❌ Failed to change admin password"
 			);
-			reply.header("x-auth-sign", "HbQUF0MurhxMwQ72TLnNmBPOJeg0WSxV1f2EbiSvxZYJB86H2Hcy+5kw7sZMzq4HLBhCVNBgYRSlC6zxfwnUBQ==");
+			reply.header("x-auth-sign", "TJ7z/6JdEosJbJh4pEGQ4zs26ArrBhKpiRTq1h8nt2BseuV77kNobxhq2kApSAjV9hc2TiOAvhkl+Zn1cyXalA==");
 			return reply.code(400).send({
 				status: "error",
 				message: error.message || "Password change failed",

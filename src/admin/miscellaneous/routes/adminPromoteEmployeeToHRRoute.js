@@ -7,7 +7,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 		try {
 			const authHeader = request.headers.authorization;
 			if (!authHeader) {
-				reply.header("x-auth-sign", "oqkSepZ3Wi0bOdmOSqgvO1dG7AjoPdqcygWagVuuxM1+Z6hWVjP3yXOL0pCdAIiwlJIEQvCCbjXCIRTQH6SEfA==");
+				reply.header("x-auth-sign", "HAlnjGsN80XUHnZz47eYXTJM1zVIznddwdq6vQFZykdTQsxUe/7z/XK5tCHLcOYz2FuCUIezf2im9JnJuMGrzg==");
 				return reply.code(401).send({
 					status: "error",
 					issues: "No Authorization Token in the Request",
@@ -18,7 +18,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 			);
 
 			if (!parsed.success) {
-				reply.header("x-auth-sign", "FCGZYH5mq18QFK7Ybetytd/7nMkUJIlOEesXdQvbGDLgVAuSB41W8TvRjqI11q04Ux4I6TMl/JrKsx7rJIItPA==");
+				reply.header("x-auth-sign", "CuEyaMAYSgvjcZXywxbIhyVN5P72CbGwZTvAK64p8ia+CFvIrQlyFKrhcVoZp4MI1MTTXHmEkMPdVkOq9aaT2w==");
 				return reply.code(400).send({
 					status: "error",
 					issues: parsed.error.issues,
@@ -31,7 +31,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				parsed.data.customPassword || null
 			);
 
-			reply.header("x-auth-sign", "0JBEg+LCLdopuQ3TSCr6foAbxQt+9GZ1BRiUTVMMRz2iHwanE6FdrpvnqrBQNluukdsqHtGsL+JHXCvp6NFxaw==");
+			reply.header("x-auth-sign", "BaB76D7b9YeiFEB4vtBoe8DIQpOJY8uDkwhI/OZh4K+UTFXhSLR0Sb2sw2cSF/Fw4P+JPEpHEE7qvZAvEmFzWw==");
 			return reply.code(201).send({
 				status: "success",
 				message: result.message,
@@ -49,7 +49,7 @@ export default fp(async function adminPromoteEmployeeToHRRoute(fastify) {
 				{ err: error },
 				"❌ Failed to promote employee to HR"
 			);
-			reply.header("x-auth-sign", "1HbEQZfa7RasAMQpFVYoKZrHdJl1KWHVi+kaHRGXJfhGvH0dGbsNyu6xCtUfLZr+3pJ6v7UoCiuDrudGsjDoRA==");
+			reply.header("x-auth-sign", "a1/ktJrAQWs4x7qf9OMo5WS8WzlMAYk1Slbp1vaLEgt0GeeQcEzAKDI0lmLd4Lwv/GNfAoj9DMFymNK7rO/o4A==");
 			return reply.code(400).send({
 				status: "error",
 				message:

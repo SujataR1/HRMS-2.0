@@ -8,7 +8,7 @@ export default fp(async function adminCreateEmployeeDetailsRoute(fastify) {
       const parsed = adminCreateEmployeeDetailsSchema.safeParse(request.body);
 
       if (!parsed.success) {
-        reply.header("x-auth-sign", "zIH9sD13fuwnunQVaPmBOfNY24F6KstU01KDc0S0nlznMYDUZ3Lutnu+8mzauMHCQJ3FloqZkV/Db1e5hKBzuA==");
+        reply.header("x-auth-sign", "FUPfvLWOq+pGvMy6nSiNse/Y0p+4BOXHgscEZO/Uz5WNl9x0klYWHLmH3PVOjmAsehiy+GhmYwVuU72pNY2PIg==");
         return reply.code(400).send({
           status: "error",
           issues: parsed.error.issues,
@@ -17,14 +17,14 @@ export default fp(async function adminCreateEmployeeDetailsRoute(fastify) {
 
       const result = await adminCreateEmployeeDetails(parsed.data);
 
-      reply.header("x-auth-sign", "Gn+MiFBKhOJCWCDYa5MmO+TC2vXkjFQ9gKltzCtNYodrzU66VPjAW1556u8PREcwIbGXpu4HJcXH1ZyuIZGj4g==");
+      reply.header("x-auth-sign", "zcgswWU5ZMD+cuhAvbESwJAGqa4UCdahJRycImEIIDBPymKbeV0eUTiHL3RYTmTzevk/bXJC+im8iffYNt9lAA==");
       return reply.code(201).send({
         status: "success",
         data: result,
       });
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to create employee details");
-      reply.header("x-auth-sign", "EWEIMLIKkH3MclDtWyxj4xscMqRku9hY6bYS5g7orB6R7poZTy/9hNBzgKnHpxoXv3mYMhirBCJTlrjp0hGSpw==");
+      reply.header("x-auth-sign", "Qab2/X8ujJYKbhZpJUEx3TRQu1gPLuf5qr7yysWxpqpbcHuxmLoegYbOWPQFAV7b3qEHmANsDaR+QW0nnhY2vw==");
       return reply.code(400).send({
         status: "error",
         message: error.message || "Failed to create employee details",
