@@ -1,5 +1,6 @@
 import { z } from "zod";
 
 export const hrGetEmployeeLeaveRegisterSchema = z.object({
-  employeeId: z.string().min(1, "Employee ID is required"),
+  employeeIds: z.array(z.string().min(1, "Employee ID cannot be empty"))
+                .min(1, "At least one Employee ID is required"),
 });

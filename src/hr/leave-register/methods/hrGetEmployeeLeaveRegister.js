@@ -4,12 +4,12 @@ import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManage
 const prisma = new PrismaClient();
 
 /**
- * HR-only: Fetch leave register for an employee.
+ * HR-only: Fetch leave registers for multiple employees.
  *
  * @param {string} authHeader – "Bearer <token>"
- * @param {string} employeeId
+ * @param {string[]} employeeIds – Array of employee IDs
  */
-export async function hrGetEmployeeLeaveRegister(authHeader, employeeId) {
+export async function hrGetEmployeeLeaveRegister(authHeader, employeeIds) {
   if (!authHeader?.startsWith("Bearer ")) {
     throw new Error("Missing or invalid Authorization header");
   }
@@ -18,16 +18,18 @@ export async function hrGetEmployeeLeaveRegister(authHeader, employeeId) {
   const hr = await prisma.hr.findUnique({ where: { id: hrId } });
   if (!hr) throw new Error("HR account not found");
 
-  const leaveRegister = await prisma.leaveRegister.findUnique({
-    where: { employeeId },
+  const leaveRegisters = await prisma.leaveRegister.findMany({
+    where: {
+      employeeId: { in: employeeIds },
+    },
   });
 
-  if (!leaveRegister) {
-    throw new Error("Leave register not found for this employee");
-  }
+  const foundIds = new Set(leaveRegisters.map((lr) => lr.employeeId));
+  const missingIds = employeeIds.filter((id) => !foundIds.has(id));
 
   return {
     success: true,
-    data: leaveRegister,
+    data: leaveRegisters,
+    ...(missingIds.length > 0 && { missing: missingIds }), // Optional: list missing IDs
   };
 }
