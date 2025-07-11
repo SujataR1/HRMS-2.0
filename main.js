@@ -5,6 +5,7 @@ import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
+import verifyAuthPlugin from "./src/plugins/verifyAuthPlugin.js";
 import { gracefulAuditShutdown } from "./src/utils/logging/methods/logQueue.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -99,6 +100,7 @@ const app = Fastify({
 
 app.decorate("prisma", prisma);
 
+app.register(verifyAuthPlugin);
 app.register(requestMetaPlugin);
 
 app.register(fastifyCors, {
@@ -123,7 +125,8 @@ app.register(fastifyCors, {
     "Accept",
     "Origin",
 	"user-agent",
-	"referer"
+	"referer",
+	"x-auth-sign",
   ],
 });
 
