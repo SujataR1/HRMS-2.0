@@ -17,7 +17,7 @@ export async function hrGetPendingLeaves(authHeader) {
 
 	await verifyHrJWT(authHeader);
 
-	const now = dayjs().tz(LOCAL_TZ).startOf("day");
+	const now = dayjs().startOf("day");
 
 	const leaves = await prisma.leave.findMany({
 		where: {
