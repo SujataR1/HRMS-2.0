@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
+import dayjs from "dayjs";
 
 const prisma = new PrismaClient();
 
@@ -36,6 +38,33 @@ export async function employeeCancelLeave(authHeader, { leaveId }) {
 			status: "cancelled",
 		},
 	});
+
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId: employeeId },
+		select: {
+			name: true,
+			assignedEmail: true,
+		},
+	});
+
+	if (employee?.assignedEmail) {
+		await sendEmployeeMail({
+			to: employee.assignedEmail,
+			purpose: "leave-cancelled",
+			payload: {
+				subject: "Your leave has been cancelled",
+				name: employee.name,
+				leaveId,
+				fromDate: dayjs(leave.fromDate).format("YYYY-MM-DD"),
+				toDate: dayjs(leave.toDate).format("YYYY-MM-DD"),
+				leaveType: leave.leaveType.join(", "),
+				status: "cancelled",
+				applicationNotes: leave.applicationNotes || "-",
+				otherTypeDescription: leave.otherTypeDescription || "-",
+			},
+		});
+	}
+
 
 	return {
 		success: true,

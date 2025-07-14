@@ -4,6 +4,7 @@ import dayjs from "dayjs"; // If not already imported
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+import { sendEmployeeMailWithAttachments } from "../../mailer/methods/employeeMailer.js";
 
 const prisma = new PrismaClient();
 const UPLOAD_DIR = path.join(process.cwd(), "media", "leave-attachments");
@@ -51,6 +52,10 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 		await file.toFile(savePath);
 		const relativePath = `/media/leave-attachments/${filename}`;
 		savedPaths.push(relativePath);
+			attachmentsToSend.push({
+			filename: file.filename,
+			path: savePath,
+		});
 	}
 
 	// Create or update attachment record
@@ -66,6 +71,33 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 	} else {
 		await prisma.leaveAttachments.create({
 			data: { leaveId, attachmentPaths: savedPaths },
+		});
+	}
+
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId: employeeId },
+		select: {
+			name: true,
+			assignedEmail: true,
+		},
+	});
+
+	if (employee?.assignedEmail) {
+		await sendEmployeeMailWithAttachments({
+			to: employee.assignedEmail,
+			purpose: "leave-attachments-uploaded",
+			payload: {
+				subject: "Your leave attachments have been uploaded",
+				name: employee.name,
+				leaveId,
+				fromDate: dayjs(leave.fromDate).format("YYYY-MM-DD"),
+				toDate: dayjs(leave.toDate).format("YYYY-MM-DD"),
+				leaveType: leave.leaveType.join(", "),
+				status: leave.status,
+				applicationNotes: leave.applicationNotes || "-",
+				otherTypeDescription: leave.otherTypeDescription || "-",
+			},
+			attachments: attachmentsToSend,
 		});
 	}
 

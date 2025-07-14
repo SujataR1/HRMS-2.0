@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leave Attachments Uploaded</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #4CAF50;
+    }
+    .info {
+      margin-bottom: 10px;
+    }
+    .info strong {
+      display: inline-block;
+      width: 180px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello {{ name }},</h2>
+    <p>Your attachments have been successfully uploaded for your leave request.</p>
+
+    <div class="info"><strong>Leave ID:</strong> {{ leaveId }}</div>
+    <div class="info"><strong>From Date:</strong> {{ fromDate }}</div>
+    <div class="info"><strong>To Date:</strong> {{ toDate }}</div>
+    <div class="info"><strong>Leave Type:</strong> {{ leaveType }}</div>
+    <div class="info"><strong>Status:</strong> {{ status }}</div>
+    <div class="info"><strong>Application Notes:</strong> {{ applicationNotes }}</div>
+    <div class="info"><strong>Other Type Description:</strong> {{ otherTypeDescription }}</div>
+
+    <p>The uploaded files are attached with this email for your reference.</p>
+
+    <p>Regards,<br>HRMS System</p>
+  </div>
+</body>
+</html>

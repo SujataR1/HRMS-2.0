@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -64,6 +65,32 @@ export async function employeeCreateLeave(authHeader, data) {
 			status: "pending",
 		},
 	});
+
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId: employeeId },
+		select: {
+			name: true,
+			assignedEmail: true,
+		},
+	});
+
+	if (employee?.assignedEmail) {
+		await sendEmployeeMail({
+			to: employee.assignedEmail,
+			purpose: "leave-applied",
+			payload: {
+				subject: "Your leave request has been submitted",
+				name: employee.name,
+				leaveId: created.id,
+				fromDate: dayjs(from).format("YYYY-MM-DD"),
+				toDate: dayjs(to).format("YYYY-MM-DD"),
+				leaveType: leaveType.join(", "),
+				applicationNotes: applicationNotes || "-",
+				otherTypeDescription: otherTypeDescription || "-",
+				status: "pending",
+			},
+		});
+	}
 
 	return {
 		success: true,
