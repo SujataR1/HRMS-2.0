@@ -33,7 +33,7 @@ export async function employeeCreateOTP(assignedEmail, purpose) {
 
 			const existing = await tx.employeeOTP.findFirst({
 				where: {
-					employeeId: employee.id,
+					employeeId: employee.employeeId,
 					purpose,
 					expiresAt: {
 						gt: new Date(),
@@ -55,7 +55,7 @@ export async function employeeCreateOTP(assignedEmail, purpose) {
 
 			await tx.employeeOTP.create({
 				data: {
-					employeeId: employee.id,
+					employeeId: employee.employeeId,
 					otp,
 					purpose,
 					expiresAt,

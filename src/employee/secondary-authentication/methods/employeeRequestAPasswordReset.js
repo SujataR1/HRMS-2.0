@@ -27,7 +27,7 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 			const otpResult = await employeeCreateOTP(assignedEmail, "passwordReset");
 
 			const settings = await tx.employeeSettings.findFirst({
-				where: { employeeId: employee.id },
+				where: { employeeId: employee.employeeId },
 			});
 
 			const sendToPersonal =
@@ -37,7 +37,7 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 
 			if (sendToPersonal) {
 				const details = await tx.employeeDetails.findUnique({
-					where: { employeeId: employee.id },
+					where: { employeeId: employee.employeeId },
 				});
 				if (details?.personalEmail) {
 					targetEmail = details.personalEmail;
