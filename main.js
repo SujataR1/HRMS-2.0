@@ -72,6 +72,7 @@ import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEnt
 import hrGetEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrGetEmployeeLeaveRegisterRoute.js";
 import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 import hrGetLeavesRoute from "./src/hr/leave/routes/hrGetLeavesRoute.js";
+import hrApproveOrRejectLeaveRoute from "./src/hr/leave/routes/hrApproveOrRejectLeaveRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
 import employeeCreateLeaveRoute from "./src/employee/leave/routes/employeeCreateLeaveRoute.js";
@@ -201,6 +202,7 @@ await app.register(hrLoginRoute);
 await app.register(hrCreateEmployeeLeaveRegisterRoute);
 await app.register(hrGetEmployeeLeaveRegisterRoute);
 await app.register(hrLogoutRoute);
+await app.register(hrApproveOrRejectLeaveRoute);
 await app.register(hrVerify2FAAndLoginRoute);
 await app.register(hrResetEmployeeLeaveRegisterRoute);
 await app.register(hrRequestAPasswordResetRoute);
