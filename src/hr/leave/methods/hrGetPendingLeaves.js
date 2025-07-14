@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { PrismaClient } from "@prisma/client";
-import { hrVerifyJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -15,7 +15,7 @@ export async function hrGetPendingLeaves(authHeader) {
 		throw new Error("Authorization header missing or invalid");
 	}
 
-	await hrVerifyJWT(authHeader);
+	await verifyHrJWT(authHeader);
 
 	const now = dayjs().tz(LOCAL_TZ).startOf("day");
 
