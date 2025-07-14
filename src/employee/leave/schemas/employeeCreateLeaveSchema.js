@@ -8,6 +8,7 @@ const EmployeeAllowedLeaveTypes = [
 	"OTHER",
 	"MATERNITY",
 	"PATERNITY",
+	"COMP_OFF"
 ];
 
 export const employeeCreateLeaveSchema = z.object({
