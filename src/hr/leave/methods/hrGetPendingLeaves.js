@@ -8,7 +8,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const prisma = new PrismaClient();
-const LOCAL_TZ = process.env.TIMEZONE || "Asia/Kolkata";
 
 export async function hrGetPendingLeaves(authHeader) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
