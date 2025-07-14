@@ -83,7 +83,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 			await sendEmployeeMail({
 				to: settings.sendOTPsToPersonalEmail
 					? (await tx.employeeDetails.findUnique({
-							where: { employeeId: employee.id },
+							where: { employeeId: employee.employeeId },
 					  })).personalEmail
 					: assignedEmail,
 				purpose: "twoFA",
