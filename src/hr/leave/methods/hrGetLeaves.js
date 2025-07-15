@@ -46,9 +46,11 @@ export async function hrGetLeaves(authHeader, filters = {}) {
 	};
 
 	const leaves = await prisma.leave.findMany({
-		where,
-		orderBy: { fromDate: "desc" },
-		employeeId,
+	where: {
+		...where,
+		// employeeId: employeeId,
+	},
+	orderBy: { fromDate: "desc" },
 	});
 
 	const attachments = await prisma.leaveAttachments.findMany({
@@ -67,8 +69,6 @@ export async function hrGetLeaves(authHeader, filters = {}) {
 	return leaves.map((leave) => ({
 		id: leave.id,
 		employeeId: leave.employeeId,
-		employeeName: leave.employee.name,
-		employeeCode: leave.employee.employeeId,
 		fromDate: dayjs.utc(leave.fromDate).tz(TIMEZONE).format("YYYY-MM-DD"),
 		toDate: dayjs.utc(leave.toDate).tz(TIMEZONE).format("YYYY-MM-DD"),
 		leaveType: leave.leaveType,
