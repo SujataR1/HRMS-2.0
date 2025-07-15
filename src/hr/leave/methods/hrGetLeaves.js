@@ -48,14 +48,7 @@ export async function hrGetLeaves(authHeader, filters = {}) {
 	const leaves = await prisma.leave.findMany({
 		where,
 		orderBy: { fromDate: "desc" },
-		include: {
-			employee: {
-				select: {
-					name: true,
-					employeeId: true,
-				},
-			},
-		},
+		employeeId,
 	});
 
 	const attachments = await prisma.leaveAttachments.findMany({
