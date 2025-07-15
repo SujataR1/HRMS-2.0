@@ -4,7 +4,6 @@ import { LeaveStatus, LeaveType } from "@prisma/client";
 export const hrGetLeavesSchema = z.object({
 	employeeId: z
 		.string()
-		.uuid("Invalid employee ID")
 		.optional(),
 
 	fromDate: z
