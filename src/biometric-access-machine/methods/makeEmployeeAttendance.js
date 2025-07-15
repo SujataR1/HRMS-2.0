@@ -227,6 +227,11 @@ export async function makeEmployeeAttendance({
 			const leaveKey = `${empId}_${dayKey}`;
 			const leaveType = leaveMap.get(leaveKey);
 
+			let status = "absent";
+			let flags = [];
+			let pin = null,
+				pout = null;
+			
 			if (leaveType && !["UNPAID", "LOP"].includes(leaveType)) {
 				status = "approvedLeave";
 				flags = ["approvedLeave"];
@@ -295,11 +300,6 @@ export async function makeEmployeeAttendance({
 					)
 				)
 				.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
-
-			let status = "absent";
-			let flags = [];
-			let pin = null,
-				pout = null;
 
 			if (
 				isHoliday ||
