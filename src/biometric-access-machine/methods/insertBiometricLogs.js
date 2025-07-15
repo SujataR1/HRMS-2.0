@@ -36,10 +36,7 @@ export async function insertBiometricLogs(logs = []) {
       logs.map(({ employeeId, timestamp }) =>
         makeEmployeeAttendance({
           employeeId,
-          date: dayjs
-            .tz(timestamp, TIMEZONE)      // localise to env TZ
-            .startOf("day")               // midnight local
-            .toDate(),                    // JS Date (UTC under the hood)
+          date: new Date(dayjs.tz(timestamp, TIMEZONE).format("YYYY-MM-DD")),
         })
       )
     );
