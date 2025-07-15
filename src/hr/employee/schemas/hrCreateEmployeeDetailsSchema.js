@@ -54,5 +54,5 @@ export const hrCreateEmployeeDetailsSchema = z.object({
 	bankAccountNumber: z.string().min(1),
 	ifsCode: z.string().min(1),
 
-	assignedShiftId: z.string().optional().nullable(),
+	assignedShiftId: z.string().uuid().optional().nullable(),
 });

@@ -1,10 +1,11 @@
 import fastifyStatic from "@fastify/static";
-import { PrismaClient } from "@prisma/client";
+import { AdminOTPPurpose, PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
 import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
+import verifyAuthPlugin from "./src/plugins/verifyAuthPlugin.js";
 import { gracefulAuditShutdown } from "./src/utils/logging/methods/logQueue.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +31,7 @@ import adminChangePasswordRoute from "./src/admin/secondary-authentication/route
 import adminRequestAPasswordResetRoute from "./src/admin/secondary-authentication/routes/adminRequestAPasswordResetRoute.js";
 import adminRequestEmailVerificationRoute from "./src/admin/secondary-authentication/routes/adminRequestEmailVerificationRoute.js";
 import adminResetPasswordRoute from "./src/admin/secondary-authentication/routes/adminResetPasswordRoute.js";
+import adminMakeOrRefreshEmployeeAttendanceRoute from "./src/admin/attendance/routes/adminMakeOrRefreshEmployeeAttendanceRoute.js";
 import adminVerify2FAAndLoginRoute from "./src/admin/secondary-authentication/routes/adminVerify2FAAndLoginRoute.js";
 import adminVerifyEmailRoute from "./src/admin/secondary-authentication/routes/adminVerifyEmailRoute.js";
 import adminGetSettingsRoute from "./src/admin/settings/routes/adminGetSettingsRoute.js";
@@ -48,19 +50,38 @@ import hrLogoutRoute from "./src/hr/auth/routes/hrLogoutRoute.js";
 import hrAssignAnEmployeeAShiftRoute from "./src/hr/employee/routes/hrAssignAnEmployeeAShiftRoute.js";
 import hrCreateAnEmployeeRoute from "./src/hr/employee/routes/hrCreateAnEmployeeRoute.js";
 import hrCreateEmployeeDetailsRoute from "./src/hr/employee/routes/hrCreateEmployeeDetailsRoute.js";
+import hrCreateEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrCreateEmployeeLeaveRegisterRoute.js";
 import hrGetAllEmployeeProfileRoute from "./src/hr/employee/routes/hrGetAllEmployeeProfileRoute.js";
 import hrGetEmployeeDetailsRoute from "./src/hr/employee/routes/hrGetEmployeeDetailsRoute.js";
 import hrUpdateAnEmployeeRoute from "./src/hr/employee/routes/hrUpdateAnEmployeeRoute.js";
 import hrUpdateEmployeeDetailsRoute from "./src/hr/employee/routes/hrUpdateEmployeeDetailsRoute.js";
 import hrCreateAHolidayRoute from "./src/hr/holidays/routes/hrCreateAHolidayEntryRoute.js";
 import hrChangePasswordRoute from "./src/hr/secondary-authentication/routes/hrChangePasswordRoute.js";
+import hrEditEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrEditEmployeeLeaveRegisterRoute.js";
 import hrRequestAPasswordResetRoute from "./src/hr/secondary-authentication/routes/hrRequestAPasswordResetRoute.js";
 import hrResetPasswordRoute from "./src/hr/secondary-authentication/routes/hrResetPasswordRoute.js";
 import hrVerify2FAAndLoginRoute from "./src/hr/secondary-authentication/routes/hrVerify2FAAndLoginRoute.js";
 import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
+import hrGetProfileRoute from "./src/hr/profile/routes/hrGetProfileRoute.js";
+import hrResetEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrResetEmployeeLeaveRegisterRoute.js";
+import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
+import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAttendanceEntryRoute.js";
+import hrGetHolidayEntriesRoute from "./src/hr/holidays/routes/hrGetHolidayEntriesRoute.js";
+import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEntryRoute.js";
+import hrGetEmployeeLeaveRegisterRoute from "./src/hr/leave-register/routes/hrGetEmployeeLeaveRegisterRoute.js";
+import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
+import hrGetLeavesRoute from "./src/hr/leave/routes/hrGetLeavesRoute.js";
+import hrApproveOrRejectLeaveRoute from "./src/hr/leave/routes/hrApproveOrRejectLeaveRoute.js";
+import hrGetPendingLeavesRoute from "./src/hr/leave/routes/hrGetPendingLeavesRoute.js";
 
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
+import employeeCreateLeaveRoute from "./src/employee/leave/routes/employeeCreateLeaveRoute.js";
+import employeeGetLeavesRoute from "./src/employee/leave/routes/employeeGetLeavesRoute.js";
+import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
+import employeeCancelLeaveRoute from "./src/employee/leave/routes/employeeCancelLeaveRoute.js";
+import employeeEditLeaveNotesRoute from "./src/employee/leave/routes/employeeEditLeaveNotesRoute.js";
+import employeeUploadLeaveAttachmentsRoute from "./src/employee/leave/routes/employeeUploadLeaveAttachmentsRoute.js";
 import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
 import employeeChangePasswordRoute from "./src/employee/secondary-authentication/routes/employeeChangePasswordRoute.js";
 import employeeRequestAPasswordResetRoute from "./src/employee/secondary-authentication/routes/employeeRequestAPasswordResetRoute.js";
@@ -105,9 +126,12 @@ app.register(fastifyCors, {
     "Accept",
     "Origin",
 	"user-agent",
-	"referer"
+	"referer",
+	"x-auth-sign",
   ],
 });
+
+app.register(verifyAuthPlugin);
 
 app.register(fastifyStatic, {
 	root: path.join(__dirname, "media"),
@@ -122,7 +146,7 @@ process.on("SIGINT", async () => {
 });
 
 app.get("/", async (req, reply) => {
-	return reply.code(200).send("This is the HRMS backend!");
+	return reply.code(200).send("This is the HRMS backend!\n [x-auth-sign: `VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==`]");
 });
 
 app.get("/favicon.ico", async (req, reply) => {
@@ -160,6 +184,7 @@ await app.register(adminAssignAnEmployeeAShiftRoute);
 await app.register(adminCreateEmployeeDetailsRoute);
 await app.register(adminGetAllEmployeeProfileRoute);
 await app.register(adminGetEmployeeDetailsRoute);
+await app.register(adminMakeOrRefreshEmployeeAttendanceRoute);
 await app.register(adminUpdateAnEmployeeRoute);
 await app.register(adminUpdateEmployeeDetailsRoute);
 
@@ -172,13 +197,26 @@ await app.register(hrUpdateEmployeeDetailsRoute);
 await app.register(hrGetAllEmployeeProfileRoute);
 await app.register(hrGetEmployeeDetailsRoute);
 await app.register(hrGetAllShiftsRoute);
+await app.register(hrGenerateAndSendMonthlyReportsRoute);
 await app.register(hrAssignAnEmployeeAShiftRoute);
 await app.register(hrLoginRoute);
+await app.register(hrCreateEmployeeLeaveRegisterRoute);
+await app.register(hrGetEmployeeLeaveRegisterRoute);
 await app.register(hrLogoutRoute);
+await app.register(hrApproveOrRejectLeaveRoute);
 await app.register(hrVerify2FAAndLoginRoute);
+await app.register(hrResetEmployeeLeaveRegisterRoute);
 await app.register(hrRequestAPasswordResetRoute);
 await app.register(hrResetPasswordRoute);
 await app.register(hrChangePasswordRoute);
+await app.register(hrGetPendingLeavesRoute);
+await app.register(hrGetProfileRoute);
+await app.register(hrGetEmployeeAttendanceRoute);
+await app.register(hrEditAnAttendanceEntryRoute);
+await app.register(hrGetHolidayEntriesRoute);
+await app.register(hrGetLeavesRoute);
+await app.register(hrEditAHolidayEntryRoute);
+await app.register(hrEditEmployeeLeaveRegisterRoute);
 
 await app.register(employeeLoginRoute);
 await app.register(employeeLogoutRoute);
@@ -186,6 +224,12 @@ await app.register(employeeChangePasswordRoute);
 await app.register(employeeRequestAPasswordResetRoute);
 await app.register(employeeResetPasswordRoute);
 await app.register(employeeVerify2FAAndLoginRoute);
+await app.register(employeeGetAttendanceRoute);
+await app.register(employeeCreateLeaveRoute);
+await app.register(employeeCancelLeaveRoute);
+await app.register(employeeGetLeavesRoute);
+await app.register(employeeUploadLeaveAttachmentsRoute);
+await app.register(employeeEditLeaveNotesRoute);
 
 const PORT = process.env.PORT || 3000;
 

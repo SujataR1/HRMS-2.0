@@ -60,7 +60,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 
 			if (!settings.isTwoFA) {
 				const token = await createEmployeeJWT(employee.id, {
-					employeeId: employee.id,
+					employeeId: employee.employeeId,
 				});
 
 				auditor({
@@ -83,7 +83,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 			await sendEmployeeMail({
 				to: settings.sendOTPsToPersonalEmail
 					? (await tx.employeeDetails.findUnique({
-							where: { employeeId: employee.id },
+							where: { employeeId: employee.employeeId },
 					  })).personalEmail
 					: assignedEmail,
 				purpose: "twoFA",

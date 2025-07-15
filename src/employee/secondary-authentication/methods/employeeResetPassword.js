@@ -22,7 +22,7 @@ export async function employeeResetPassword(assignedEmail, otp, newPassword) {
 			const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
 
 			await tx.employee.update({
-				where: { id: employeeId },
+				where: { employeeId: employeeId },
 				data: { password: hashed },
 			});
 

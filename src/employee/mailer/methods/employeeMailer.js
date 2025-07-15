@@ -49,4 +49,39 @@ export async function sendEmployeeMail({ to, purpose, payload = {} }) {
 		console.error("🔥 Failed to send employee mail:", err);
 		throw err;
 	}
+
+}
+
+export async function sendEmployeeMailWithAttachments({ to, purpose, payload = {}, attachments = [] }) {
+	try {
+		const templatePath = path.join(TEMPLATES_DIR, `${purpose}.html`);
+
+		if (!fs.existsSync(templatePath)) {
+			throw new Error(`Email template not found for purpose: ${purpose}`);
+		}
+
+		let html = fs.readFileSync(templatePath, "utf-8");
+
+		for (const key in payload) {
+			const pattern = new RegExp(`{{\s*${key}\s*}}`, "g");
+			html = html.replace(pattern, payload[key]);
+		}
+
+		const subject = payload.subject || `Notification from HRMS – ${purpose}`;
+
+		await transporter.sendMail({
+			from:
+				process.env.SMTP_FROM ||
+				'"HRMS System" <no-reply@yourdomain.com>',
+			to,
+			subject,
+			html,
+			attachments,
+		});
+
+		return { success: true };
+	} catch (err) {
+		console.error("🔥 Failed to send employee mail with attachments:", err);
+		throw err;
+	}
 }

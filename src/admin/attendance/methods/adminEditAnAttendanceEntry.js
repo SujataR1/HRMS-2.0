@@ -36,7 +36,7 @@ export async function adminEditAnAttendanceEntry(
 			if (!admin) throw new Error("Admin not found");
 
 			const employee = await tx.employee.findUnique({
-				where: { id: employeeId },
+				where: { employeeId: employeeId },
 			});
 			if (!employee) throw new Error("Employee not found");
 

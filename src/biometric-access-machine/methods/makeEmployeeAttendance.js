@@ -416,6 +416,7 @@ export async function makeEmployeeAttendance({
 	await pMap(
 		upserts,
 		async (rec) => {
+			console.log("Upserts to perform:", upserts.length);
 			const existing = await prisma.attendanceLog.findUnique({
 				where: {
 					employeeId_attendanceDate: {

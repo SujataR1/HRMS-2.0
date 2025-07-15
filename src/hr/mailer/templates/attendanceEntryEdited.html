@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Attendance Entry Edited</title>
+  </head>
+  <body style="font-family: sans-serif; padding: 1rem;">
+    <h2>📢 Your Attendance Entry Was Edited</h2>
+
+    <p>
+      Hello {{ name }},<br />
+      This is to inform you that your attendance log for <strong>{{ attendanceDate }}</strong>
+      was manually edited by a HR on <strong>{{ editTimestamp }}</strong>.
+    </p>
+
+    <h3>🕒 Previous Entry</h3>
+    <ul>
+      <li><strong>Punch In:</strong> {{ oldPunchIn }}</li>
+      <li><strong>Punch Out:</strong> {{ oldPunchOut }}</li>
+      <li><strong>Status:</strong> {{ oldStatus }}</li>
+      <li><strong>Flags:</strong> {{ oldFlags }}</li>
+      <li><strong>Comments:</strong> {{ oldComments }}</li>
+    </ul>
+
+    <h3>✍️ Updated Entry</h3>
+    <ul>
+      <li><strong>Punch In:</strong> {{ newPunchIn }}</li>
+      <li><strong>Punch Out:</strong> {{ newPunchOut }}</li>
+      <li><strong>Status:</strong> {{ newStatus }}</li>
+      <li><strong>Flags:</strong> {{ newFlags }}</li>
+      <li><strong>Comments:</strong> {{ newComments }}</li>
+    </ul>
+
+    <p>
+      If you believe this update was incorrect or have any concerns,
+      please contact your HR or reporting manager.
+    </p>
+
+    <p>Thank you,<br />HRMS Attendance System</p>
+  </body>
+</html>

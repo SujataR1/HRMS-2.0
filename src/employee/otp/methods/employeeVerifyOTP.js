@@ -33,7 +33,7 @@ export async function employeeVerifyOTP(assignedEmail, purpose, otp) {
 
 			const match = await tx.employeeOTP.findFirst({
 				where: {
-					employeeId: employee.id,
+					employeeId: employee.employeeId,
 					purpose,
 					otp,
 					expiresAt: {
@@ -52,7 +52,7 @@ export async function employeeVerifyOTP(assignedEmail, purpose, otp) {
 
 			return {
 				success: true,
-				employeeId: employee.id,
+				employeeId: employee.employeeId,
 			};
 		});
 
