@@ -40,18 +40,30 @@ export async function employeeCreateLeave(authHeader, data) {
 		throw new Error("fromDate cannot be after toDate");
 	}
 
-	// Check for existing overlapping leave
-	const existing = await prisma.leave.findFirst({
-		where: {
-			employeeId,
-			fromDate,
-			toDate,
-			status: {not :"cancelled"}
-		},
-	});
-	if (existing) {
-		throw new Error("A leave request already exists for this date range");
-	}
+	// // Check for existing overlapping leave
+	// const existing = await prisma.leave.findFirst({
+	// 	where: {
+	// 		employeeId,
+	// 		fromDate,
+	// 		toDate,
+	// 		status: {not :"cancelled"}
+	// 	},
+	// });
+	// if (existing) {
+	// 	throw new Error("A leave request already exists for this date range");
+	// }
+
+	// Check for existing overlapping leave (date range overlap)
+    const existing = await prisma.leave.findFirst({
+    where: {
+        employeeId,
+        status: { not: "cancelled" },
+        AND: [
+        { fromDate: { lte: to } },  // leave starts on or before requested toDate
+        { toDate: { gte: from } },  // leave ends on or after requested fromDate
+        ],
+    },
+    });
 
 	// Create the leave record
 	const created = await prisma.leave.create({
