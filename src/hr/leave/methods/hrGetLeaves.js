@@ -69,7 +69,6 @@ export async function hrGetLeaves(authHeader, filters = {}) {
 	return leaves.map((leave) => ({
 		id: leave.id,
 		employeeId: leave.employeeId,
-		employeeCode: leave.employeeId,
 		fromDate: dayjs.utc(leave.fromDate).tz(TIMEZONE).format("YYYY-MM-DD"),
 		toDate: dayjs.utc(leave.toDate).tz(TIMEZONE).format("YYYY-MM-DD"),
 		leaveType: leave.leaveType,
