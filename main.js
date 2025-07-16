@@ -140,7 +140,11 @@ app.register(fastifyStatic, {
 	prefix: "/media/",
 });
 
-await app.register(fastifyMultipart);
+app.register(fastifyMultipart, {
+  limits: {
+    fileSize: 20 * 1024 * 1024, // 20MB or whatever you want
+  },
+});
 
 process.on("SIGINT", async () => {
 	console.log("🛑 SIGINT received. Flushing audit log queue...");
