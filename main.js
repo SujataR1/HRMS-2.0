@@ -154,7 +154,7 @@ process.on("SIGINT", async () => {
 });
 
 app.get("/", async (req, reply) => {
-	return reply.code(200).send("This is the HRMS backend!\n [x-auth-sign: `VqBivKQXe1BC0EuvLepSMwqreaVPkIBHdTeXoZh2003uJxPvbw/rOXBN0XPvyWJNNGK/SCl+y4e+U6UIFpcEXA==`]");
+	return reply.code(200).send("This is the HRMS backend!\n [x-auth-sign: `70ad4dbf27e3a2ddfd453514165fc4c9 ||| 7540aa6b11c733ebea260c15e542f361c10230aad1339eab7016df181694d7be9c58b65f3c3ed3865259d11b22adb736`]");
 });
 
 app.get("/favicon.ico", async (req, reply) => {
