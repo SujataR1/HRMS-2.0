@@ -57,9 +57,13 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		}
 	}
 
-	const leave = await prisma.leave.findUnique({
+	const leave = await prisma.leave.findFirst({
 		where: { id: leaveId },
 	});
+
+	if (!leave) {
+	throw new Error("Leave not found");
+	}
 
 	const employee = await prisma.employee.findUnique({
 		where: { employeeId: leave.employeeId },
