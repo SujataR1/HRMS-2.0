@@ -112,7 +112,7 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		},
 	});
 
-	const attachmentsRecord = await prisma.leaveAttachments.findUnique({
+	const attachmentsRecord = await prisma.leaveAttachments.findFirst({
 	where: { leaveId: leave.id },
 	});
 
