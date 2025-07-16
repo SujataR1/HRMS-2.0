@@ -1,10 +1,17 @@
 import fs from "fs";
 import path from "path";
-import dayjs from "dayjs"; // If not already imported
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMailWithAttachments } from "../../mailer/methods/employeeMailer.js";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
+import dayjs from "dayjs";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 const prisma = new PrismaClient();
 const UPLOAD_DIR = path.join(process.cwd(), "media", "leave-attachments");
@@ -30,8 +37,11 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 		throw new Error("Attachments can only be uploaded for pending leaves");
 	}
 
-	if (dayjs().isAfter(leave.toDate)) {
-	throw new Error("Cannot edit leave notes after the leave's end date");
+	const now = dayjs().tz(TIMEZONE);
+	const leaveEnd = dayjs(leave.toDate).tz(TIMEZONE);
+
+	if (now.isAfter(leaveEnd)) {
+	throw new Error("Cannot upload attachments after the leave's end date");
 	}
 
 	if (!Array.isArray(files) || files.length === 0) {
