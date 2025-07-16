@@ -43,6 +43,7 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 	}
 
 	const savedPaths = [];
+	const attachmentsToSend = [];
 
 	for (const file of files) {
 		const ext = path.extname(file.filename);
