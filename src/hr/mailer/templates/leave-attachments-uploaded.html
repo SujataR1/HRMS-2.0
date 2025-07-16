@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leave Attachments Uploaded</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; color: #333; }
+    .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    h2 { color: #4CAF50; }
+    .info strong { display: inline-block; width: 180px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Leave Attachments Uploaded</h2>
+    <p>{{ name }} has uploaded attachments for their leave request.</p>
+    <div class="info"><strong>Leave ID:</strong> {{ leaveId }}</div>
+    <div class="info"><strong>From:</strong> {{ fromDate }}</div>
+    <div class="info"><strong>To:</strong> {{ toDate }}</div>
+    <div class="info"><strong>Type:</strong> {{ leaveType }}</div>
+    <div class="info"><strong>Status:</strong> {{ status }}</div>
+    <div class="info"><strong>Notes:</strong> {{ applicationNotes }}</div>
+    <div class="info"><strong>Other Description:</strong> {{ otherTypeDescription }}</div>
+    <p>The attachments are included with this email.</p>
+  </div>
+</body>
+</html>

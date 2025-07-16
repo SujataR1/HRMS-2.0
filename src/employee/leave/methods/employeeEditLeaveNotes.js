@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
+import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
@@ -79,6 +80,23 @@ export async function employeeEditLeaveNotes(authHeader, { leaveId, applicationN
 				applicationNotes: applicationNotes || "-",
 				otherTypeDescription: otherTypeDescription || "-",
 			},
+		});
+
+		await notifyAllHR({
+		purpose: "leave-notes-updated",
+		payload: {
+			subject: `Leave notes updated by ${employee.name}`,
+			name: employee.name,
+			leaveId,
+			fromDate: dayjs(leave.fromDate).format("YYYY-MM-DD"),
+			toDate: dayjs(leave.toDate).format("YYYY-MM-DD"),
+			status: leave.status,
+			leaveType: leave.leaveType.join(", "),
+			previousApplicationNotes,
+			previousOtherTypeDescription,
+			applicationNotes: applicationNotes || "-",
+			otherTypeDescription: otherTypeDescription || "-",
+		},
 		});
 	}
 

@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMailWithAttachments } from "../../mailer/methods/employeeMailer.js";
+import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
@@ -109,6 +110,23 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 				otherTypeDescription: leave.otherTypeDescription || "-",
 			},
 			attachments: attachmentsToSend,
+		});
+
+		await notifyAllHR({
+		purpose: "leave-attachments-uploaded",
+		payload: {
+			subject: `Leave attachments uploaded by ${employee.name}`,
+			name: employee.name,
+			leaveId,
+			fromDate: dayjs(leave.fromDate).format("YYYY-MM-DD"),
+			toDate: dayjs(leave.toDate).format("YYYY-MM-DD"),
+			leaveType: leave.leaveType.join(", "),
+			status: leave.status,
+			applicationNotes: leave.applicationNotes || "-",
+			otherTypeDescription: leave.otherTypeDescription || "-",
+		},
+		attachments: true,
+		attachmentFiles: attachmentsToSend,
 		});
 	}
 

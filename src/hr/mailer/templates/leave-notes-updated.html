@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leave Notes Updated</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; color: #333; }
+    .container { background: #fff; padding: 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+    h2 { color: #007b5e; }
+    .info strong { display: inline-block; width: 180px; }
+    .section { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Leave Notes Updated</h2>
+    <p>{{ name }} has updated the notes on their pending leave:</p>
+    <div class="info"><strong>Leave ID:</strong> {{ leaveId }}</div>
+    <div class="info"><strong>Type:</strong> {{ leaveType }}</div>
+    <div class="info"><strong>Status:</strong> {{ status }}</div>
+    <div class="info"><strong>From:</strong> {{ fromDate }}</div>
+    <div class="info"><strong>To:</strong> {{ toDate }}</div>
+
+    <div class="section">
+      <h3>Application Notes</h3>
+      <div><strong>Previous:</strong> {{ previousApplicationNotes }}</div>
+      <div><strong>Updated:</strong> {{ applicationNotes }}</div>
+    </div>
+
+    <div class="section">
+      <h3>Other Description</h3>
+      <div><strong>Previous:</strong> {{ previousOtherTypeDescription }}</div>
+      <div><strong>Updated:</strong> {{ otherTypeDescription }}</div>
+    </div>
+  </div>
+</body>
+</html>
