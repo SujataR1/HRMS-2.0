@@ -1,4 +1,5 @@
 import fastifyStatic from "@fastify/static";
+import fastifyMultipart from "@fastify/multipart";
 import { AdminOTPPurpose, PrismaClient } from "@prisma/client";
 import Fastify from "fastify";
 import fastifyCors from "@fastify/cors";
@@ -138,6 +139,8 @@ app.register(fastifyStatic, {
 	root: path.join(__dirname, "media"),
 	prefix: "/media/",
 });
+
+await app.register(fastifyMultipart);
 
 process.on("SIGINT", async () => {
 	console.log("🛑 SIGINT received. Flushing audit log queue...");
