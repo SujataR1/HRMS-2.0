@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Leave Rejected</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #fff6f6;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #f44336;
+    }
+    .info strong {
+      display: inline-block;
+      width: 180px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Hello {{ name }},</h2>
+    <p>We regret to inform you that your leave request has been <strong>rejected</strong>.</p>
+
+    <div class="info"><strong>Leave ID:</strong> {{ leaveId }}</div>
+    <div class="info"><strong>From Date:</strong> {{ fromDate }}</div>
+    <div class="info"><strong>To Date:</strong> {{ toDate }}</div>
+    <div class="info"><strong>Leave Type:</strong> {{ leaveType }}</div>
+    <div class="info"><strong>Status:</strong> {{ status }}</div>
+    <div class="info"><strong>Application Notes:</strong> {{ applicationNotes }}</div>
+    <div class="info"><strong>Other Type Description:</strong> {{ otherTypeDescription }}</div>
+
+    <p>If you believe this was a mistake or need clarification, please reach out to HR.</p>
+
+    <p>Regards,<br>HRMS System</p>
+  </div>
+</body>
+</html>

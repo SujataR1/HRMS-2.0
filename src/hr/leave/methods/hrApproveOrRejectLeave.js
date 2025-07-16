@@ -3,6 +3,7 @@ import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManage
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
+import { sendEmployeeMail, sendEmployeeMailWithAttachments } from "../../../employee/mailer/methods/employeeMailer.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -60,6 +61,12 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		where: { id: leaveId },
 	});
 
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId: leave.employeeId },
+		select: { name: true, assignedEmail: true },
+	});
+
+
 	if (!leave) {
 		throw new Error("Leave not found");
 	}
@@ -100,6 +107,43 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 			leaveType: updatedLeaveType,
 		},
 	});
+
+	const attachmentsRecord = await prisma.leaveAttachments.findUnique({
+	where: { leaveId: leave.id },
+	});
+
+	const attachmentFiles = attachmentsRecord?.attachmentPaths?.map((path) => ({
+		filename: path.split("/").pop(),
+		path: path.startsWith("/") ? `.${path}` : `./${path}`, // relative path for nodemailer
+	})) || [];
+
+	const payload = {
+		subject: `Your leave has been ${action}`,
+		name: employee.name,
+		leaveId: leave.id,
+		fromDate: dayjs(leave.fromDate).format("YYYY-MM-DD"),
+		toDate: dayjs(leave.toDate).format("YYYY-MM-DD"),
+		leaveType: updatedLeaveType.join(", "),
+		status: action,
+		applicationNotes: leave.applicationNotes || "-",
+		otherTypeDescription: leave.otherTypeDescription || "-",
+	};
+
+	if (employee?.assignedEmail) {
+		if (attachmentFiles.length > 0) {
+			await sendEmployeeMailWithAttachments({
+				to: employee.assignedEmail,
+				purpose: `leave-${action}`, // 'leave-approved' or 'leave-rejected'
+				payload,
+				attachments: attachmentFiles,
+			});
+		} else {
+			await sendEmployeeMail({
+				to: employee.assignedEmail,
+				purpose: `leave-${action}`,
+				payload,
+			});
+		}}
 
 	return {
 		success: true,
