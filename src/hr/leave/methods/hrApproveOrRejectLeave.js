@@ -1,6 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 const prisma = new PrismaClient();
 
@@ -61,11 +68,13 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		throw new Error("Only pending leaves can be approved or rejected");
 	}
 
-	const now = dayjs();
-	const leaveStart = dayjs(leave.fromDate);
-	if (!now.isBefore(leaveStart, "day")) {
-		throw new Error("Leave can only be approved or rejected before the start date");
+	const now = dayjs().tz(TIMEZONE).startOf("day");
+	const leaveStart = dayjs(leave.fromDate).tz(TIMEZONE).startOf("day");
+
+	if (!now.isBefore(leaveStart)) {
+	throw new Error("Leave can only be approved or rejected before the start date");
 	}
+
 
 	let updatedLeaveType = leave.leaveType;
 

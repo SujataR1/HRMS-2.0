@@ -4,6 +4,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
+import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -102,7 +103,24 @@ export async function employeeCreateLeave(authHeader, data) {
 				status: "pending",
 			},
 		});
+
+		await notifyAllHR({
+		purpose: "leave-applied",
+		payload: {
+			subject: `New leave request from ${employee.name}`,
+			name: employee.name,
+			leaveId: created.id,
+			fromDate: dayjs(from).format("YYYY-MM-DD"),
+			toDate: dayjs(to).format("YYYY-MM-DD"),
+			leaveType: leaveType.join(", "),
+			status: "pending",
+			applicationNotes: applicationNotes || "-",
+			otherTypeDescription: otherTypeDescription || "-",
+		},
+		});
 	}
+
+
 
 	return {
 		success: true,
