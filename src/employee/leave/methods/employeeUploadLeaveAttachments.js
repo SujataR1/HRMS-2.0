@@ -8,6 +8,7 @@ import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import dayjs from "dayjs";
+import { pipeline } from "stream/promises";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -61,7 +62,8 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, file
 		const filename = `${employeeId}-${Date.now()}-${randomUUID()}${ext}`;
 		const savePath = path.join(UPLOAD_DIR, filename);
 
-		await file.toFile(savePath);
+		// await file.toFile(savePath);
+		await pipeline(file.file, fs.createWriteStream(savePath));
 		const relativePath = `/media/leave-attachments/${filename}`;
 		savedPaths.push(relativePath);
 			attachmentsToSend.push({
