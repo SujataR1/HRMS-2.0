@@ -71,9 +71,9 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 	});
 
 
-	if (!leave) {
-		throw new Error("Leave not found");
-	}
+	// if (!leave) {
+	// 	throw new Error("Leave not found");
+	// }
 
 	if (leave.status !== "pending") {
 		throw new Error("Only pending leaves can be approved or rejected");
