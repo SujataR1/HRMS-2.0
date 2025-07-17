@@ -13,5 +13,5 @@ schema.prisma.txt
 forUpload.txt
 logs
 media/leave-attachments
-.exe
+*.exe
 bun.lock
