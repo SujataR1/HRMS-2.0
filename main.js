@@ -9,8 +9,6 @@ import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
 import verifyAuthPlugin from "./src/plugins/verifyAuthPlugin.js";
 import { gracefulAuditShutdown } from "./src/utils/logging/methods/logQueue.js";
 
-const __filename = fileURLToPath(import.meta.url);
-
 import handleGetRequestRoute from "./src/biometric-access-machine/routes/handleGetRequestRoute.js";
 import postBiometricLogsRoute from "./src/biometric-access-machine/routes/handlePostBiometricLogsRoute.js";
 
