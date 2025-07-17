@@ -17,8 +17,16 @@ export const adminEditAnAttendanceEntrySchema = z.object({
 			message: "Invalid date format",
 		}),
 
-	punchIn: z.string().datetime().optional(),
-	punchOut: z.string().datetime().optional(),
+	// punchIn: z.string().datetime().optional(),
+	// punchOut: z.string().datetime().optional(),
+
+	punchIn: z.string().refine(val => !isNaN(Date.parse(val)), {
+	message: "Invalid punch-in datetime format"
+	}).optional(),
+
+	punchOut: z.string().refine(val => !isNaN(Date.parse(val)), {
+	message: "Invalid punch-out datetime format"
+	}).optional(),
 
 	status: z.enum([...attendanceStatusEnum]).optional(),
 

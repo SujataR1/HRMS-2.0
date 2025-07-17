@@ -136,7 +136,7 @@ app.register(fastifyCors, {
 app.register(verifyAuthPlugin);
 
 app.register(fastifyStatic, {
-	root: path.join(__dirname, "media"),
+	root: path.join(process.cwd(), "media"),
 	prefix: "/media/",
 });
 

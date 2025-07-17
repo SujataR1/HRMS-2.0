@@ -3,6 +3,8 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
+import { sendAdminMail, sendAdminEmailWithAttachments } from "../../mailer/methods/adminMailer.js";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -40,15 +42,32 @@ export async function adminEditAnAttendanceEntry(
 			});
 			if (!employee) throw new Error("Employee not found");
 
-			const dateObj = dayjs(attendanceDate).startOf("day").toDate();
+			const dateObj = dayjs
+			.tz(attendanceDate, TIMEZONE) // interpret as IST
+			.startOf("day")                // lock to midnight IST
+			.format("YYYY-MM-DD HH:mm:ss"); // as a raw string without timezone
 
-			const existing = await tx.attendanceLog.findUnique({
-				where: {
-					employeeId_attendanceDate: {
-						employeeId,
-						attendanceDate: dateObj,
-					},
+			console.log(`attendanceDate:${attendanceDate}`)
+			console.log(`dateObj:${dateObj}`)
+
+			const start = dayjs
+			.tz(attendanceDate, TIMEZONE)
+			.startOf("day")
+			.toDate();
+
+			const end = dayjs
+			.tz(attendanceDate, TIMEZONE)
+			.endOf("day")
+			.toDate();
+
+			const existing = await tx.attendanceLog.findFirst({
+			where: {
+				employeeId,
+				attendanceDate: {
+				gte: start,
+				lte: end,
 				},
+			},
 			});
 
 			if (!existing) {
@@ -62,13 +81,8 @@ export async function adminEditAnAttendanceEntry(
 				sanitizedFlags.push("edited");
 			}
 
-			const punchInUTC = punchIn
-				? dayjs.tz(punchIn, TIMEZONE).utc().toDate()
-				: null;
-
-			const punchOutUTC = punchOut
-				? dayjs.tz(punchOut, TIMEZONE).utc().toDate()
-				: null;
+			const punchInUTC = punchIn ? dayjs(punchIn).utc().toDate() : null;
+			const punchOutUTC = punchOut ? dayjs(punchOut).utc().toDate() : null;
 
 			await tx.attendanceLog.update({
 				where: { id: existing.id },
