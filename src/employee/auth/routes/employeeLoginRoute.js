@@ -1,6 +1,6 @@
+import fp from "fastify-plugin";
 import { employeeLogin } from "../methods/employeeLogin.js";
 import { employeeLoginSchema } from "../schemas/employeeLoginSchema.js";
-import fp from "fastify-plugin";
 
 export default fp(async function employeeLoginRoute(fastify) {
 	fastify.post("/employee/login", async (request, reply) => {

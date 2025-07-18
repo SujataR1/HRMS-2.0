@@ -27,6 +27,7 @@ export default fp(async function hrLoginRoute(fastify) {
 
 			reply
 				.header("Authorization", `Bearer ${result.token}`)
+				.header("x-auth-sign","e1433b1aaea03f2eefedb21f15d448b3 ||| 7f6f4e73b91e97ee4349cb83376dcc7e9d94231ba991f93ea8643708ef5c3605815d61e7870c2dc1f9e82e0c7deae74c")
 				.code(200)
 				.send({
 					status: "success",
