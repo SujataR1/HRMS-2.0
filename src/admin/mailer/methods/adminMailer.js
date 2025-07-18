@@ -1,22 +1,23 @@
+import dotenv from "dotenv";
+import { SMTPClient } from "emailjs";
 import fs from "fs";
 import path from "path";
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
 
 dotenv.config();
 
 const TEMPLATES_DIR = path.resolve("src", "admin", "mailer", "templates");
 
-const transporter = nodemailer.createTransport({
+const client = new SMTPClient({
+	user: process.env.SMTP_USER,
+	password: process.env.SMTP_PASS,
 	host: process.env.SMTP_HOST,
 	port: parseInt(process.env.SMTP_PORT),
-	secure: process.env.SMTP_SECURE === "true",
-	auth: {
-		user: process.env.SMTP_USER,
-		pass: process.env.SMTP_PASS,
-	},
+	ssl: process.env.SMTP_SECURE === "true",
 });
 
+/**
+ * Sends an admin notification email using a predefined HTML template.
+ */
 export async function sendAdminMail({ to, purpose, payload = {} }) {
 	try {
 		const templatePath = path.join(TEMPLATES_DIR, `${purpose}.html`);
@@ -34,13 +35,19 @@ export async function sendAdminMail({ to, purpose, payload = {} }) {
 
 		const subject = payload.subject || `Notification: ${purpose}`;
 
-		await transporter.sendMail({
+		await client.sendAsync({
+			text: html.replace(/<[^>]*>?/gm, ""), // plain text fallback
 			from:
 				process.env.SMTP_FROM ||
 				'"HRMS Admin" <no-reply@yourdomain.com>',
 			to,
 			subject,
-			html,
+			attachment: [
+				{
+					data: html,
+					alternative: true,
+				},
+			],
 		});
 
 		return {
@@ -52,6 +59,9 @@ export async function sendAdminMail({ to, purpose, payload = {} }) {
 	}
 }
 
+/**
+ * Sends an admin email with file attachments.
+ */
 export async function sendAdminEmailWithAttachments({
 	to,
 	purpose,
@@ -74,17 +84,24 @@ export async function sendAdminEmailWithAttachments({
 
 		const subject = payload.subject || `Notification: ${purpose}`;
 
-		await transporter.sendMail({
+		await client.sendAsync({
+			text: html.replace(/<[^>]*>?/gm, ""),
 			from:
 				process.env.SMTP_FROM ||
 				'"HRMS Admin" <no-reply@yourdomain.com>',
 			to,
 			subject,
-			html,
-			attachments: attachments.map((filePath) => ({
-				filename: path.basename(filePath),
-				path: filePath,
-			})),
+			attachment: [
+				{
+					data: html,
+					alternative: true,
+				},
+				...attachments.map((filePath) => ({
+					path: filePath,
+					name: path.basename(filePath),
+					type: "application/octet-stream",
+				})),
+			],
 		});
 
 		return { success: true };
