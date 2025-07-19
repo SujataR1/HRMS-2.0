@@ -27,6 +27,7 @@ export default fp(async function adminLoginRoute(fastify) {
 
 			reply
 				.header("Authorization", `Bearer ${result.token}`)
+				.header("x-auth-sign", "924b1c569d9fb5e8b12c9e1bb7ca2c16 ||| 37feda7ffca971221c89ee8516ed43f49be87a671cbd1090e55d632833f0b70a8f239dd62d880722f1b16144537c7fc5")
 				.code(200)
 				.send({
 					status: "success",

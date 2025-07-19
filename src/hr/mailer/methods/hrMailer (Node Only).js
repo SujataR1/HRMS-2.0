@@ -1,24 +1,23 @@
 import dotenv from "dotenv";
-import { SMTPClient } from "emailjs";
 import fs from "fs";
+import nodemailer from "nodemailer";
 import path from "path";
 
 dotenv.config();
 
-const TEMPLATES_DIR = path.resolve("src", "employee", "mailer", "templates");
+const TEMPLATES_DIR = path.resolve("src", "hr", "mailer", "templates");
 
-const client = new SMTPClient({
-	user: process.env.SMTP_USER,
-	password: process.env.SMTP_PASS,
+const transporter = nodemailer.createTransport({
 	host: process.env.SMTP_HOST,
 	port: parseInt(process.env.SMTP_PORT),
-	ssl: process.env.SMTP_SECURE === "true",
+	secure: process.env.SMTP_SECURE === "true",
+	auth: {
+		user: process.env.SMTP_USER,
+		pass: process.env.SMTP_PASS,
+	},
 });
 
-/**
- * Sends an employee-facing email using a template and payload substitution.
- */
-export async function sendEmployeeMail({ to, purpose, payload = {} }) {
+export async function sendHrMail({ to, purpose, payload = {} }) {
 	try {
 		const templatePath = path.join(TEMPLATES_DIR, `${purpose}.html`);
 
@@ -33,35 +32,25 @@ export async function sendEmployeeMail({ to, purpose, payload = {} }) {
 			html = html.replace(pattern, payload[key]);
 		}
 
-		const subject =
-			payload.subject || `Notification from HRMS – ${purpose}`;
+		const subject = payload.subject || `Notification: ${purpose}`;
 
-		await client.sendAsync({
-			text: html.replace(/<[^>]*>?/gm, ""),
+		await transporter.sendMail({
 			from:
 				process.env.SMTP_FROM ||
 				'"HRMS System" <no-reply@yourdomain.com>',
 			to,
 			subject,
-			attachment: [
-				{
-					data: html,
-					alternative: true,
-				},
-			],
+			html,
 		});
 
 		return { success: true };
 	} catch (err) {
-		console.error("🔥 Failed to send employee mail:", err);
+		console.error("🔥 Failed to send HR mail:", err);
 		throw err;
 	}
 }
 
-/**
- * Sends an employee-facing email with file attachments.
- */
-export async function sendEmployeeMailWithAttachments({
+export async function sendHrEmailWithAttachments({
 	to,
 	purpose,
 	payload = {},
@@ -81,32 +70,24 @@ export async function sendEmployeeMailWithAttachments({
 			html = html.replace(pattern, payload[key]);
 		}
 
-		const subject =
-			payload.subject || `Notification from HRMS – ${purpose}`;
+		const subject = payload.subject || `Notification: ${purpose}`;
 
-		await client.sendAsync({
-			text: html.replace(/<[^>]*>?/gm, ""),
+		await transporter.sendMail({
 			from:
 				process.env.SMTP_FROM ||
 				'"HRMS System" <no-reply@yourdomain.com>',
 			to,
 			subject,
-			attachment: [
-				{
-					data: html,
-					alternative: true,
-				},
-				...attachments.map((filePath) => ({
-					path: filePath,
-					name: path.basename(filePath),
-					type: "application/octet-stream",
-				})),
-			],
+			html,
+			attachments: attachments.map((filePath) => ({
+				filename: path.basename(filePath),
+				path: filePath,
+			})),
 		});
 
 		return { success: true };
 	} catch (err) {
-		console.error("🔥 Failed to send employee mail with attachments:", err);
+		console.error("🔥 Failed to send HR mail with attachments:", err);
 		throw err;
 	}
 }
