@@ -15,3 +15,5 @@ logs
 media/leave-attachments
 *.exe
 bun.lock
+hrms
+start.sh
