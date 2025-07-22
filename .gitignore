@@ -17,3 +17,4 @@ media/leave-attachments
 bun.lock
 hrms
 start.sh
+.vscode
