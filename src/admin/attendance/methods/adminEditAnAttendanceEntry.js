@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-import { sendAdminMail, sendAdminEmailWithAttachments } from "../../mailer/methods/adminMailer.js";
+import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -81,8 +81,8 @@ export async function adminEditAnAttendanceEntry(
 				sanitizedFlags.push("edited");
 			}
 
-			const punchInUTC = punchIn ? dayjs(punchIn).utc().toDate() : null;
-			const punchOutUTC = punchOut ? dayjs(punchOut).utc().toDate() : null;
+			const punchInUTC = punchIn ? dayjs.tz(punchIn, TIMEZONE).utc().toDate() : null;
+			const punchOutUTC = punchOut ? dayjs.tz(punchOut, TIMEZONE).utc().toDate() : null;
 
 			await tx.attendanceLog.update({
 				where: { id: existing.id },
