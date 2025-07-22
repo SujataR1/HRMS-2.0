@@ -1,4 +1,11 @@
 import { PrismaClient } from "@prisma/client";
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 
 const prisma = new PrismaClient();
 
@@ -30,13 +37,16 @@ export async function hrVerifyOTP(email, purpose, otp) {
 				},
 			});
 
+			const serverTz = process.env.TIMEZONE || 'UTC';
+			const now = dayjs().tz(serverTz).toDate();
+
 			const match = await tx.hrOTP.findFirst({
 				where: {
 					hrId: hr.id,
 					purpose,
 					otp,
 					expiresAt: {
-						gt: new Date(),
+						gt: now,
 					},
 				},
 			});
