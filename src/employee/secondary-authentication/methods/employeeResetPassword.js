@@ -14,7 +14,7 @@ export async function employeeResetPassword(assignedEmail, otp, newPassword) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const { employeeId } = await employeeVerifyOTP(assignedEmail, "passwordReset", otp);
@@ -32,12 +32,12 @@ export async function employeeResetPassword(assignedEmail, otp, newPassword) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeResetPassword:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (e) {
 			console.error("🧨 DB disconnect error:", e);
 		}

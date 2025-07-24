@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
+import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -19,7 +19,7 @@ export async function adminCreateAnEmployee(
 
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const existing = await tx.employee.findFirst({
@@ -85,15 +85,11 @@ export async function adminCreateAnEmployee(
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminRegisterAnEmployee:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

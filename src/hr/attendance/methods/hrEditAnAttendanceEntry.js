@@ -28,7 +28,7 @@ export async function hrEditAnAttendanceEntry(
 			throw new Error("Authorization header missing or invalid");
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			/* 1️⃣  Verify HR token & existence */
@@ -132,12 +132,12 @@ export async function hrEditAnAttendanceEntry(
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrEditAnAttendanceEntry:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

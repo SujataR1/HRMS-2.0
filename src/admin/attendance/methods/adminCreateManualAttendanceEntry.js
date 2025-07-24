@@ -25,7 +25,7 @@ export async function adminCreateManualAttendanceEntry(
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const { adminId } = await verifyAdminJWT(authHeader);
@@ -128,12 +128,12 @@ export async function adminCreateManualAttendanceEntry(
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreateManualAttendanceEntry:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 DB disconnect error:", disconnectErr);
 		}

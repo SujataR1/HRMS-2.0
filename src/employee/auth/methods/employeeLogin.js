@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
-import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js"
+import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
 import { employeeCreateOTP } from "../../otp/methods/employeeCreateOTP.js";
 
@@ -11,7 +11,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const employee = await tx.employee.findUnique({
@@ -111,7 +111,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 			return { requires2FA: true };
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeLogin:", err);
@@ -126,11 +126,7 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 			status: "failure",
 			message: `Unhandled error in employeeLogin: ${err.message || "unknown"}`,
 		});
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-import { DateTime } from "luxon";
 import dotenv from "dotenv";
+import { DateTime } from "luxon";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dotenv.config();
 
@@ -16,7 +16,7 @@ export async function hrGetProfile(authHeader) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(
 			async (tx) => {
@@ -54,15 +54,11 @@ export async function hrGetProfile(authHeader) {
 			{ timeout: 30_000 }
 		);
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrGetProfile:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

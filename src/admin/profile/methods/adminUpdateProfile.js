@@ -13,7 +13,7 @@ export async function adminUpdateProfile(authHeader, { name, email }) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(
 			async (tx) => {
@@ -61,12 +61,12 @@ export async function adminUpdateProfile(authHeader, { name, email }) {
 			{ timeout: 30_000 }
 		);
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminUpdateProfile:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

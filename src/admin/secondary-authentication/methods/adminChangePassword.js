@@ -19,7 +19,7 @@ export async function adminChangePassword(
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(
 			async (tx) => {
@@ -55,12 +55,12 @@ export async function adminChangePassword(
 			{ timeout: 30_000 }
 		);
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminChangePassword:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

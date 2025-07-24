@@ -14,7 +14,7 @@ export async function hrLogin({ email, password }) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const hr = await tx.hr.findUnique({
@@ -52,15 +52,11 @@ export async function hrLogin({ email, password }) {
 			return { requires2FA: true };
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrLogin:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

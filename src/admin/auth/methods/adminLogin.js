@@ -11,7 +11,7 @@ export async function adminLogin({ email, password }, meta = {}) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const admin = await tx.admin.findUnique({
@@ -109,7 +109,7 @@ export async function adminLogin({ email, password }, meta = {}) {
 			return { requires2FA: true };
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminLogin:", err);
@@ -125,11 +125,7 @@ export async function adminLogin({ email, password }, meta = {}) {
 			status: "failure",
 			message: `Unhandled error in adminLogin: ${err.message || "unknown error"}`,
 		});
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

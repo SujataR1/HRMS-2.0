@@ -1,9 +1,9 @@
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 dayjs.extend(utc);
@@ -28,7 +28,7 @@ export async function createEmployeeJWT(employeeId, payload = {}) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			await deleteExpiredEmployeeTokens(tx);
@@ -63,15 +63,11 @@ export async function createEmployeeJWT(employeeId, payload = {}) {
 			return encryptedToken;
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in createEmployeeJWT:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }
@@ -80,7 +76,7 @@ export async function verifyEmployeeJWT(authHeader = "") {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			await deleteExpiredEmployeeTokens(tx);
@@ -124,15 +120,11 @@ export async function verifyEmployeeJWT(authHeader = "") {
 			return decoded;
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in verifyEmployeeJWT:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

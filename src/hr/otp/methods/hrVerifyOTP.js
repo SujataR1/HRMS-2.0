@@ -18,7 +18,7 @@ export async function hrVerifyOTP(email, purpose, otp) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const hr = await tx.hr.findUnique({
@@ -65,15 +65,10 @@ export async function hrVerifyOTP(email, purpose, otp) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrVerifyOTP:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
 		throw err;
 	}
 }

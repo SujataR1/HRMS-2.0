@@ -15,7 +15,7 @@ export async function hrChangePassword(authHeader, oldPassword, newPassword) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const { hrId } = await verifyHrJWT(authHeader);
@@ -42,15 +42,11 @@ export async function hrChangePassword(authHeader, oldPassword, newPassword) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrChangePassword:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

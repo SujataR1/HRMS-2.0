@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
-import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(timezone);
 
@@ -29,11 +29,11 @@ export async function hrGetHolidayEntries({
 	if (!authHeader || !authHeader.startsWith("Bearer "))
 		throw new Error("Authorization header missing or invalid");
 
-	try {
+	// try {
 		await verifyHrJWT(authHeader);
-	} catch {
-		throw new Error("Invalid or expired HR token");
-	}
+	// } catch {
+	// 	throw new Error("Invalid or expired HR token");
+	// }
 
 	/* --------------------- 2️⃣  Input validation ------------------------ */
 	if ((fromDate && !toDate) || (!fromDate && toDate)) {

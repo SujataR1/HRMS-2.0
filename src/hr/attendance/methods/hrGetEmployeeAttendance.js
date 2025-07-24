@@ -33,11 +33,11 @@ export async function hrGetEmployeeAttendance({
 	/* -------------------------------------------------- *
 	 * 1️⃣  Verify HR session
 	 * -------------------------------------------------- */
-	try {
+	// try {
 		await verifyHrJWT(authHeader);
-	} catch {
-		throw new Error("Invalid or expired HR token");
-	}
+	// } catch {
+	// 	throw new Error("Invalid or expired HR token");
+	// }
 
 	/* -------------------------------------------------- *
 	 * 2️⃣  Derive UTC date range (if any)

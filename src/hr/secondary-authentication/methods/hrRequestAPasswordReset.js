@@ -10,7 +10,7 @@ export async function hrRequestAPasswordReset(email) {
 		if (!email) throw new Error("Email is required");
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const hr = await tx.hr.findUnique({
@@ -40,12 +40,12 @@ export async function hrRequestAPasswordReset(email) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrRequestAPasswordReset:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

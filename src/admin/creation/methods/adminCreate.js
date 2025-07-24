@@ -9,7 +9,7 @@ export async function adminCreate({ name, email, password }, meta = {}) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const existing = await tx.admin.findUnique({
@@ -64,7 +64,7 @@ export async function adminCreate({ name, email, password }, meta = {}) {
 			return newAdmin;
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreate:", err);
@@ -81,11 +81,7 @@ export async function adminCreate({ name, email, password }, meta = {}) {
 			message: `Unhandled error in adminCreate: ${err.message || "unknown error"}`,
 		});
 
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

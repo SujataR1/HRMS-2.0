@@ -14,7 +14,7 @@ export async function hrResetPassword(email, otp, newPassword) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const verifyResult = await hrVerifyOTP(email, "passwordReset", otp);
@@ -34,12 +34,12 @@ export async function hrResetPassword(email, otp, newPassword) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrResetPassword:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

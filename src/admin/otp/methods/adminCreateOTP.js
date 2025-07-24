@@ -12,7 +12,7 @@ export async function adminCreateOTP(email, purpose) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const admin = await tx.admin.findUnique({
@@ -70,12 +70,12 @@ export async function adminCreateOTP(email, purpose) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreateOTP:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}

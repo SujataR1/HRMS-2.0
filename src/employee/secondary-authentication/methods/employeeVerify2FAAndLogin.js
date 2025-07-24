@@ -14,7 +14,7 @@ export async function employeeVerify2FAAndLogin(assignedEmail, password, otp) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const employee = await tx.employee.findUnique({
@@ -44,12 +44,12 @@ export async function employeeVerify2FAAndLogin(assignedEmail, password, otp) {
 			return { token };
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeVerify2FAAndLogin:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (e) {
 			console.error("🧨 DB disconnect error:", e);
 		}

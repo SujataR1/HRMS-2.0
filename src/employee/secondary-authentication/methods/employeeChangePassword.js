@@ -14,7 +14,7 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const verified = await verifyEmployeeJWT(authHeader)
 
@@ -53,12 +53,12 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeChangePassword:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (e) {
 			console.error("🧨 DB disconnect error:", e);
 		}

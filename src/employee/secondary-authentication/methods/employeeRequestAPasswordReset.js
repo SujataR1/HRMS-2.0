@@ -13,7 +13,7 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 		}
 
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const employee = await tx.employee.findUnique({
@@ -57,12 +57,12 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 			return { success: true, message: "OTP sent for password reset" };
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeRequestAPasswordReset:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (e) {
 			console.error("🧨 DB disconnect error:", e);
 		}

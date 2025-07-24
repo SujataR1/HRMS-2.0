@@ -28,7 +28,7 @@ export async function createAdminJWT(adminId, payload = {}) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			await deleteExpiredAdminTokens(tx);
@@ -63,15 +63,10 @@ export async function createAdminJWT(adminId, payload = {}) {
 			return encryptedToken;
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in createAdminJWT:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
 		throw err;
 	}
 }
@@ -80,8 +75,6 @@ export async function verifyAdminJWT(authHeader = "") {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
-
 		const result = await db.$transaction(async (tx) => {
 			await deleteExpiredAdminTokens(tx);
 
@@ -124,15 +117,10 @@ export async function verifyAdminJWT(authHeader = "") {
 			return decoded;
 		});
 
-		await db.$disconnect();
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in verifyAdminJWT:", err);
-		try {
-			if (db) await db.$disconnect();
-		} catch (e) {
-			console.error("🧨 Error disconnecting DB:", e);
-		}
+		
 		throw err;
 	}
 }

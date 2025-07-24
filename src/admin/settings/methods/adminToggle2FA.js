@@ -7,7 +7,7 @@ export async function adminToggle2FA(authHeader) {
 	let db;
 	try {
 		db = prisma;
-		await db.$connect();
+		
 
 		const result = await db.$transaction(async (tx) => {
 			const { adminId } = await verifyAdminJWT(authHeader);
@@ -45,12 +45,12 @@ export async function adminToggle2FA(authHeader) {
 			};
 		});
 
-		await db.$disconnect();
+		
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminToggle2FA:", err);
 		try {
-			if (db) await db.$disconnect();
+			if (db) 
 		} catch (disconnectErr) {
 			console.error("🧨 Error disconnecting DB:", disconnectErr);
 		}
