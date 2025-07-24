@@ -364,7 +364,7 @@ model Hr {
   employeeId      String   @unique
   name            String
   email           String   @unique
-  isEmailVerified Boolean  @default(false)
+  isEmailVerified Boolean  @default(true)
   password        String
   updatedAt       DateTime @updatedAt
 
