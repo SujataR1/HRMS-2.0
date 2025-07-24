@@ -2,8 +2,8 @@ import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
+import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -24,7 +24,7 @@ export async function adminCreateManualAttendanceEntry(
 			throw new Error("Authorization header missing or invalid");
 		}
 
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {

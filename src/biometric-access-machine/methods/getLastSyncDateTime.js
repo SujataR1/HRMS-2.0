@@ -5,7 +5,7 @@ export async function getLastSyncDateTime() {
 	let db;
 
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 
 		await db.$connect();
 

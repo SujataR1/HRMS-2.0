@@ -27,7 +27,7 @@ async function deleteExpiredHrTokens(tx) {
 export async function createHrJWT(hrId, payload = {}) {
 	let db;
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {
@@ -79,7 +79,7 @@ export async function createHrJWT(hrId, payload = {}) {
 export async function verifyHrJWT(authHeader = "") {
 	let db;
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {

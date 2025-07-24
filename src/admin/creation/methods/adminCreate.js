@@ -8,7 +8,7 @@ const SALT_ROUNDS = 10;
 export async function adminCreate({ name, email, password }, meta = {}) {
 	let db;
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {

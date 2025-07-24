@@ -1,9 +1,9 @@
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import { PrismaClient } from "@prisma/client";
+import crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 dayjs.extend(utc);
@@ -27,7 +27,7 @@ async function deleteExpiredAdminTokens(tx) {
 export async function createAdminJWT(adminId, payload = {}) {
 	let db;
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {
@@ -79,7 +79,7 @@ export async function createAdminJWT(adminId, payload = {}) {
 export async function verifyAdminJWT(authHeader = "") {
 	let db;
 	try {
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {

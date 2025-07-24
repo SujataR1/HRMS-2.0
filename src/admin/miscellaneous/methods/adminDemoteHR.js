@@ -18,7 +18,7 @@ export async function adminDemoteHR(authHeader, employeeId) {
 			throw new Error("Authorization header missing or invalid");
 		}
 
-		db = prisma.$extends({});
+		db = prisma;
 		await db.$connect();
 
 		const result = await db.$transaction(async (tx) => {
