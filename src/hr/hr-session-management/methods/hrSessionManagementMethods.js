@@ -34,9 +34,7 @@ export async function createHrJWT(hrId, payload = {}) {
 			await deleteExpiredHrTokens(tx);
 
 			const fullPayload = { hrId, ...payload };
-			const jwtToken = jwt.sign(fullPayload, JWT_SECRET, {
-				expiresIn: "7d",
-			});
+			const jwtToken = jwt.sign(fullPayload, JWT_SECRET);
 
 			const iv = crypto.randomBytes(16);
 			const cipher = crypto.createCipheriv(
