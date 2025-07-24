@@ -1,7 +1,7 @@
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
-import timezone from "dayjs/plugin/timezone.js";
 import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(utc);
@@ -21,9 +21,9 @@ export async function hrGetPendingLeaves(authHeader) {
 	const leaves = await prisma.leave.findMany({
 		where: {
 			status: "pending",
-			fromDate: {
-				gt: now.toDate(),
-			},
+			// fromDate: {
+			// 	gt: now.toDate(),
+			// },
 		},
 		select: {
 			id: true,

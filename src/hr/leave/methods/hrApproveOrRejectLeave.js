@@ -1,9 +1,9 @@
 import { PrismaClient } from "@prisma/client";
-import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import dayjs from "dayjs";
 import { sendEmployeeMail, sendEmployeeMailWithAttachments } from "../../../employee/mailer/methods/employeeMailer.js";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -82,9 +82,9 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 	const now = dayjs().tz(TIMEZONE).startOf("day");
 	const leaveStart = dayjs(leave.fromDate).tz(TIMEZONE).startOf("day");
 
-	if (!now.isBefore(leaveStart)) {
-	throw new Error("Leave can only be approved or rejected before the start date");
-	}
+	// if (!now.isBefore(leaveStart)) {
+	// throw new Error("Leave can only be approved or rejected before the start date");
+	// }
 
 
 	let updatedLeaveType = leave.leaveType;
