@@ -23,14 +23,6 @@ export async function getLastSyncDateTime() {
 		return tx;
 	} catch (error) {
 		console.error("🔥 Error while fetching last sync timestamp:", error);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error(
-				"🧨 Error while disconnecting from DB:",
-				disconnectErr
-			);
-		}
 		throw error;
 	}
 }

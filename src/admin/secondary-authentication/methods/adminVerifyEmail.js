@@ -46,11 +46,7 @@ export async function adminVerifyEmail(authHeader, otp) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminVerifyEmail:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

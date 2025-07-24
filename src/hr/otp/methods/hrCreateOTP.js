@@ -74,11 +74,7 @@ export async function hrCreateOTP(email, purpose) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrCreateOTP:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

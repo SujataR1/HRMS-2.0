@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-import { adminCreateOTP } from "../../otp/methods/adminCreateOTP.js";
 import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
+import { adminCreateOTP } from "../../otp/methods/adminCreateOTP.js";
 
 const prisma = new PrismaClient();
 
@@ -53,11 +53,7 @@ export async function adminRequestEmailVerification(authHeader) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminRequestEmailVerification:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

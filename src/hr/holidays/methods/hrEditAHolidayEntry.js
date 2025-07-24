@@ -76,11 +76,7 @@ export async function hrEditAHolidayEntry(authHeader, { holidayId, name, date, f
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrEditHoliday:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

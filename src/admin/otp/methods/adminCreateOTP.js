@@ -74,11 +74,7 @@ export async function adminCreateOTP(email, purpose) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreateOTP:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

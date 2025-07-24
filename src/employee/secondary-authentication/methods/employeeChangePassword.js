@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js"
+import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
@@ -57,11 +57,7 @@ export async function employeeChangePassword(authHeader, oldPassword, newPasswor
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeChangePassword:", err);
-		try {
-			if (db) 
-		} catch (e) {
-			console.error("🧨 DB disconnect error:", e);
-		}
+		
 		throw err;
 	}
 }

@@ -50,11 +50,7 @@ export async function adminRevokeAllActiveSessions(authHeader, password) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminRevokeAllActiveSessions:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

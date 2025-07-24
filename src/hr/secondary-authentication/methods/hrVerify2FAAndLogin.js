@@ -39,11 +39,7 @@ export async function hrVerify2FAAndLogin(email, password, otp) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in hrVerify2FAAndLogin:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

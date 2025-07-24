@@ -132,11 +132,6 @@ export async function adminCreateManualAttendanceEntry(
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminCreateManualAttendanceEntry:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 DB disconnect error:", disconnectErr);
-		}
 		throw err;
 	}
 }

@@ -104,11 +104,7 @@ export async function adminPromoteEmployeeToHR(
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in promoteEmployeeToHR:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

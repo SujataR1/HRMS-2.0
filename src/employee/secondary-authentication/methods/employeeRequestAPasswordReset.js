@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { employeeCreateOTP } from "../../otp/methods/employeeCreateOTP.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
+import { employeeCreateOTP } from "../../otp/methods/employeeCreateOTP.js";
 
 const prisma = new PrismaClient();
 
@@ -61,11 +61,7 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeRequestAPasswordReset:", err);
-		try {
-			if (db) 
-		} catch (e) {
-			console.error("🧨 DB disconnect error:", e);
-		}
+		
 		throw err;
 	}
 }

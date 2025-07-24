@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { adminVerifyOTP } from "../../otp/methods/adminVerifyOTP.js";
 import { createAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
+import { adminVerifyOTP } from "../../otp/methods/adminVerifyOTP.js";
 
 const prisma = new PrismaClient();
 
@@ -42,11 +42,7 @@ export async function adminVerify2FAAndLogin(email, password, otp) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in adminVerify2FAAndLogin:", err);
-		try {
-			if (db) 
-		} catch (disconnectErr) {
-			console.error("🧨 Error disconnecting DB:", disconnectErr);
-		}
+		
 		throw err;
 	}
 }

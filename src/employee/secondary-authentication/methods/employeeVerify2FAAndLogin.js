@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { employeeVerifyOTP } from "../../otp/methods/employeeVerifyOTP.js";
 import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+import { employeeVerifyOTP } from "../../otp/methods/employeeVerifyOTP.js";
 
 const prisma = new PrismaClient();
 
@@ -48,11 +48,7 @@ export async function employeeVerify2FAAndLogin(assignedEmail, password, otp) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeVerify2FAAndLogin:", err);
-		try {
-			if (db) 
-		} catch (e) {
-			console.error("🧨 DB disconnect error:", e);
-		}
+		
 		throw err;
 	}
 }

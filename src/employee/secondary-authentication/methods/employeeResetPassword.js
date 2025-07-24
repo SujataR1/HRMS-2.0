@@ -36,11 +36,7 @@ export async function employeeResetPassword(assignedEmail, otp, newPassword) {
 		return result;
 	} catch (err) {
 		console.error("🔥 Error in employeeResetPassword:", err);
-		try {
-			if (db) 
-		} catch (e) {
-			console.error("🧨 DB disconnect error:", e);
-		}
+		
 		throw err;
 	}
 }
