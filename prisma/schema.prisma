@@ -406,7 +406,7 @@ model HrOTP {
 model HrSettings {
   id        String   @id @default(uuid())
   HrId      String
-  isTwoFA   Boolean  @default(true)
+  isTwoFA   Boolean  @default(false)
   updatedAt DateTime @updatedAt
 }
 
