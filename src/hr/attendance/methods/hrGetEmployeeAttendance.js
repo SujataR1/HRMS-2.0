@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import utc from "dayjs/plugin/utc.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(utc);
@@ -112,6 +112,7 @@ export async function hrGetEmployeeAttendance({
 		punchOut: log.punchOut
 			? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
 			: null,
+		durationInOfficeMinutes: log.durationInOfficeMinutes,
 		status: log.status,
 		flags: log.flags,
 		comments: log.comments,

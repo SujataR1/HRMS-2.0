@@ -94,6 +94,7 @@ export async function adminGetEmployeeAttendance({
 			? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
 			: null,
 		status: log.status,
+		durationInOfficeMinutes: log.durationInOfficeMinutes,
 		flags: log.flags,
 		comments: log.comments,
 	}));

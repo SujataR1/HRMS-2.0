@@ -407,6 +407,10 @@ export async function makeEmployeeAttendance({
 				attendanceDay: dayName,
 				punchIn: pin ? pin.utc().toDate() : null,
 				punchOut: pout ? pout.utc().toDate() : null,
+				durationInOfficeMinutes:
+				pin && pout
+					? Math.floor(pout.diff(pin, "second") / 60)
+					: 0,
 				flags,
 				status,
 			});

@@ -238,53 +238,52 @@ model Leave {
   createdAt            DateTime    @default(now())
   updatedAt            DateTime    @updatedAt
 
+  @@unique([employeeId, fromDate, toDate])
   @@index([employeeId])
   @@index([fromDate, toDate])
-  @@unique([employeeId, fromDate, toDate])
 }
 
 model LeaveRegister {
-  id                        String   @id @default(uuid())
-  employeeId                String   @unique
+  id         String @id @default(uuid())
+  employeeId String @unique
 
-  casualCurrent             Int      @default(0)
-  casualCarried             Int      @default(0)
-  casualTotal               Int      @default(0)
+  casualCurrent Int @default(0)
+  casualCarried Int @default(0)
+  casualTotal   Int @default(0)
 
-  sickCurrent               Int      @default(0)
-  sickCarried               Int      @default(0)
-  sickTotal                 Int      @default(0)
+  sickCurrent Int @default(0)
+  sickCarried Int @default(0)
+  sickTotal   Int @default(0)
 
-  bereavementCurrent        Int      @default(0)
-  bereavementCarried        Int      @default(0)
-  bereavementTotal          Int      @default(0)
+  bereavementCurrent Int @default(0)
+  bereavementCarried Int @default(0)
+  bereavementTotal   Int @default(0)
 
-  maternityCurrent          Int      @default(0)
-  maternityCarried          Int      @default(0)
-  maternityTotal            Int      @default(0)
+  maternityCurrent Int @default(0)
+  maternityCarried Int @default(0)
+  maternityTotal   Int @default(0)
 
-  paternityCurrent          Int      @default(0)
-  paternityCarried          Int      @default(0)
-  paternityTotal            Int      @default(0)
+  paternityCurrent Int @default(0)
+  paternityCarried Int @default(0)
+  paternityTotal   Int @default(0)
 
-  earnedCurrent             Int      @default(0)
-  earnedCarried             Int      @default(0)
-  earnedTotal               Int      @default(0)
+  earnedCurrent Int @default(0)
+  earnedCarried Int @default(0)
+  earnedTotal   Int @default(0)
 
-  compOffCurrent            Int      @default(0)
-  compOffCarried            Int      @default(0)
-  compOffTotal              Int      @default(0)
+  compOffCurrent Int @default(0)
+  compOffCarried Int @default(0)
+  compOffTotal   Int @default(0)
 
-  otherCurrent              Int      @default(0)
-  otherCarried              Int      @default(0)
-  otherTotal                Int      @default(0)
+  otherCurrent Int @default(0)
+  otherCarried Int @default(0)
+  otherTotal   Int @default(0)
 
-  grandTotal                Int      @default(0)
+  grandTotal Int @default(0)
 
-  lastResetYear             Int
-  updatedAt                 DateTime @updatedAt
+  lastResetYear Int
+  updatedAt     DateTime @updatedAt
 }
-
 
 model LeaveAttachments {
   id              String   @id @default(uuid())
@@ -314,15 +313,16 @@ enum LeaveStatus {
 }
 
 model AttendanceLog {
-  id             String           @id @default(uuid())
-  employeeId     String
-  punchIn        DateTime?
-  punchOut       DateTime?
-  attendanceDate DateTime
-  attendanceDay  String
-  flags          String[]
-  status         AttendanceStatus
-  comments       String?
+  id                      String           @id @default(uuid())
+  employeeId              String
+  punchIn                 DateTime?
+  punchOut                DateTime?
+  durationInOfficeMinutes Int?
+  attendanceDate          DateTime
+  attendanceDay           String
+  flags                   String[]
+  status                  AttendanceStatus
+  comments                String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
