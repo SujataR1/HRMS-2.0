@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import fs from "fs/promises";
 import mime from "mime-types";
 import path from "path";
-import { verifyHRJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 const prisma = new PrismaClient();
 const MEDIA_BASE_PATH = path.join(process.cwd(), "media");
@@ -19,7 +19,7 @@ export async function hrGetEmployeeProfilePicture(authHeader, employeeIds) {
 	}
 
 	// Auth check
-	await verifyHRJWT(authHeader);
+	await verifyHrJWT(authHeader);
 
 	// Fetch all attachments in one go
 	const attachments = await prisma.employeeDetailsAttachments.findMany({
