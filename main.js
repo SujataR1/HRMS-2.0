@@ -52,6 +52,7 @@ import hrCreateAnEmployeeRoute from "./src/hr/employee/routes/hrCreateAnEmployee
 import hrCreateEmployeeDetailsRoute from "./src/hr/employee/routes/hrCreateEmployeeDetailsRoute.js";
 import hrGetAllEmployeeProfileRoute from "./src/hr/employee/routes/hrGetAllEmployeeProfileRoute.js";
 import hrGetEmployeeDetailsRoute from "./src/hr/employee/routes/hrGetEmployeeDetailsRoute.js";
+import hrGetEmployeeProfilePictureRoute from "./src/hr/employee/routes/hrGetEmployeeProfilePictureRoute.js";
 import hrUpdateAnEmployeeRoute from "./src/hr/employee/routes/hrUpdateAnEmployeeRoute.js";
 import hrUpdateEmployeeDetailsRoute from "./src/hr/employee/routes/hrUpdateEmployeeDetailsRoute.js";
 import hrUploadProfilePictureRoute from "./src/hr/employee/routes/hrUploadProfilePictureRoute.js";
@@ -211,6 +212,7 @@ await app.register(hrAssignAnEmployeeAShiftRoute);
 await app.register(hrLoginRoute);
 await app.register(hrCreateEmployeeLeaveRegisterRoute);
 await app.register(hrGetEmployeeLeaveRegisterRoute);
+await app.register(hrGetEmployeeProfilePictureRoute);
 await app.register(hrLogoutRoute);
 await app.register(hrApproveOrRejectLeaveRoute);
 await app.register(hrVerify2FAAndLoginRoute);
