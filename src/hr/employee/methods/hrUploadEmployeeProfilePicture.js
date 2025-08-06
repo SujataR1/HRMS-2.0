@@ -1,0 +1,33 @@
+import { PrismaClient } from "@prisma/client";
+import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+
+const prisma = new PrismaClient();
+
+/**
+ * Updates the profilePicturePath for an employee.
+ *
+ * @param {string} authHeader – Bearer token for HR
+ * @param {string} employeeId – UUID of the employee
+ * @param {string} profilePicturePath – Relative path to the saved file
+ */
+export async function hrUploadEmployeeProfilePicture(authHeader, {employeeId, profilePicturePath}) {
+	try {
+		// 🔐 Auth check
+		await verifyHrJWT(authHeader);
+
+		// 🛠️ Upsert-style update
+		await prisma.employeeDetails.update({
+			where: { employeeId },
+			data: { profilePicturePath },
+		});
+
+		return {
+			status: "success",
+			message: "Profile picture path updated successfully.",
+			path: profilePicturePath,
+		};
+	} catch (err) {
+		console.error("🔥 Failed to update employee profile picture path:", err);
+		throw err;
+	}
+}

@@ -54,6 +54,7 @@ import hrGetAllEmployeeProfileRoute from "./src/hr/employee/routes/hrGetAllEmplo
 import hrGetEmployeeDetailsRoute from "./src/hr/employee/routes/hrGetEmployeeDetailsRoute.js";
 import hrUpdateAnEmployeeRoute from "./src/hr/employee/routes/hrUpdateAnEmployeeRoute.js";
 import hrUpdateEmployeeDetailsRoute from "./src/hr/employee/routes/hrUpdateEmployeeDetailsRoute.js";
+import hrUploadProfilePictureRoute from "./src/hr/employee/routes/hrUploadProfilePictureRoute.js";
 import hrCreateAHolidayRoute from "./src/hr/holidays/routes/hrCreateAHolidayEntryRoute.js";
 import hrEditAHolidayEntryRoute from "./src/hr/holidays/routes/hrEditAHolidayEntryRoute.js";
 import hrGetHolidayEntriesRoute from "./src/hr/holidays/routes/hrGetHolidayEntriesRoute.js";
@@ -223,6 +224,7 @@ await app.register(hrEditAnAttendanceEntryRoute);
 await app.register(hrGetHolidayEntriesRoute);
 await app.register(hrGetLeavesRoute);
 await app.register(hrEditAHolidayEntryRoute);
+await app.register(hrUploadProfilePictureRoute);
 await app.register(hrEditEmployeeLeaveRegisterRoute);
 
 await app.register(employeeLoginRoute);
