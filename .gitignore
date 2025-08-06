@@ -10,7 +10,7 @@ scratchpads
 .prettierrc
 tree.txt
 schema.prisma.txt
-forUpload.txt
+forUpload*.txt
 logs
 media/leave-attachments
 *.exe
