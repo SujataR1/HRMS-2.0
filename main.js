@@ -23,6 +23,7 @@ import adminCreateAnEmployeeRoute from "./src/admin/employee/routes/adminCreateA
 import adminCreateEmployeeDetailsRoute from "./src/admin/employee/routes/adminCreateEmployeeDetailsRoute.js";
 import adminGetAllEmployeeProfileRoute from "./src/admin/employee/routes/adminGetAllEmployeeProfileRoute.js";
 import adminGetEmployeeDetailsRoute from "./src/admin/employee/routes/adminGetEmployeeDetailsRoute.js";
+import adminGetEmployeeProfilePictureRoute from "./src/admin/employee/routes/adminGetEmployeeProfilePictureRoute.js";
 import adminUpdateAnEmployeeRoute from "./src/admin/employee/routes/adminUpdateAnEmployeeRoute.js";
 import adminUpdateEmployeeDetailsRoute from "./src/admin/employee/routes/adminUpdateEmployeeDetailsRoute.js";
 import adminActOnUserInfraRequestRoute from "./src/admin/infra-requests/routes/adminActOnUserInfraRequestRoute.js";
@@ -186,6 +187,7 @@ await app.register(adminGenerateAndSendMonthlyReportsRoute);
 await app.register(adminPromoteEmployeeToHRRoute);
 await app.register(adminDemoteHRRoute);
 await app.register(adminEditAnAttendanceEntryRoute);
+await app.register(adminGetEmployeeProfilePictureRoute);
 await app.register(adminCreateManualAttendanceEntryRoute);
 await app.register(adminGetUserInfraRequestsRoute);
 await app.register(adminActOnUserInfraRequestRoute);
