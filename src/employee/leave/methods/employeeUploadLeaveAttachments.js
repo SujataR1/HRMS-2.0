@@ -207,6 +207,18 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, save
 		},
 	});
 
+	// console.log("🧾 Attachments to send:");
+	// console.dir(attachmentsToSend, { depth: null });
+
+	// const safeAttachments = attachmentsToSend.map((att) => ({
+	// filename: String(att.filename),
+	// path: typeof att.path === 'string'
+	// 	? att.path
+	// 	: typeof att.path?.value === 'string'
+	// 	? att.path.value // ✅ safely unwrap object
+	// 	: String(att.path) // fallback, just stringify whatever garbage it is
+	// }));
+
 	if (employee?.assignedEmail) {
 		await sendEmployeeMailWithAttachments({
 			to: employee.assignedEmail,

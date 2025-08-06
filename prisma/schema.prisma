@@ -1,506 +1,506 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model BiometricLog {
-  id         String     @id @default(uuid())
-  employeeId String
-  timestamp  DateTime
-  identifier Identifier
+    id         String     @id @default(uuid())
+    employeeId String
+    timestamp  DateTime
+    identifier Identifier
 
-  @@unique([employeeId, timestamp, identifier])
-  @@index([employeeId])
-  @@index([timestamp])
+    @@unique([employeeId, timestamp, identifier])
+    @@index([employeeId])
+    @@index([timestamp])
 }
 
 enum Identifier {
-  fingerprint
-  card
-  unknown
+    fingerprint
+    card
+    unknown
 }
 
 model Admin {
-  id              String   @id @default(uuid())
-  name            String
-  email           String   @unique
-  isEmailVerified Boolean  @default(false)
-  password        String
-  updatedAt       DateTime @updatedAt
+    id              String   @id @default(uuid())
+    name            String
+    email           String   @unique
+    isEmailVerified Boolean  @default(false)
+    password        String
+    updatedAt       DateTime @updatedAt
 
-  @@index(email)
-  @@index(id)
+    @@index(email)
+    @@index(id)
 }
 
 model AdminSettings {
-  id        String   @id @default(uuid())
-  adminId   String
-  isTwoFA   Boolean  @default(false)
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(uuid())
+    adminId   String
+    isTwoFA   Boolean  @default(false)
+    updatedAt DateTime @updatedAt
 }
 
 model AdminActiveSessions {
-  id        String   @id @default(uuid())
-  adminId   String
-  token     String
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+    id        String   @id @default(uuid())
+    adminId   String
+    token     String
+    createdAt DateTime @default(now())
+    expiresAt DateTime
 
-  @@index([adminId])
-  @@index([token])
-  @@index([expiresAt])
+    @@index([adminId])
+    @@index([token])
+    @@index([expiresAt])
 }
 
 enum AdminOTPPurpose {
-  twoFA
-  emailVerification
-  passwordReset
+    twoFA
+    emailVerification
+    passwordReset
 }
 
 model AdminOTP {
-  id        String          @id @default(uuid())
-  adminId   String
-  otp       String
-  purpose   AdminOTPPurpose
-  expiresAt DateTime
+    id        String          @id @default(uuid())
+    adminId   String
+    otp       String
+    purpose   AdminOTPPurpose
+    expiresAt DateTime
 
-  @@index([adminId])
-  @@index([otp])
-  @@index([purpose])
-  @@index([expiresAt])
+    @@index([adminId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
 }
 
 model Shift {
-  id                                                         String    @id @default(uuid())
-  shiftName                                                  String    @unique
-  weeklyDaysOff                                              String[]
-  weeklyHalfDays                                             String[]
-  fullShiftEarlyPunchConsiderTimeInMinutes                   Int
-  halfShiftEarlyPunchConsiderTimeInMinutes                   Int
-  fullShiftStartingTime                                      DateTime
-  fullShiftEndingTime                                        DateTime
-  halfShiftStartingTime                                      DateTime?
-  halfShiftEndingTime                                        DateTime?
-  fullShiftGraceInTimingInMinutes                            Int
-  fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int
-  halfShiftGraceInTimingInMinutes                            Int?
-  halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int?
-  fullShiftGraceOutTimingInMinutes                           Int
-  halfShiftGraceOutTimingInMinutes                           Int?
-  overtimeMaximumAllowableLimitInMinutes                     Int?
-  maximumValidShiftLengthPostRegularEndingTimeInMinutes      Int?
-  floorPercentageOfTotalFullShiftForHalfDay                  Float
-  ceilingPercentageOfTotalFullShiftForHalfDay                Float
-  floorPercentageOfTotalHalfShiftForHalfDay                  Float
-  ceilingPercentageOfTotalHalfShiftForHalfDay                Float
+    id                                                         String    @id @default(uuid())
+    shiftName                                                  String    @unique
+    weeklyDaysOff                                              String[]
+    weeklyHalfDays                                             String[]
+    fullShiftEarlyPunchConsiderTimeInMinutes                   Int
+    halfShiftEarlyPunchConsiderTimeInMinutes                   Int
+    fullShiftStartingTime                                      DateTime
+    fullShiftEndingTime                                        DateTime
+    halfShiftStartingTime                                      DateTime?
+    halfShiftEndingTime                                        DateTime?
+    fullShiftGraceInTimingInMinutes                            Int
+    fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int
+    halfShiftGraceInTimingInMinutes                            Int?
+    halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes Int?
+    fullShiftGraceOutTimingInMinutes                           Int
+    halfShiftGraceOutTimingInMinutes                           Int?
+    overtimeMaximumAllowableLimitInMinutes                     Int?
+    maximumValidShiftLengthPostRegularEndingTimeInMinutes      Int?
+    floorPercentageOfTotalFullShiftForHalfDay                  Float
+    ceilingPercentageOfTotalFullShiftForHalfDay                Float
+    floorPercentageOfTotalHalfShiftForHalfDay                  Float
+    ceilingPercentageOfTotalHalfShiftForHalfDay                Float
 
-  @@index([shiftName])
+    @@index([shiftName])
 }
 
 model Employee {
-  id            String   @id @default(uuid())
-  name          String
-  employeeId    String   @unique
-  assignedEmail String   @unique
-  password      String
-  updatedAt     DateTime @updatedAt
+    id            String   @id @default(uuid())
+    name          String
+    employeeId    String   @unique
+    assignedEmail String   @unique
+    password      String
+    updatedAt     DateTime @updatedAt
 
-  @@index(assignedEmail)
-  @@index(employeeId)
-  @@index(id)
+    @@index(assignedEmail)
+    @@index(employeeId)
+    @@index(id)
 }
 
 enum BloodGroups {
-  A_positive
-  A_negative
-  B_positive
-  B_negative
-  AB_positive
-  AB_negative
-  O_positive
-  O_negative
+    A_positive
+    A_negative
+    B_positive
+    B_negative
+    AB_positive
+    AB_negative
+    O_positive
+    O_negative
 }
 
 enum EmploymentTypes {
-  PART_TIME
-  FULL_TIME
-  INTERN
-  CONTRACT
-  FREELANCER
+    PART_TIME
+    FULL_TIME
+    INTERN
+    CONTRACT
+    FREELANCER
 }
 
 enum EmploymentStatus {
-  EMPLOYED
-  RESIGNED
-  TERMINATED
-  SUSPENDED
-  PROBATION
+    EMPLOYED
+    RESIGNED
+    TERMINATED
+    SUSPENDED
+    PROBATION
 }
 
 model EmployeeDetails {
-  id                              String           @id @default(uuid())
-  employeeId                      String           @unique
-  personalEmail                   String
-  isPersonalEmailVerified         Boolean          @default(false)
-  employmentType                  EmploymentTypes
-  employmentStatus                EmploymentStatus
-  dateOfJoining                   DateTime
-  confirmationDate                DateTime?
-  phoneNumber                     String
-  emergencyContactNumber          String
-  presentAddress                  String
-  permanentAddress                String
-  aadhaarCardNumber               String
-  panCardNumber                   String
-  bloodGroup                      BloodGroups
-  medicalNotes                    String?
-  highestEducationalQualification String
-  designation                     String
-  department                      String
-  bankName                        String
-  bankAccountNumber               String
-  ifsCode                         String
-  assignedShiftId                 String?
+    id                              String           @id @default(uuid())
+    employeeId                      String           @unique
+    personalEmail                   String
+    isPersonalEmailVerified         Boolean          @default(false)
+    employmentType                  EmploymentTypes
+    employmentStatus                EmploymentStatus
+    dateOfJoining                   DateTime
+    confirmationDate                DateTime?
+    phoneNumber                     String
+    emergencyContactNumber          String
+    presentAddress                  String
+    permanentAddress                String
+    aadhaarCardNumber               String
+    panCardNumber                   String
+    bloodGroup                      BloodGroups
+    medicalNotes                    String?
+    highestEducationalQualification String
+    designation                     String
+    department                      String
+    bankName                        String
+    bankAccountNumber               String
+    ifsCode                         String
+    assignedShiftId                 String?
 }
 
 model EmployeeDetailsAttachments {
-  id                      String @id @default(uuid())
-  employeeId              String @unique
-  profilePicture          String
-  bankDetailsProofs       Json
-  identityProofs          Json?
-  medicalNotesProofs      Json?
-  educationAndSkillsProof Json
+    id                      String @id @default(uuid())
+    employeeId              String @unique
+    profilePicture          String
+    bankDetailsProofs       Json
+    identityProofs          Json?
+    medicalNotesProofs      Json?
+    educationAndSkillsProof Json
 }
 
 model EmployeeSettings {
-  id                      String   @id @default(uuid())
-  employeeId              String
-  isTwoFA                 Boolean  @default(false)
-  sendOTPsToPersonalEmail Boolean  @default(false)
-  updatedAt               DateTime @updatedAt
+    id                      String   @id @default(uuid())
+    employeeId              String
+    isTwoFA                 Boolean  @default(false)
+    sendOTPsToPersonalEmail Boolean  @default(false)
+    updatedAt               DateTime @updatedAt
 }
 
 model EmployeeActiveSessions {
-  id         String   @id @default(uuid())
-  employeeId String
-  token      String
-  createdAt  DateTime @default(now())
-  expiresAt  DateTime
+    id         String   @id @default(uuid())
+    employeeId String
+    token      String
+    createdAt  DateTime @default(now())
+    expiresAt  DateTime
 
-  @@index([employeeId])
-  @@index([token])
-  @@index([expiresAt])
+    @@index([employeeId])
+    @@index([token])
+    @@index([expiresAt])
 }
 
 enum EmployeeOTPPurpose {
-  twoFA
-  emailVerification
-  passwordReset
+    twoFA
+    emailVerification
+    passwordReset
 }
 
 model EmployeeOTP {
-  id         String             @id @default(uuid())
-  employeeId String
-  otp        String
-  purpose    EmployeeOTPPurpose
-  expiresAt  DateTime
+    id         String             @id @default(uuid())
+    employeeId String
+    otp        String
+    purpose    EmployeeOTPPurpose
+    expiresAt  DateTime
 
-  @@index([employeeId])
-  @@index([otp])
-  @@index([purpose])
-  @@index([expiresAt])
+    @@index([employeeId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
 }
 
 model Holiday {
-  id         String   @id @default(uuid())
-  date       DateTime @unique
-  name       String
-  forShiftId String?
-  isActive   Boolean  @default(true)
+    id         String   @id @default(uuid())
+    date       DateTime @unique
+    name       String
+    forShiftId String?
+    isActive   Boolean  @default(true)
 
-  @@index([date])
+    @@index([date])
 }
 
 model Leave {
-  id                   String      @id @default(uuid())
-  employeeId           String
-  fromDate             DateTime
-  toDate               DateTime
-  leaveType            String[]
-  otherTypeDescription String?
-  applicationNotes     String?
-  status               LeaveStatus
-  createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+    id                   String      @id @default(uuid())
+    employeeId           String
+    fromDate             DateTime
+    toDate               DateTime
+    leaveType            String[]
+    otherTypeDescription String?
+    applicationNotes     String?
+    status               LeaveStatus
+    createdAt            DateTime    @default(now())
+    updatedAt            DateTime    @updatedAt
 
-  @@unique([employeeId, fromDate, toDate])
-  @@index([employeeId])
-  @@index([fromDate, toDate])
+    @@unique([employeeId, fromDate, toDate])
+    @@index([employeeId])
+    @@index([fromDate, toDate])
 }
 
 model LeaveRegister {
-  id         String @id @default(uuid())
-  employeeId String @unique
+    id         String @id @default(uuid())
+    employeeId String @unique
 
-  casualCurrent Int @default(0)
-  casualCarried Int @default(0)
-  casualTotal   Int @default(0)
+    casualCurrent Int @default(0)
+    casualCarried Int @default(0)
+    casualTotal   Int @default(0)
 
-  sickCurrent Int @default(0)
-  sickCarried Int @default(0)
-  sickTotal   Int @default(0)
+    sickCurrent Int @default(0)
+    sickCarried Int @default(0)
+    sickTotal   Int @default(0)
 
-  bereavementCurrent Int @default(0)
-  bereavementCarried Int @default(0)
-  bereavementTotal   Int @default(0)
+    bereavementCurrent Int @default(0)
+    bereavementCarried Int @default(0)
+    bereavementTotal   Int @default(0)
 
-  maternityCurrent Int @default(0)
-  maternityCarried Int @default(0)
-  maternityTotal   Int @default(0)
+    maternityCurrent Int @default(0)
+    maternityCarried Int @default(0)
+    maternityTotal   Int @default(0)
 
-  paternityCurrent Int @default(0)
-  paternityCarried Int @default(0)
-  paternityTotal   Int @default(0)
+    paternityCurrent Int @default(0)
+    paternityCarried Int @default(0)
+    paternityTotal   Int @default(0)
 
-  earnedCurrent Int @default(0)
-  earnedCarried Int @default(0)
-  earnedTotal   Int @default(0)
+    earnedCurrent Int @default(0)
+    earnedCarried Int @default(0)
+    earnedTotal   Int @default(0)
 
-  compOffCurrent Int @default(0)
-  compOffCarried Int @default(0)
-  compOffTotal   Int @default(0)
+    compOffCurrent Int @default(0)
+    compOffCarried Int @default(0)
+    compOffTotal   Int @default(0)
 
-  otherCurrent Int @default(0)
-  otherCarried Int @default(0)
-  otherTotal   Int @default(0)
+    otherCurrent Int @default(0)
+    otherCarried Int @default(0)
+    otherTotal   Int @default(0)
 
-  grandTotal Int @default(0)
+    grandTotal Int @default(0)
 
-  lastResetYear Int
-  updatedAt     DateTime @updatedAt
+    lastResetYear Int
+    updatedAt     DateTime @updatedAt
 }
 
 model LeaveAttachments {
-  id              String   @id @default(uuid())
-  leaveId         String
-  attachmentPaths String[]
+    id              String   @id @default(uuid())
+    leaveId         String   @unique
+    attachmentPaths String[]
 }
 
 enum LeaveType {
-  CASUAL
-  SICK
-  EARNED
-  UNPAID
-  PAID
-  COMP_OFF
-  MATERNITY
-  PATERNITY
-  BEREAVEMENT
-  LOP
-  OTHER
+    CASUAL
+    SICK
+    EARNED
+    UNPAID
+    PAID
+    COMP_OFF
+    MATERNITY
+    PATERNITY
+    BEREAVEMENT
+    LOP
+    OTHER
 }
 
 enum LeaveStatus {
-  pending
-  approved
-  rejected
-  cancelled
+    pending
+    approved
+    rejected
+    cancelled
 }
 
 model AttendanceLog {
-  id                      String           @id @default(uuid())
-  employeeId              String
-  punchIn                 DateTime?
-  punchOut                DateTime?
-  durationInOfficeMinutes Int?
-  attendanceDate          DateTime
-  attendanceDay           String
-  flags                   String[]
-  status                  AttendanceStatus
-  comments                String?
+    id                      String           @id @default(uuid())
+    employeeId              String
+    punchIn                 DateTime?
+    punchOut                DateTime?
+    durationInOfficeMinutes Int?
+    attendanceDate          DateTime
+    attendanceDay           String
+    flags                   String[]
+    status                  AttendanceStatus
+    comments                String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  @@unique([employeeId, attendanceDate])
-  @@index([employeeId])
-  @@index([punchIn])
-  @@index([punchOut])
+    @@unique([employeeId, attendanceDate])
+    @@index([employeeId])
+    @@index([punchIn])
+    @@index([punchOut])
 }
 
 enum AttendanceStatus {
-  fullDay
-  halfDay
-  overtime
-  absent
-  approvedLeave
-  weeklyOff
-  holiday
-  anomalous
+    fullDay
+    halfDay
+    overtime
+    absent
+    approvedLeave
+    weeklyOff
+    holiday
+    anomalous
 }
 
 enum AttendanceFlags {
-  autoOut
-  singleEntry
-  late
-  earlyOut
-  insufficientHours
-  firstPunchBeyondCutoff
-  invalidOut
-  suspicious
-  overtime
-  manualEntry
-  edited
-  approvedLeave
+    autoOut
+    singleEntry
+    late
+    earlyOut
+    insufficientHours
+    firstPunchBeyondCutoff
+    invalidOut
+    suspicious
+    overtime
+    manualEntry
+    edited
+    approvedLeave
 }
 
 model Hr {
-  id              String   @id @default(uuid())
-  employeeId      String   @unique
-  name            String
-  email           String   @unique
-  isEmailVerified Boolean  @default(true)
-  password        String
-  updatedAt       DateTime @updatedAt
+    id              String   @id @default(uuid())
+    employeeId      String   @unique
+    name            String
+    email           String   @unique
+    isEmailVerified Boolean  @default(true)
+    password        String
+    updatedAt       DateTime @updatedAt
 
-  @@index(email)
-  @@index(id)
+    @@index(email)
+    @@index(id)
 }
 
 model HrActiveSessions {
-  id        String   @id @default(uuid())
-  hrId      String
-  token     String
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+    id        String   @id @default(uuid())
+    hrId      String
+    token     String
+    createdAt DateTime @default(now())
+    expiresAt DateTime
 
-  @@index([hrId])
-  @@index([token])
-  @@index([expiresAt])
+    @@index([hrId])
+    @@index([token])
+    @@index([expiresAt])
 }
 
 enum HrOTPPurpose {
-  twoFA
-  emailVerification
-  passwordReset
+    twoFA
+    emailVerification
+    passwordReset
 }
 
 model HrOTP {
-  id        String       @id @default(uuid())
-  hrId      String
-  otp       String
-  purpose   HrOTPPurpose
-  expiresAt DateTime
+    id        String       @id @default(uuid())
+    hrId      String
+    otp       String
+    purpose   HrOTPPurpose
+    expiresAt DateTime
 
-  @@index([hrId])
-  @@index([otp])
-  @@index([purpose])
-  @@index([expiresAt])
+    @@index([hrId])
+    @@index([otp])
+    @@index([purpose])
+    @@index([expiresAt])
 }
 
 model HrSettings {
-  id        String   @id @default(uuid())
-  HrId      String
-  isTwoFA   Boolean  @default(false)
-  updatedAt DateTime @updatedAt
+    id        String   @id @default(uuid())
+    HrId      String
+    isTwoFA   Boolean  @default(false)
+    updatedAt DateTime @updatedAt
 }
 
 enum ActorRole {
-  admin
-  hr
-  employee
-  system
-  unauthenticated
+    admin
+    hr
+    employee
+    system
+    unauthenticated
 }
 
 enum TargetRole {
-  admin
-  hr
-  employee
+    admin
+    hr
+    employee
 }
 
 enum ActionType {
-  create
-  read
-  update
-  delete
-  login
-  logout
-  access
-  verify
-  revoke
-  promote
-  demote
-  generate
-  send
-  upload
-  download
+    create
+    read
+    update
+    delete
+    login
+    logout
+    access
+    verify
+    revoke
+    promote
+    demote
+    generate
+    send
+    upload
+    download
 }
 
 enum AuditStatusType {
-  success
-  failure
+    success
+    failure
 }
 
 model AuditLog {
-  id         String          @id @default(uuid())
-  actorRole  ActorRole
-  actorId    String?
-  targetRole TargetRole?
-  targetId   String?
-  ipAddress  String
-  userAgent  String
-  referrer   String?
-  endpoint   String
-  action     ActionType
-  status     AuditStatusType
-  message    String?
-  timestamp  DateTime        @default(now())
+    id         String          @id @default(uuid())
+    actorRole  ActorRole
+    actorId    String?
+    targetRole TargetRole?
+    targetId   String?
+    ipAddress  String
+    userAgent  String
+    referrer   String?
+    endpoint   String
+    action     ActionType
+    status     AuditStatusType
+    message    String?
+    timestamp  DateTime        @default(now())
 
-  @@index([actorRole, actorId])
-  @@index([targetRole, targetId])
-  @@index([endpoint])
-  @@index([action])
-  @@index([timestamp])
+    @@index([actorRole, actorId])
+    @@index([targetRole, targetId])
+    @@index([endpoint])
+    @@index([action])
+    @@index([timestamp])
 }
 
 enum InfraRequestType {
-  bypass2FA // Temporary 2FA bypass request
-  resetPassword // Can’t log in, forgot/lost password
-  other // Explicitly handled edge case
+    bypass2FA // Temporary 2FA bypass request
+    resetPassword // Can’t log in, forgot/lost password
+    other // Explicitly handled edge case
 }
 
 enum RequestStatus {
-  pending
-  approved
-  denied
+    pending
+    approved
+    denied
 }
 
 model UserInfraRequest {
-  id             String           @id @default(uuid())
-  requesterId    String
-  requesterRole  ActorRole
-  requestType    InfraRequestType
-  reason         String
-  createdAt      DateTime         @default(now())
-  maxIterations  Int?
-  currentCount   Int              @default(0)
-  logRefs        Json
-  status         RequestStatus    @default(pending)
-  resolutionNote String?
-  respondedAt    DateTime?
-  delegatedToHr  Boolean          @default(false)
-  isVisibleToHr  Boolean          @default(false)
-  adminId        String?
-  hrId           String?
-  lastHandledBy  ActorRole?
+    id             String           @id @default(uuid())
+    requesterId    String
+    requesterRole  ActorRole
+    requestType    InfraRequestType
+    reason         String
+    createdAt      DateTime         @default(now())
+    maxIterations  Int?
+    currentCount   Int              @default(0)
+    logRefs        Json
+    status         RequestStatus    @default(pending)
+    resolutionNote String?
+    respondedAt    DateTime?
+    delegatedToHr  Boolean          @default(false)
+    isVisibleToHr  Boolean          @default(false)
+    adminId        String?
+    hrId           String?
+    lastHandledBy  ActorRole?
 
-  @@index([requesterId])
-  @@index([status])
-  @@index([requestType])
+    @@index([requesterId])
+    @@index([status])
+    @@index([requestType])
 }
