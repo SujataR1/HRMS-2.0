@@ -170,11 +170,11 @@ model EmployeeDetails {
 model EmployeeDetailsAttachments {
     id                      String @id @default(uuid())
     employeeId              String @unique
-    profilePicture          String
-    bankDetailsProofs       Json
+    profilePicture          String?
+    bankDetailsProofs       Json?
     identityProofs          Json?
     medicalNotesProofs      Json?
-    educationAndSkillsProof Json
+    educationAndSkillsProof Json?
 }
 
 model EmployeeSettings {
