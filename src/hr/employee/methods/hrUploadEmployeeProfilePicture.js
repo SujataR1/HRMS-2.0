@@ -16,7 +16,7 @@ export async function hrUploadEmployeeProfilePicture(authHeader, {employeeId, pr
 		await verifyHrJWT(authHeader);
 
 		// 🛠️ Upsert-style update
-		await prisma.employeeDetailsAttachments.update({
+		await prisma.employeeDetailsAttachments.upsert({
 			where: { employeeId },
 			data: { profilePicture: profilePicturePath },
 		});
