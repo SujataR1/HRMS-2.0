@@ -18,8 +18,12 @@ export async function hrUploadEmployeeProfilePicture(authHeader, {employeeId, pr
 		// 🛠️ Upsert-style update
 		await prisma.employeeDetailsAttachments.upsert({
 			where: { employeeId },
-			data: { profilePicture: profilePicturePath },
-		});
+			update: { profilePicture: profilePicturePath },
+			create: {
+				employeeId,
+				profilePicture: profilePicturePath,
+			},
+			});
 
 		return {
 			status: "success",
