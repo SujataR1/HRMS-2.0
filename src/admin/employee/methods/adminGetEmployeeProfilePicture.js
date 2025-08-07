@@ -32,7 +32,8 @@ export async function adminGetEmployeeProfilePicture(authHeader, employeeIds) {
 				return { employeeId: empId, profilePicture: null };
 			}
 
-			const absPath = path.resolve(MEDIA_BASE_PATH, attachment.profilePicture);
+				const relativeSubpath = path.relative("/media", attachments.profilePicture);
+				const absPath = path.resolve(MEDIA_BASE_PATH, relativeSubpath);
 
 			try {
 				const buffer = await fs.readFile(absPath);

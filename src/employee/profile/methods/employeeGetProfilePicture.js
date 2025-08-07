@@ -17,7 +17,9 @@ export async function employeeGetProfilePicture(authHeader) {
 		throw new Error("Missing or invalid Authorization header");
 	}
 
-	const { employeeId } = await verifyEmployeeJWT(authHeader);
+	const verify  = await verifyEmployeeJWT(authHeader);
+
+	const employeeId = verify.employeeId;
 
 	const attachments = await prisma.employeeDetailsAttachments.findUnique({
 		where: { employeeId },
@@ -28,7 +30,8 @@ export async function employeeGetProfilePicture(authHeader) {
 		return null;
 	}
 
-	const absolutePath = path.resolve(MEDIA_BASE_PATH, attachments.profilePicture);
+	const relativeSubpath = path.relative("/media", attachments.profilePicture);
+	const absolutePath = path.resolve(MEDIA_BASE_PATH, relativeSubpath);
 
 	try {
 		const buffer = await fs.readFile(absolutePath);

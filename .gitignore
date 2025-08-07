@@ -12,7 +12,7 @@ tree.txt
 schema.prisma.txt
 forUpload*.txt
 logs
-media/leave-attachments
+!media/favicon.ico
 *.exe
 bun.lock
 hrms
