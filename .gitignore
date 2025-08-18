@@ -13,6 +13,7 @@ schema.prisma.txt
 forUpload*.txt
 logs
 !media/favicon.ico
+media
 *.exe
 bun.lock
 hrms
