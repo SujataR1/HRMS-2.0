@@ -1,8 +1,8 @@
 import fp from "fastify-plugin";
-import { hrEditLeavePaymentStatuses } from "./methods/hrEditLeavePaymentStatuses.js";
-import { hrEditLeavePaymentStatusesSchema } from "./schemas/hrEditLeavePaymentStatusesSchema.js";
+import { hrEditLeavePaymentStatuses } from "../methods/hrEditLeavePaymentStatuses.js";
+import { hrEditLeavePaymentStatusesSchema } from "../schemas/hrEditLeavePaymentStatusesSchema.js";
 
-export default fp(async function hrLeavePaymentStatusesRoute(fastify) {
+export default fp(async function hrEditLeavePaymentStatusesRoute(fastify) {
   fastify.patch("/hr/leave/payment-status/edit", async (request, reply) => {
     const authHeader = request.headers.authorization;
 
