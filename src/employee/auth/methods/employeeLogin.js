@@ -33,6 +33,8 @@ export async function employeeLogin({ assignedEmail, password }, meta = {}) {
 				throw new Error("Invalid credentials");
 			}
 
+			if (["RESIGNED","TERMINATED"].includes((await tx.employeeDetails.findUnique({ where: { employeeId: employee.employeeId }, select: { employmentStatus: true } }))?.employmentStatus ?? "")) throw new Error("Invalid credentials");
+
 			const passwordMatch = await bcrypt.compare(
 				password,
 				employee.password
