@@ -22,6 +22,8 @@ export async function hrLogin({ email, password }) {
 			});
 			if (!hr) throw new Error("Invalid credentials");
 
+			if (["RESIGNED","TERMINATED","SUSPENDED"].includes((await tx.employeeDetails.findUnique({ where: { employeeId: hr.employeeId }, select: { employmentStatus: true } }))?.employmentStatus ?? "")) throw new Error("Invalid credentials");
+
 			const passwordMatch = await bcrypt.compare(password, hr.password);
 			if (!passwordMatch) throw new Error("Invalid credentials");
 
