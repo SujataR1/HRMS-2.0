@@ -1,6 +1,6 @@
 import fp from "fastify-plugin";
 import { EmployeeGenerateAndSendMonthlyReportsSchema } from "../schemas/employeeGenerateAndSendMonthlyReportsSchema.js";
-import { employeeGenerateAndSendMonthlyReports } from "../methods/employeeGenerateAndSendMonthlyReports.js";
+import { EmployeeGenerateAndSendMonthlyReports } from "../methods/employeeGenerateAndSendMonthlyReports.js";
 
 export default fp(
 	async function employeeGenerateAndSendMonthlyReportsRoute(fastify) {
@@ -32,7 +32,7 @@ export default fp(
 				}
 
 				try {
-					const result = await employeeGenerateAndSendMonthlyReports({
+					const result = await EmployeeGenerateAndSendMonthlyReports({
 						authHeader,
 						...parsed.data,
 					});
