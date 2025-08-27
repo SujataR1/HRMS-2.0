@@ -82,6 +82,7 @@ import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js
 import employeeLogoutRoute from "./src/employee/auth/routes/employeeLogoutRoute.js";
 import employeeCancelLeaveRoute from "./src/employee/leave/routes/employeeCancelLeaveRoute.js";
 import employeeCreateLeaveRoute from "./src/employee/leave/routes/employeeCreateLeaveRoute.js";
+import employeeGetHolidayEntriesRoute from "./src/employee/holidays/routes/employeeGetHolidayEntriesRoute.js";
 import employeeEditLeaveNotesRoute from "./src/employee/leave/routes/employeeEditLeaveNotesRoute.js";
 import employeeGetLeaveRegisterRoute from "./src/employee/leave/routes/employeeGetLeaveRegisterRoute.js";
 import employeeGetLeavesRoute from "./src/employee/leave/routes/employeeGetLeavesRoute.js";
@@ -239,6 +240,7 @@ await app.register(employeeLogoutRoute);
 await app.register(employeeChangePasswordRoute);
 await app.register(employeeGetProfileRoute);
 await app.register(employeeGetLeaveRegisterRoute);
+await app.register(employeeGetHolidayEntriesRoute);
 await app.register(employeeRequestAPasswordResetRoute);
 await app.register(employeeResetPasswordRoute);
 await app.register(employeeGetProfilePictureRoute);

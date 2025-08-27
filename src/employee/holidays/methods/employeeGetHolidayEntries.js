@@ -1,0 +1,89 @@
+import { PrismaClient } from "@prisma/client";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone.js";
+import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+
+dayjs.extend(timezone);
+
+const prisma = new PrismaClient();
+const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
+
+/**
+ * Fetch holiday records with optional filters.
+ *
+ * @param {Object} params
+ * @param {string} params.authHeader          – "Bearer <token>"      (required)
+ * @param {string[]} [params.shiftIds]        – Array of Shift UUIDs  (optional)
+ * @param {string}  [params.fromDate]         – "YYYY-MM-DD" (IST)    (optional, must pair with toDate)
+ * @param {string}  [params.toDate]           – "YYYY-MM-DD" (IST)    (optional, must pair with fromDate)
+ *
+ * @returns {Promise<Array>}                  – Array of holiday objects
+ */
+export async function employeeGetHolidayEntries({
+	authHeader,
+	fromDate = null,
+	toDate = null,
+}) {
+	/* --------------------- 1️⃣  Auth ------------------------------------ */
+	if (!authHeader || !authHeader.startsWith("Bearer "))
+		throw new Error("Authorization header missing or invalid");
+
+	const { employeeId } = await verifyEmployeeJWT(authHeader);
+
+	/* --------------------- 2️⃣  Input validation ------------------------ */
+	if ((fromDate && !toDate) || (!fromDate && toDate)) {
+		throw new Error("Both fromDate and toDate must be supplied together");
+	}
+
+	let fromISO = null;
+	let toISO = null;
+
+	if (fromDate && toDate) {
+		const fromIST = dayjs.tz(fromDate, TIMEZONE).startOf("day");
+		const toIST = dayjs.tz(toDate, TIMEZONE).endOf("day");
+
+		if (!fromIST.isValid() || !toIST.isValid()) {
+			throw new Error("fromDate / toDate must be valid YYYY-MM-DD dates");
+		}
+
+		if (fromIST.isAfter(toIST)) {
+			throw new Error("fromDate cannot be after toDate");
+		}
+
+		fromISO = fromIST.utc().toDate();
+		toISO = toIST.utc().toDate();
+	}
+
+	const details = await prisma.employeeDetails.findUnique({
+		where: { employeeId },
+	});
+
+	const shiftIds = details?.shiftId ? [details.shiftId] : [];
+
+	/* --------------------- 3️⃣  Query Prisma ---------------------------- */
+	const whereClause = {
+		...(shiftIds?.length && { forShiftId: { in: shiftIds } }),
+		...(fromISO &&
+			toISO && {
+				date: {
+					gte: fromISO,
+					lte: toISO,
+				},
+			}),
+	};
+
+	const holidays = await prisma.holiday.findMany({
+		where: whereClause,
+		orderBy: { date: "asc" },
+	});
+
+	/* --------------------- 4️⃣  Return (IST format YYYY-MM-DD) ------------ */
+	return holidays.map((h) => ({
+		id: h.id,
+		date: dayjs(h.date).tz(TIMEZONE).format("YYYY-MM-DD"),
+		name: h.name,
+		forShiftId: h.forShiftId,
+		isActive: h.isActive,
+	}));
+
+}
