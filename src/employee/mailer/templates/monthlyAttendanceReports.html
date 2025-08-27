@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Monthly Attendance Report</title>
+		<style>
+			body {
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+				color: #333;
+				padding: 20px;
+				line-height: 1.6;
+				background-color: #f9f9f9;
+			}
+			.container {
+				background: #fff;
+				padding: 20px 25px;
+				border-radius: 8px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+			}
+			.footer {
+				margin-top: 25px;
+				font-size: 12px;
+				color: #777;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<h2>Monthly Attendance Reports – {{monthYear}}</h2>
+
+			<p>Hello Employee,</p>
+
+			<p>
+				Please find the attached PDF reports for your
+				attendance in <strong>{{monthYear}}</strong>.
+			</p>
+
+			<p>Regards,<br /><strong>HRMS System</strong></p>
+		</div>
+
+		<div class="footer">
+			This is an automated email from HRMS. Please do not reply to this
+			message.
+		</div>
+	</body>
+</html>
