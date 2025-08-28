@@ -437,7 +437,31 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 		select: { personalEmail: true },
 	})
 
-	await sendEmployeeMailWithAttachments({
+	// await sendEmployeeMailWithAttachments({
+	// 	to: employee.assignedEmail,
+	// 	purpose: "monthlyAttendanceReports",
+	// 	payload: {
+	// 		monthYear,
+	// 		year: year.toString(),
+	// 		subject: `Monthly Attendance Reports – ${monthYear}`,
+	// 	},
+	// 	attachments: [pdfPath],
+	// });
+
+	// await sendEmployeeMailWithAttachments({
+	// 	to: employeePersonalEmail?.personalEmail,
+	// 	purpose: "monthlyAttendanceReports",
+	// 	payload: {
+	// 		monthYear,
+	// 		year: year.toString(),
+	// 		subject: `Monthly Attendance Reports – ${monthYear}`,
+	// 	},
+	// 	attachments: [pdfPath],
+	// });
+
+	setImmediate(async () => {
+	try {
+		await sendEmployeeMailWithAttachments({
 		to: employee.assignedEmail,
 		purpose: "monthlyAttendanceReports",
 		payload: {
@@ -446,9 +470,15 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			subject: `Monthly Attendance Reports – ${monthYear}`,
 		},
 		attachments: [pdfPath],
+		});
+	} catch (err) {
+		console.error("Failed to send office email:", err);
+	}
 	});
 
-	await sendEmployeeMailWithAttachments({
+	setImmediate(async () => {
+	try {
+		await sendEmployeeMailWithAttachments({
 		to: employeePersonalEmail?.personalEmail,
 		purpose: "monthlyAttendanceReports",
 		payload: {
@@ -457,10 +487,14 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			subject: `Monthly Attendance Reports – ${monthYear}`,
 		},
 		attachments: [pdfPath],
+		});
+	} catch (err) {
+		console.error("Failed to send personal email:", err);
+	}
 	});
 
 	return {
 		success: true,
-		message: `Consolidated attendance report for ${monthYear} generated and sent to employee`,
+		message: `Consolidated attendance report for ${monthYear} generated and queued for email delivery.`,
 	};
 }
