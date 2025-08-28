@@ -432,6 +432,11 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 	doc.end();
 
+	const employeePersonalEmail  = await prisma.employeeDetails.findFirst({
+		where: { employeeId: employee.employeeId },
+		select: { personalEmail: true },
+	})
+
 	await sendEmployeeMailWithAttachments({
 		to: employee.assignedEmail,
 		purpose: "monthlyAttendanceReports",
@@ -443,8 +448,19 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 		attachments: [pdfPath],
 	});
 
+	await sendEmployeeMailWithAttachments({
+		to: employeePersonalEmail?.personalEmail,
+		purpose: "monthlyAttendanceReports",
+		payload: {
+			monthYear,
+			year: year.toString(),
+			subject: `Monthly Attendance Reports – ${monthYear}`,
+		},
+		attachments: [pdfPath],
+	});
+
 	return {
 		success: true,
-		message: `Consolidated attendance report for ${monthYear} generated and sent to admin`,
+		message: `Consolidated attendance report for ${monthYear} generated and sent to employee`,
 	};
 }
