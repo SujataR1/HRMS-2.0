@@ -59,7 +59,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 	const decoded = await verifyEmployeeJWT(authHeader);
 	const employeeId = decoded.employeeId;
-	const employee = await prisma.employee.findUnique({ where: employeeId });
+	const employee = await prisma.employee.findUnique({where: { employeeId }});
 	const employeeIds = [employeeId];
 	if (!employee) throw new Error("Employee not found");
 
