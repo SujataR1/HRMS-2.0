@@ -93,18 +93,18 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 	const startX = (doc.page.width - totalTableWidth) / 2;
 	const maxY = doc.page.height - 120;
 
-	const employeeDetailsWithMatchingShifts =
-		await prisma.employeeDetails.findMany({
-			where:
-				shiftIds.length > 0
-					? {
-							assignedShiftId: { in: shiftIds },
-						}
-					: undefined,
-		});
-	const shiftMatchedEmployeeIds = employeeDetailsWithMatchingShifts.map(
-		(d) => d.employeeId
-	);
+	// const employeeDetailsWithMatchingShifts =
+	// 	await prisma.employeeDetails.findMany({
+	// 		where:
+	// 			shiftIds.length > 0
+	// 				? {
+	// 						assignedShiftId: { in: shiftIds },
+	// 					}
+	// 				: undefined,
+	// 	});
+	// const shiftMatchedEmployeeIds = employeeDetailsWithMatchingShifts.map(
+	// 	(d) => d.employeeId
+	// );
 
 	const employeesById = await prisma.employee.findMany({
 		where:
@@ -115,31 +115,31 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 				: undefined,
 	});
 
-	const employeesByShift = await prisma.employee.findMany({
-		where:
-			shiftIds.length > 0
-				? {
-						employeeId: { in: shiftMatchedEmployeeIds },
-					}
-				: undefined,
-	});
+	// const employeesByShift = await prisma.employee.findMany({
+	// 	where:
+	// 		shiftIds.length > 0
+	// 			? {
+	// 					employeeId: { in: shiftMatchedEmployeeIds },
+	// 				}
+	// 			: undefined,
+	// });
 
-	let allEmployees;
+	let allEmployees = employeesById; // Change this line to only include employeesById
 
-	if (employeeIds.length === 0 && shiftIds.length === 0) {
-		allEmployees = employeesById;
-	} else if (employeeIds.length > 0 && shiftIds.length === 0) {
-		allEmployees = employeesById;
-	} else if (employeeIds.length === 0 && shiftIds.length > 0) {
-		allEmployees = employeesByShift;
-	} else {
-		const seen = new Set();
-		allEmployees = [...employeesById, ...employeesByShift].filter((emp) => {
-			if (seen.has(emp.employeeId)) return false;
-			seen.add(emp.employeeId);
-			return true;
-		});
-	}
+	// if (employeeIds.length === 0 && shiftIds.length === 0) {
+	// 	allEmployees = employeesById;
+	// } else if (employeeIds.length > 0 && shiftIds.length === 0) {
+	// 	allEmployees = employeesById;
+	// } else if (employeeIds.length === 0 && shiftIds.length > 0) {
+	// 	allEmployees = employeesByShift;
+	// } else {
+	// 	const seen = new Set();
+	// 	allEmployees = [...employeesById, ...employeesByShift].filter((emp) => {
+	// 		if (seen.has(emp.employeeId)) return false;
+	// 		seen.add(emp.employeeId);
+	// 		return true;
+	// 	});
+	// }
 
 	const employeeDetailsMap = new Map();
 	const allEmployeeDetails = await prisma.employeeDetails.findMany({
