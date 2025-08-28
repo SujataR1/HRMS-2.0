@@ -76,7 +76,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 	);
 	if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-	const pdfPath = path.join(outputDir, `Attendance-of-${monthYear}.pdf`);
+	const pdfPath = path.join(outputDir, `Attendance-of-${monthYear} for ${employeeId}.pdf`);
 	const doc = new PDFDocument({ margin: 50, size: "A4" });
 	doc.pipe(fs.createWriteStream(pdfPath));
 
