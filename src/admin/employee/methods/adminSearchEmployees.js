@@ -27,7 +27,6 @@ export async function adminSearchEmployees(
     // Optional: tune trigram similarity threshold for this session
     // Requires pg_trgm extension (you said it's enabled)
     await prisma.$executeRaw`SELECT set_limit(${fuzzyLimit});`;
-    await prisma.$executeRaw`SET pg_trgm.word_similarity_threshold = ${fuzzyLimit};`;
 
     // The unified, weighted, fuzzy search (Employee > EmployeeDetails)
     const rows = await prisma.$queryRaw`
