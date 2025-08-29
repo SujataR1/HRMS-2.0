@@ -18,6 +18,7 @@ import adminMakeOrRefreshEmployeeAttendanceRoute from "./src/admin/attendance/ro
 import adminLoginRoute from "./src/admin/auth/routes/adminLoginRoute.js";
 import adminLogoutRoute from "./src/admin/auth/routes/adminLogoutRoute.js";
 import adminCreateRoute from "./src/admin/creation/routes/adminCreateRoute.js";
+import adminSearchEmployeesRoute from "./src/admin/employee/routes/adminSearchEmployeesRoute.js";
 import adminAssignAnEmployeeAShiftRoute from "./src/admin/employee/routes/adminAssignAnEmployeeAShiftRoute.js";
 import adminCreateAnEmployeeRoute from "./src/admin/employee/routes/adminCreateAnEmployeeRoute.js";
 import adminCreateEmployeeDetailsRoute from "./src/admin/employee/routes/adminCreateEmployeeDetailsRoute.js";
@@ -187,6 +188,7 @@ await app.register(adminUpdateProfileRoute);
 await app.register(adminRevokeAllActiveSessionsRoute);
 await app.register(adminGetEmployeeAttendanceRoute);
 await app.register(adminGenerateAndSendMonthlyReportsRoute);
+await app.register(adminSearchEmployeesRoute);
 await app.register(adminPromoteEmployeeToHRRoute);
 await app.register(adminDemoteHRRoute);
 await app.register(adminEditAnAttendanceEntryRoute);
