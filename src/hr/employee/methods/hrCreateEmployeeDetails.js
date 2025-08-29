@@ -17,6 +17,15 @@ export async function hrCreateEmployeeDetails(details) {
 	const toUTC = (t) => dayjs.tz(t, TIMEZONE).utc().toDate();
 
 	return await prisma.$transaction(async (tx) => {
+
+		const existingEmployee = await prisma.employee.findUnique({
+			where: { employeeId },
+		});
+
+		if (!existingEmployee) {
+			throw new Error("Employee with given employeeId does not exist");
+		}
+		
 		const existing = await tx.employeeDetails.findUnique({
 			where: { employeeId: details.employeeId },
 		});

@@ -7,6 +7,14 @@ export async function adminCreateEmployeeDetails({ employeeId, details }) {
     throw new Error("Both employeeId and details are required");
   }
 
+  const existingEmployee = await prisma.employee.findUnique({
+    where: { employeeId },
+  });
+
+  if (!existingEmployee) {
+    throw new Error("Employee with given employeeId does not exist");
+  }
+
   const existing = await prisma.employeeDetails.findUnique({
     where: { employeeId },
   });
