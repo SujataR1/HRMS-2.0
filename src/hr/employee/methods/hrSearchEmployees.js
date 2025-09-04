@@ -198,7 +198,7 @@ const prisma = new PrismaClient();
  */
 export async function hrSearchEmployees(
   authHeader,
-  { searchText, limit = 50, fuzzyLimit = 0.175 }
+  { searchText, limit = 50, fuzzyLimit = 0.15 }
 ) {
   try {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
