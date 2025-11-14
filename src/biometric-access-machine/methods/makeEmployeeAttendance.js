@@ -216,6 +216,7 @@ export async function makeEmployeeAttendance({
 
 	for (const istDay of allDays) {
 		const dayKey = istDay.format("YYYY-MM-DD");
+		const monthKey = istDay.format("YYYY-MM");
 		const dayName = istDay.format("dddd");
 
 		for (const { employeeId: empId } of allEmployees) {
@@ -397,6 +398,23 @@ export async function makeEmployeeAttendance({
 						}
 					}
 				}
+			}
+
+			const isLateToday = flags.includes("late");
+			if (isLateToday) {
+			const lateKey = `${empId}_${monthKey}`;
+			const prev = monthlyLateCount.get(lateKey) ?? 0;
+			const current = prev + 1;
+			monthlyLateCount.set(lateKey, current);
+
+			// Every 3rd late of the calendar month (3rd, 6th, 9th, ...)
+			if (current % 3 === 0) {
+				// Call processAttendanceStatuses with employeeId and attendance date
+				await processAttendanceStatuses({
+				employeeId: empId,
+				date: new Date(istDay.format("YYYY-MM-DD")), // same as attendanceDate
+				});
+			}
 			}
 
 			flags = Array.from(new Set(flags));
