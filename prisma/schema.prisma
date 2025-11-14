@@ -226,6 +226,17 @@ model Holiday {
     @@index([date])
 }
 
+model Events {
+    id         String   @id @default(uuid())
+    date       DateTime @unique
+    name       String
+    description String?
+    forShiftId String?
+    isActive   Boolean  @default(true)
+
+    @@index([date])
+}
+
 model Leave {
     id                   String      @id @default(uuid())
     employeeId           String

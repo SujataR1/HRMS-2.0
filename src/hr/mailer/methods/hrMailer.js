@@ -15,6 +15,17 @@ const client = new SMTPClient({
 	ssl: process.env.SMTP_SECURE === "true",
 });
 
+
+// const client = new SMTPClient({
+//   user: process.env.SMTP_USER,
+//   password: process.env.SMTP_PASS,
+//   host: process.env.SMTP_HOST,
+//   port: parseInt(process.env.SMTP_PORT),
+//   ssl: false,
+//   tls: true,
+//   timeout: 15000 // extend timeout to 15s
+// });
+
 /**
  * Sends a basic HR mail using a predefined HTML template and payload values.
  */
