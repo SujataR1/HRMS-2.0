@@ -438,6 +438,38 @@ export async function makeEmployeeAttendance({
 		}
 	}
 
+	// await pMap(
+	// 	upserts,
+	// 	async (rec) => {
+	// 		const existing = await prisma.attendanceLog.findUnique({
+	// 			where: {
+	// 				employeeId_attendanceDate: {
+	// 					employeeId: rec.employeeId,
+	// 					attendanceDate: rec.attendanceDate,
+	// 				},
+	// 			},
+	// 			select: { flags: true },
+	// 		});
+
+	// 		const preserve =
+	// 			existing?.flags?.includes("manualEntry") ||
+	// 			existing?.flags?.includes("edited");
+	// 		if (preserve) return;
+
+	// 		return await prisma.attendanceLog.upsert({
+	// 			where: {
+	// 				employeeId_attendanceDate: {
+	// 					employeeId: rec.employeeId,
+	// 					attendanceDate: rec.attendanceDate,
+	// 				},
+	// 			},
+	// 			create: rec,
+	// 			update: rec,
+	// 		});
+	// 	},
+	// 	{ concurrency: CORES }
+	// );
+
 	await pMap(
 		upserts,
 		async (rec) => {
@@ -451,10 +483,32 @@ export async function makeEmployeeAttendance({
 				select: { flags: true },
 			});
 
-			const preserve =
-				existing?.flags?.includes("manualEntry") ||
-				existing?.flags?.includes("edited");
-			if (preserve) return;
+			const existingFlags = Array.isArray(existing?.flags)
+				? existing.flags
+				: [];
+
+			// Respect manual-edit protection
+			if (
+				existingFlags.includes("manualEntry") ||
+				existingFlags.includes("edited")
+			) {
+				return;
+			}
+
+			// 🔁 Idempotent penalty preservation logic
+			const hasThirdLate = existingFlags.includes("thirdLate");
+
+			let penaltyFlagsToCarry = [];
+
+			if (hasThirdLate) {
+				penaltyFlagsToCarry = existingFlags.filter((f) =>
+					["thirdLate", "leaveDocked", "payDocked"].includes(f)
+				);
+			}
+
+			rec.flags = Array.from(
+				new Set([...(rec.flags || []), ...penaltyFlagsToCarry])
+			);
 
 			return await prisma.attendanceLog.upsert({
 				where: {
