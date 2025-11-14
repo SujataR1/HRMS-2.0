@@ -24,6 +24,10 @@ enum Identifier {
     unknown
 }
 
+enum AttendanceStatusProcessingIdentifiers {
+    thirdlate
+}
+
 model Admin {
     id              String   @id @default(uuid())
     name            String
@@ -368,6 +372,8 @@ enum AttendanceFlags {
     manualEntry
     edited
     approvedLeave
+    leaveDocked
+    payDocked
 }
 
 model Hr {

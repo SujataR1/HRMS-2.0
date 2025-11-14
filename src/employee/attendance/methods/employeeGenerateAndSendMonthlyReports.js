@@ -48,6 +48,8 @@ const readableFlags = {
 	overtime: "Overtime logged after full shift",
 	suspicious: "Out-of-pattern activity detected",
 	approvedLeave: "Pre-approved leave",
+	leaveDocked: "A paid leave has been docked",
+	payDocked: "A day's pay has been docked",
 };
 
 export async function EmployeeGenerateAndSendMonthlyReports({
@@ -243,6 +245,9 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			halfDay: 0,
 			approvedLeave: 0,
 			holiday: 0,
+			thirdLate: 0,
+			payDocked: 0,
+			leaveDocked: 0,
 		};
 
 		const rows = attendance.map((log) => {
@@ -255,6 +260,9 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			if (log.status === "holiday") stats.holiday++;
 			if (log.status === "weeklyOff") stats.weeklyOff++;
 			if ((log.flags || []).includes("late")) stats.late++;
+			if ((log.flags || []).includes("thirdLate")) stats.thirdLate++;
+			if ((log.flags || []).includes("payDocked")) stats.payDocked++;
+			if ((log.flags || []).includes("leaveDocked")) stats.leaveDocked++;
 
 			return {
 				date: dayjs
@@ -408,7 +416,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 		const totalCalendarDays = end.date();
 		const totalWorkingDays = 30;
-		const totalWorkingDaysPresent = totalWorkingDays - stats.absent;
+		const totalWorkingDaysPresent = totalWorkingDays - stats.absent - stats.thirdLate;
 		const totalPartialShifts = stats.halfDay;
 
 		doc.x = startX;
@@ -425,8 +433,11 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			.text(`• Total Approved Leaves: ${stats.approvedLeave}`)
 			.text(`• Total Days Absent: ${stats.absent}`)
 			.text(`• Total Days Late: ${stats.late}`)
+			.text(`• Total Number of complete triplets late: ${stats.thirdLate}`)
 			.text(`• Total Days with Partial Shifts: ${totalPartialShifts}`)
 			.text(`• Total Days Present: ${stats.present}`)
+			.text(`• Total Leaves Docked: ${stats.leaveDocked}`)
+			.text(`• Total Pays Docked: ${stats.payDocked}`)
 			.text(`• Total Working Days Present: ${totalWorkingDaysPresent}`);
 	}
 

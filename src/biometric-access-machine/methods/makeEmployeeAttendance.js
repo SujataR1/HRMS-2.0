@@ -6,6 +6,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import os from "os";
 import pMap from "p-map";
+import { processAttendanceStatuses } from "./processAttendanceStatuses.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -413,6 +414,7 @@ export async function makeEmployeeAttendance({
 				await processAttendanceStatuses({
 				employeeId: empId,
 				date: new Date(istDay.format("YYYY-MM-DD")), // same as attendanceDate
+				identifier: "thirdlate"
 				});
 			}
 			}
