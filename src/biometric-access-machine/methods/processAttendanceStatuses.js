@@ -59,6 +59,23 @@ async function handleThirdLate({ attendance, employeeId, attendanceDate }) {
 			? [...attendance.flags]
 			: [];
 
+		let existingFlags = Array.isArray(attendance.flags)
+			? [...attendance.flags]
+			: [];
+
+		// 🔁 Idempotency guard:
+		// If we've already marked this as a third late AND already
+		// recorded whether leave or pay was docked, don't do it again.
+		const alreadyPenalized =
+			existingFlags.includes("thirdLate") &&
+			(existingFlags.includes("leaveDocked") ||
+				existingFlags.includes("payDocked"));
+
+		if (alreadyPenalized) {
+			// Penalty already applied earlier; skip docking + emails
+			return;
+		}
+
 		// Make sure thirdLate is present
 		if (!flags.includes("thirdLate")) {
 			flags.push("thirdLate");

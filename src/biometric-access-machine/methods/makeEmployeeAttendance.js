@@ -410,6 +410,7 @@ export async function makeEmployeeAttendance({
 
 			// Every 3rd late of the calendar month (3rd, 6th, 9th, ...)
 			if (current % 3 === 0) {
+				flags.push("thirdLate");
 				// Call processAttendanceStatuses with employeeId and attendance date
 				await processAttendanceStatuses({
 				employeeId: empId,
