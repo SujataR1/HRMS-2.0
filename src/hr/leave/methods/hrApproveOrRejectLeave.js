@@ -270,14 +270,14 @@ export async function hrApproveOrRejectLeave(
 	if (action === "approved" && paymentStatuses?.includes("PAID")) {
 		// Map LeaveType enum → LeaveRegister bucket
 		const LEAVE_TYPE_TO_REGISTER_KEY = {
-			CASUAL: "casualTotal",
-			SICK: "sickTotal",
-			EARNED: "earnedTotal",
-			BEREAVEMENT: "bereavementTotal",
-			MATERNITY: "maternityTotal",
-			PATERNITY: "paternityTotal",
-			COMP_OFF: "compOffTotal",
-			OTHER: "otherTotal",
+			CASUAL: "casualCurrent",
+			SICK: "sickCurrent",
+			EARNED: "earnedCurrent",
+			BEREAVEMENT: "bereavementCurrent",
+			MATERNITY: "maternityCurrent",
+			PATERNITY: "paternityCurrent",
+			COMP_OFF: "compOffCurrent",
+			OTHER: "otherCurrent",
 		};
 
 		const baseTypes = Object.keys(LEAVE_TYPE_TO_REGISTER_KEY);
