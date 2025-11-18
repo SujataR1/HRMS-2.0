@@ -159,7 +159,10 @@ import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import { sendEmployeeMail, sendEmployeeMailWithAttachments } from "../../../employee/mailer/methods/employeeMailer.js";
+import {
+	sendEmployeeMail,
+	sendEmployeeMailWithAttachments,
+} from "../../../employee/mailer/methods/employeeMailer.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dayjs.extend(utc);
@@ -174,16 +177,19 @@ const CONFLICTING_COMBOS = [
 	["PAID", "UNPAID"],
 	["PAID", "LOP"],
 	["COMP_OFF", "UNPAID"],
-	["COMP_OFF", "LOP"]
+	["COMP_OFF", "LOP"],
 ];
 
 function hasConflict(paymentStatuses) {
 	return CONFLICTING_COMBOS.some((combo) =>
-		combo.every((status) => paymentStatuses.includes(status))
+		combo.every((status) => paymentStatuses.includes(status)),
 	);
 }
 
-export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paymentStatuses }) {
+export async function hrApproveOrRejectLeave(
+	authHeader,
+	{ leaveId, action, paymentStatuses },
+) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		throw new Error("Authorization header missing or invalid");
 	}
@@ -194,13 +200,15 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		throw new Error("Invalid leaveId");
 	}
 
-	if (![`approved`, `rejected`].includes(action)) {
+	if (!["approved", "rejected"].includes(action)) {
 		throw new Error("Action must be either 'approved' or 'rejected'");
 	}
 
 	if (action === "approved") {
 		if (!Array.isArray(paymentStatuses) || paymentStatuses.length === 0) {
-			throw new Error("At least one payment status must be provided when approving");
+			throw new Error(
+				"At least one payment status must be provided when approving",
+			);
 		}
 
 		for (const status of paymentStatuses) {
@@ -227,10 +235,6 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		select: { name: true, assignedEmail: true },
 	});
 
-	// if (!leave) {
-	// 	throw new Error("Leave not found");
-	// }
-
 	if (leave.status !== "pending") {
 		throw new Error("Only pending leaves can be approved or rejected");
 	}
@@ -247,7 +251,8 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 	if (action === "approved") {
 		// Remove COMP_OFF if it existed in the original but not in the approved statuses
 		updatedLeaveType = updatedLeaveType.filter((type) => {
-			if (type === "COMP_OFF" && !paymentStatuses.includes("COMP_OFF")) return false;
+			if (type === "COMP_OFF" && !paymentStatuses.includes("COMP_OFF"))
+				return false;
 			return true;
 		});
 
@@ -259,28 +264,35 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 		updatedLeaveType = leave.leaveType;
 	}
 
-	// If approving as PAID, deduct from LeaveRegister for the given leave type
+	// 🔐 Only on approval, and only when PAID:
+	// if the leave type has remaining count in LeaveRegister, deduct 1,
+	// else throw "No leaves paid remaining for that type"
 	if (action === "approved" && paymentStatuses?.includes("PAID")) {
-		// Assume first leaveType entry denotes the category (e.g. CASUAL, SICK, etc.)
-		const primaryLeaveType = Array.isArray(leave.leaveType) ? leave.leaveType[0] : leave.leaveType;
+		// Map LeaveType enum → LeaveRegister bucket
+		const LEAVE_TYPE_TO_REGISTER_KEY = {
+			CASUAL: "casualTotal",
+			SICK: "sickTotal",
+			EARNED: "earnedTotal",
+			BEREAVEMENT: "bereavementTotal",
+			MATERNITY: "maternityTotal",
+			PATERNITY: "paternityTotal",
+			COMP_OFF: "compOffTotal",
+			OTHER: "otherTotal",
+		};
 
+		const baseTypes = Object.keys(LEAVE_TYPE_TO_REGISTER_KEY);
+		const leaveTypesArray = Array.isArray(leave.leaveType)
+			? leave.leaveType
+			: [leave.leaveType];
+
+		// Find the first "base" type (CASUAL, SICK, EARNED, etc.) in leave.leaveType
+		const primaryLeaveType = leaveTypesArray.find((t) =>
+			baseTypes.includes(t),
+		);
+
+		// If this leave type isn’t tracked in LeaveRegister, skip deduction
 		if (primaryLeaveType) {
-			// Normalize to a register field prefix, e.g. CASUAL -> casual, COMP_OFF -> compOff
-			const normalized = String(primaryLeaveType).trim().toLowerCase();
-			let prefix;
-
-			switch (normalized) {
-				case "comp_off":
-				case "comp-off":
-				case "compoff":
-					prefix = "compOff";
-					break;
-				default:
-					// convert snake/kebab/space to camelCase
-					prefix = normalized.replace(/[_\-\s]+(.)/g, (_, c) => c.toUpperCase());
-			}
-
-			const totalKey = `${prefix}Total`;
+			const bucketKey = LEAVE_TYPE_TO_REGISTER_KEY[primaryLeaveType];
 
 			const leaveRegister = await prisma.leaveRegister.findUnique({
 				where: { employeeId: leave.employeeId },
@@ -290,21 +302,17 @@ export async function hrApproveOrRejectLeave(authHeader, { leaveId, action, paym
 				throw new Error("Leave register not found for employee");
 			}
 
-			const currentTotal = leaveRegister[totalKey] ?? 0;
-
-			if (currentTotal <= 0) {
-				throw new Error("No leaves paid remaining for that type");
-			}
-
+			const currentBucketTotal = leaveRegister[bucketKey] ?? 0;
 			const currentGrandTotal = leaveRegister.grandTotal ?? 0;
-			if (currentGrandTotal <= 0) {
+
+			if (currentBucketTotal <= 0 || currentGrandTotal <= 0) {
 				throw new Error("No leaves paid remaining for that type");
 			}
 
 			await prisma.leaveRegister.update({
 				where: { employeeId: leave.employeeId },
 				data: {
-					[totalKey]: currentTotal - 1,
+					[bucketKey]: currentBucketTotal - 1,
 					grandTotal: currentGrandTotal - 1,
 				},
 			});
