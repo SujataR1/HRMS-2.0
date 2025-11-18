@@ -215,6 +215,8 @@ export async function makeEmployeeAttendance({
 
 	const upserts = [];
 
+	const monthlyLateCount = new Map();
+
 	for (const istDay of allDays) {
 		const dayKey = istDay.format("YYYY-MM-DD");
 		const monthKey = istDay.format("YYYY-MM");

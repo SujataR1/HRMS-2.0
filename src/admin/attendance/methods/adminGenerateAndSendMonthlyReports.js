@@ -48,6 +48,7 @@ const readableFlags = {
 	overtime: "Overtime logged after full shift",
 	suspicious: "Out-of-pattern activity detected",
 	approvedLeave: "Pre-approved leave",
+	thirdLate: "Late for the third day of a triplet in a month",
 	leaveDocked: "A paid leave has been docked",
 	payDocked: "A day's pay has been docked",
 };
@@ -417,7 +418,7 @@ export async function adminGenerateAndSendMonthlyReports({
 
 		const totalCalendarDays = end.date();
 		const totalWorkingDays = 30;
-		const totalWorkingDaysPresent = totalWorkingDays - stats.absent - stats.absent.thirdLate;
+		const totalWorkingDaysPresent = (totalWorkingDays - stats.absent) - stats.thirdLate;
 		const totalPartialShifts = stats.halfDay;
 
 		doc.x = startX;
