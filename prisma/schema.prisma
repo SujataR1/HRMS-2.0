@@ -370,6 +370,7 @@ enum AttendanceFlags {
     suspicious
     overtime
     manualEntry
+    thirdLate
     edited
     approvedLeave
     leaveDocked
