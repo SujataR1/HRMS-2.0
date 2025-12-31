@@ -264,9 +264,10 @@ await app.register(employeeUploadLeaveAttachmentsRoute);
 await app.register(employeeEditLeaveNotesRoute);
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || "0.0.0.0"
 
 try {
-	await app.listen({ port: PORT, host: "0.0.0.0" });
+	await app.listen({ port: PORT, host: HOST });
 	app.log.info(`🔥 The server is live`);
 } catch (err) {
 	app.log.error({ err }, "❌ Failed to start server");
