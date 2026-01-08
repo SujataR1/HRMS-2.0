@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import { hrNotifyEmployeesShiftUpdated } from "../../../employee/mailer/methods/hrNotifyEmployeesShiftUpdated.js"
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -87,6 +88,12 @@ export async function hrEditAShift(input) {
 			},
 		});
 
+        try {
+            await hrNotifyEmployeesShiftUpdated({ shiftId: updatedShift.id });
+        } catch (err) {
+            // Best-effort: do NOT fail shift edit because SMTP/template failed
+            console.error("Shift updated, but employee notification failed:", err);
+        }
 		return updated;
 	});
 }
