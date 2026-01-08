@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { hrSendShiftAssignedMail } from "../../../employee/mailer/methods/hrSendShiftAssignedMail.js"
 
 const prisma = new PrismaClient();
 
