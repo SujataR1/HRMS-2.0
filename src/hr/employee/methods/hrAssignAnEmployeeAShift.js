@@ -24,6 +24,13 @@ export async function hrAssignAnEmployeeAShift({ employeeId, shiftId }) {
 			data: { assignedShiftId: shiftId },
 		});
 
+		try {
+		await hrSendShiftAssignedMail({ employeeId });
+		} catch (err) {
+			// Should never break assignment, but just in case:
+			console.error("⚠️ Assigned shift, but mail failed:", err);
+		}
+
 		return updated;
 	});
 }
