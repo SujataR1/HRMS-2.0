@@ -79,6 +79,7 @@ import hrResetPasswordRoute from "./src/hr/secondary-authentication/routes/hrRes
 import hrVerify2FAAndLoginRoute from "./src/hr/secondary-authentication/routes/hrVerify2FAAndLoginRoute.js";
 import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
+import hrEditAShiftRoute from "./src/hr/shifts/routes/hrEditAShiftRoute.js";
 
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
 import employeeMakeOrRefreshAttendanceRoute from "./src/employee/attendance/routes/employeeMakeOrRefreshAttendanceRoute.js";
@@ -219,6 +220,7 @@ await app.register(hrUpdateEmployeeDetailsRoute);
 await app.register(hrGetAllEmployeeProfileRoute);
 await app.register(hrGetEmployeeDetailsRoute);
 await app.register(hrGetAllShiftsRoute);
+await app.register(hrEditAShiftRoute);
 await app.register(hrGenerateAndSendMonthlyReportsRoute);
 await app.register(hrAssignAnEmployeeAShiftRoute);
 await app.register(hrLoginRoute);
