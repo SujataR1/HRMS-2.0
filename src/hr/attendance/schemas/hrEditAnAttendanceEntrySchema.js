@@ -14,10 +14,10 @@ export const hrEditAnAttendanceEntrySchema = z.object({
 		.string({ required_error: "Attendance date is required" })
 		.refine((val) => !isNaN(Date.parse(val)), {
 			message: "Invalid date format",
-		}),
+		}).optional(),
 
-	punchIn: z.string(),
-	punchOut: z.string(),
+	punchIn: z.string().optional(),
+	punchOut: z.string().optional(),
 
 	status: z.enum([...attendanceStatusEnum]).optional(),
 
