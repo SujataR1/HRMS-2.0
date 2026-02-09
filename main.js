@@ -32,6 +32,7 @@ import adminActOnUserInfraRequestRoute from "./src/admin/infra-requests/routes/a
 import adminGetUserInfraRequestsRoute from "./src/admin/infra-requests/routes/adminGetUserInfraRequestsRoute.js";
 import adminDemoteHRRoute from "./src/admin/miscellaneous/routes/adminDemoteHRRoute.js";
 import adminPromoteEmployeeToHRRoute from "./src/admin/miscellaneous/routes/adminPromoteEmployeeToHRRoute.js";
+import adminGetAllHRsRoute from "./src/admin/miscellaneous/routes/adminGetAllHRsRoute.js";
 import adminRevokeAllActiveSessionsRoute from "./src/admin/miscellaneous/routes/adminRevokeAllActiveSessionsRoute.js";
 import adminGetProfileRoute from "./src/admin/profile/routes/adminGetProfileRoute.js";
 import adminUpdateProfileRoute from "./src/admin/profile/routes/adminUpdateProfileRoute.js";
@@ -194,6 +195,7 @@ await app.register(adminGetEmployeeAttendanceRoute);
 await app.register(adminGenerateAndSendMonthlyReportsRoute);
 await app.register(adminSearchEmployeesRoute);
 await app.register(adminPromoteEmployeeToHRRoute);
+await app.register(adminGetAllHRsRoute);
 await app.register(adminDemoteHRRoute);
 await app.register(adminEditAnAttendanceEntryRoute);
 await app.register(adminCheckEmployeePresenceByEmployeeIdRoute);
