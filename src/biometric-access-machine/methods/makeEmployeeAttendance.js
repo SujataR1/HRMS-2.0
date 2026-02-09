@@ -385,11 +385,11 @@ export async function makeEmployeeAttendance({
 						pout.isAfter(rawShiftEnd)
 					) {
 						const otMin = pout.diff(rawShiftEnd, "minute");
-						const otHours = Math.floor(
-							pout.diff(rawShiftEnd, "minute") / 60
-						);
+						// const otHours = Math.floor(
+						// 	pout.diff(rawShiftEnd, "minute") / 60
+						// );
 
-						if (otHours > 0 && otHours * 60 <= sd.overtimeMax) {
+						if (otMin > 0 && otMin <= sd.overtimeMax) {
 							status = "overtime";
 							flags.push("overtime");
 						} else if (otMin > sd.overtimeMax) {
