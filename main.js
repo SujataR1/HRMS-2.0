@@ -50,6 +50,7 @@ import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAtt
 import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
 import hrLoginRoute from "./src/hr/auth/routes/hrLoginRoute.js";
+import hrResendOTPRoute from "./src/hr/otp/routes/hrResendOTPRoute.js";
 import hrLogoutRoute from "./src/hr/auth/routes/hrLogoutRoute.js";
 import hrAssignAnEmployeeAShiftRoute from "./src/hr/employee/routes/hrAssignAnEmployeeAShiftRoute.js";
 import hrCreateAnEmployeeRoute from "./src/hr/employee/routes/hrCreateAnEmployeeRoute.js";
@@ -226,6 +227,7 @@ await app.register(hrEditAShiftRoute);
 await app.register(hrGenerateAndSendMonthlyReportsRoute);
 await app.register(hrAssignAnEmployeeAShiftRoute);
 await app.register(hrLoginRoute);
+await app.register(hrResendOTPRoute);
 await app.register(hrCreateEmployeeLeaveRegisterRoute);
 await app.register(hrCheckEmployeePresenceByEmployeeIdRoute);
 await app.register(hrGetEmployeeLeaveRegisterRoute);
