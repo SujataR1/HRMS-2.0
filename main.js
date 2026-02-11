@@ -47,6 +47,7 @@ import adminToggle2FARoute from "./src/admin/settings/routes/adminToggle2FARoute
 
 import adminEditAnAttendanceEntryRoute from "./src/admin/attendance/routes/adminEditAnAttendanceEntryRoute.js";
 import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAttendanceEntryRoute.js";
+import hrMakeOrRefreshEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrMakeOrRefreshEmployeeAttendanceRoute.js";
 import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
 import hrLoginRoute from "./src/hr/auth/routes/hrLoginRoute.js";
@@ -242,6 +243,7 @@ await app.register(hrChangePasswordRoute);
 await app.register(hrGetPendingLeavesRoute);
 await app.register(hrGetProfileRoute);
 await app.register(hrGetEmployeeAttendanceRoute);
+await app.register(hrMakeOrRefreshEmployeeAttendanceRoute);
 await app.register(hrEditAnAttendanceEntryRoute);
 await app.register(hrGetHolidayEntriesRoute);
 await app.register(hrGetLeavesRoute);
