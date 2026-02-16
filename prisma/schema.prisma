@@ -90,12 +90,14 @@ model Shift {
 }
 
 model Employee {
-  id            String   @id @default(uuid())
-  name          String
-  employeeId    String   @unique
-  assignedEmail String   @unique
-  password      String
-  updatedAt     DateTime @updatedAt
+  id              String           @id @default(uuid())
+  name            String
+  employeeId      String           @unique
+  assignedEmail   String           @unique
+  password        String
+  updatedAt       DateTime         @updatedAt
+  teamMemberships TeamMembership[]
+  projectMembers  ProjectMember[]
 
   @@index([assignedEmail])
   @@index([employeeId])
@@ -510,4 +512,177 @@ enum RequestStatus {
   pending
   approved
   denied
+}
+
+enum TeamRole {
+  leader
+  member
+}
+
+model Team {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships TeamMembership[]
+}
+
+model TeamMembership {
+  id         String @id @default(uuid())
+  teamId     String
+  employeeId String
+
+  role     TeamRole  @default(member)
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, employeeId])
+  @@index([employeeId])
+  @@index([teamId, role])
+  @@index([teamId, leftAt])
+}
+
+enum ProjectMemberRole {
+  lead
+  contributor
+}
+
+enum ProjectStatus {
+  planned
+  active
+  paused
+  completed
+  cancelled
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectStatus @default(planned)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members ProjectMember[]
+  tasks   Task[]
+
+  @@unique([name])
+  @@index([status])
+}
+
+model ProjectMember {
+  id         String @id @default(uuid())
+  projectId  String
+  employeeId String
+
+  role     ProjectMemberRole @default(contributor)
+  joinedAt DateTime          @default(now())
+  leftAt   DateTime?
+
+  project  Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  taskAssignments TaskAssignment[]
+  taskTimelines   TaskTimeline[]
+
+  @@unique([projectId, employeeId])
+  @@index([employeeId])
+  @@index([projectId, role])
+  @@index([projectId, leftAt])
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  blocked
+  done
+  cancelled
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+model Task {
+  id        String @id @default(uuid())
+  projectId String
+
+  title       String
+  description String?
+
+  status   TaskStatus   @default(todo)
+  priority TaskPriority @default(medium)
+
+  dueAt       DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  assignments TaskAssignment[]
+  timeline    TaskTimeline[]
+
+  @@index([projectId, status])
+  @@index([projectId, dueAt])
+}
+
+model TaskAssignment {
+  id              String @id @default(uuid())
+  taskId          String
+  projectMemberId String
+
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+
+  task          Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  projectMember ProjectMember @relation(fields: [projectMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, projectMemberId])
+  @@index([projectMemberId])
+  @@index([taskId, unassignedAt])
+}
+
+enum TaskTimelineKind {
+  work_done
+  comment
+  status_change
+  assignment
+  system
+}
+
+model TaskTimeline {
+  id              String @id @default(uuid())
+  taskId          String
+  projectMemberId String
+
+  kind TaskTimelineKind @default(work_done)
+
+  from DateTime?
+  to   DateTime?
+
+  summary String
+  details String?
+
+  meta Json?
+
+  createdAt DateTime @default(now())
+
+  task          Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  projectMember ProjectMember @relation(fields: [projectMemberId], references: [id], onDelete: Cascade)
+
+  @@index([taskId, createdAt])
+  @@index([projectMemberId, createdAt])
+  @@index([kind])
 }
