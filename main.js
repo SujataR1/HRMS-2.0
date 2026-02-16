@@ -83,6 +83,14 @@ import hrVerify2FAAndLoginRoute from "./src/hr/secondary-authentication/routes/h
 import hrCreateAShiftRoute from "./src/hr/shifts/routes/hrCreateAShiftRoute.js";
 import hrGetAllShiftsRoute from "./src/hr/shifts/routes/hrGetAllShiftsRoute.js";
 import hrEditAShiftRoute from "./src/hr/shifts/routes/hrEditAShiftRoute.js";
+import hrAssignTeamMembersRoute from "./src/hr/teams/routes/hrAssignTeamMembersRoute.js";
+import hrCreateTeamRoute from "./src/hr/teams/routes/hrCreateTeamRoute.js";
+import hrDeactivateTeamRoute from "./src/hr/teams/routes/hrDeactivateTeamRoute.js";
+import hrEditTeamRoute from "./src/hr/teams/routes/hrEditTeamRoute.js";
+import hrGetAllTeamsRoute from "./src/hr/teams/routes/hrGetAllTeamsRoute.js";
+import hrGetMembersByTeamIdRoute from "./src/hr/teams/routes/hrGetMembersByTeamIdRoute.js";
+import hrUnassignTeamMembersRoute from "./src/hr/teams/routes/hrUnassignTeamMembersRoute.js";
+import hrUpdateTeamMemberRolesRoute from "./src/hr/teams/routes/hrUpdateTeamMemberRolesRoute.js";
 
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
 import employeeMakeOrRefreshAttendanceRoute from "./src/employee/attendance/routes/employeeMakeOrRefreshAttendanceRoute.js";
@@ -251,6 +259,14 @@ await app.register(hrEditLeavePaymentStatusesRoute);
 await app.register(hrEditAHolidayEntryRoute);
 await app.register(hrUploadProfilePictureRoute);
 await app.register(hrEditEmployeeLeaveRegisterRoute);
+await app.register(hrAssignTeamMembersRoute);
+await app.register(hrCreateTeamRoute);
+await app.register(hrDeactivateTeamRoute);
+await app.register(hrEditTeamRoute);
+await app.register(hrGetAllTeamsRoute);
+await app.register(hrGetMembersByTeamIdRoute);
+await app.register(hrUnassignTeamMembersRoute);
+await app.register(hrUpdateTeamMemberRolesRoute);
 
 await app.register(employeeLoginRoute);
 await app.register(employeeLogoutRoute);
