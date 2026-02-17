@@ -547,7 +547,7 @@ model TeamMembership {
   leftAt     DateTime?
 
   team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee   Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade)
 
   @@unique([teamId, employeeId])
   @@index([employeeId])
