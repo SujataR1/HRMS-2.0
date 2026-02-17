@@ -654,16 +654,16 @@ model Task {
   /// Worklog/commit entries
   timeline    TaskTimeline[]
 
-  /// Status change requests + approvals
-  statusChanges TaskStatusChange[]
+  /// Status change requests + approvals (Task -> many)
+  statusChanges TaskStatusChange[] @relation("TaskAllStatusChanges")
 
-  /// Optional: quick pointer for FE to show "pending approval" without scanning
-  latestPendingStatusChangeId String?
-  latestPendingStatusChange   TaskStatusChange? @relation(fields: [latestPendingStatusChangeId], references: [id], onDelete: SetNull)
+  /// Optional: quick pointer for FE to show "pending approval" without scanning (Task -> 0/1)
+  latestPendingStatusChangeId String? @unique
+  latestPendingStatusChange   TaskStatusChange? @relation("TaskLatestPendingStatusChange", fields: [latestPendingStatusChangeId], references: [id], onDelete: SetNull)
 
   @@index([projectId, status])
   @@index([projectId, dueAt])
-  @@index([latestPendingStatusChangeId])
+  // @@index([latestPendingStatusChangeId])  // optional; @unique already indexes it
 }
 
 /// Join table: Task assigned to many ProjectMembers
@@ -747,9 +747,14 @@ model TaskStatusChange {
   /// decision remark (approved/rejected + why)
   decisionRemark              String?
 
-  task                        Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  /// Main relation: this change belongs to exactly one task (Task -> many TaskStatusChange)
+  task                        Task          @relation("TaskAllStatusChanges", fields: [taskId], references: [id], onDelete: Cascade)
+
+  /// Back relation for the "latest pending pointer" (Task -> 0/1 TaskStatusChange)
+  latestPendingForTask        Task?         @relation("TaskLatestPendingStatusChange")
+
   requestedBy                 ProjectMember @relation("TaskStatusRequestedBy", fields: [requestedByProjectMemberId], references: [id], onDelete: Cascade)
-  decidedBy                   ProjectMember?@relation("TaskStatusDecidedBy", fields: [decidedByProjectMemberId], references: [id], onDelete: SetNull)
+  decidedBy                   ProjectMember? @relation("TaskStatusDecidedBy", fields: [decidedByProjectMemberId], references: [id], onDelete: SetNull)
 
   @@index([taskId, requestedAt])
   @@index([approvalStatus])
