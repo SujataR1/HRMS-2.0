@@ -9,6 +9,10 @@ const prisma = new PrismaClient();
  *
  * Constraint:
  * - max 3 active leaders per team (after update)
+ *
+ * IMPORTANT:
+ * - employeeIds are business Employee.employeeId
+ * - TeamMembership.employeeId stores business Employee.employeeId
  */
 export async function hrUpdateTeamMemberRoles(authHeader, { teamId, role, employeeIds }) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -23,7 +27,10 @@ export async function hrUpdateTeamMemberRoles(authHeader, { teamId, role, employ
   if (!["leader", "member"].includes(role)) throw new Error("Invalid role");
   if (!Array.isArray(employeeIds) || employeeIds.length === 0) throw new Error("employeeIds is required");
 
-  const ids = Array.from(new Set(employeeIds.map((x) => String(x).trim()).filter(Boolean)));
+  const ids = Array.from(
+    new Set(employeeIds.map((x) => String(x).trim()).filter(Boolean))
+  );
+  if (ids.length === 0) throw new Error("employeeIds must contain at least one valid employeeId");
 
   return await prisma.$transaction(async (tx) => {
     const team = await tx.team.findUnique({ where: { id: teamId } });
@@ -40,19 +47,23 @@ export async function hrUpdateTeamMemberRoles(authHeader, { teamId, role, employ
       throw new Error(`Active membership not found for employee(s): ${missing.join(", ")}`);
     }
 
-    // Leader cap enforcement if promoting to leader
-    if (role === "leader") {
-      const currentActiveLeaders = await tx.teamMembership.count({
-        where: { teamId, role: "leader", leftAt: null },
-      });
+    // Leader cap enforcement (after update)
+    const currentActiveLeaders = await tx.teamMembership.count({
+      where: { teamId, role: "leader", leftAt: null },
+    });
 
-      const promotions = memberships.filter((m) => m.role !== "leader").length;
-      const leadersAfter = currentActiveLeaders + promotions;
-      if (leadersAfter > 3) {
-        throw new Error(
-          `Leader limit exceeded. Current active leaders: ${currentActiveLeaders}. Promotions: ${promotions}. Max allowed: 3.`
-        );
-      }
+    const leadersInSelection = memberships.filter((m) => m.role === "leader").length;
+    const nonLeadersInSelection = memberships.length - leadersInSelection;
+
+    const leadersAfter =
+      role === "leader"
+        ? (currentActiveLeaders - leadersInSelection) + memberships.length // all selected become leaders
+        : (currentActiveLeaders - leadersInSelection); // selected leaders become members, others already not leaders
+
+    if (leadersAfter > 3) {
+      throw new Error(
+        `Leader limit exceeded. Current active leaders: ${currentActiveLeaders}. Leaders after update: ${leadersAfter}. Max allowed: 3.`
+      );
     }
 
     await tx.teamMembership.updateMany({
