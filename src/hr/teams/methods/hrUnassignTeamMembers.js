@@ -7,6 +7,11 @@ const prisma = new PrismaClient();
  * HR: Unassign multiple employees from a team (soft remove).
  * Sets leftAt=now() for active memberships.
  * Idempotent: already removed => no-op.
+ *
+ * IMPORTANT:
+ * - Input employeeIds are Employee.employeeId (business id)
+ * - TeamMembership.employeeId ALSO stores Employee.employeeId (business id)
+ * - Employee.id (UUID) is not used here
  */
 export async function hrUnassignTeamMembers(authHeader, { teamId, employeeIds }) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -20,6 +25,7 @@ export async function hrUnassignTeamMembers(authHeader, { teamId, employeeIds })
   if (!teamId || typeof teamId !== "string") throw new Error("teamId is required");
   if (!Array.isArray(employeeIds) || employeeIds.length === 0) throw new Error("employeeIds is required");
 
+  // These are BUSINESS employeeIds (Employee.employeeId)
   const ids = Array.from(
     new Set(
       employeeIds
@@ -28,16 +34,28 @@ export async function hrUnassignTeamMembers(authHeader, { teamId, employeeIds })
         .filter(Boolean)
     )
   );
-  if (ids.length === 0) throw new Error("employeeIds must contain at least one valid id");
+
+  if (ids.length === 0) throw new Error("employeeIds must contain at least one valid employeeId");
 
   return await prisma.$transaction(async (tx) => {
     const team = await tx.team.findUnique({ where: { id: teamId } });
     if (!team) throw new Error("Team not found");
 
+    // (Recommended) Validate employees exist by Employee.employeeId.
+    // If you *want* "unknown employeeId" to be treated as unchanged/no-op, you can remove this block.
+    const foundEmployees = await tx.employee.findMany({
+      where: { employeeId: { in: ids } },
+      select: { employeeId: true },
+    });
+
+    const foundSet = new Set(foundEmployees.map((e) => e.employeeId));
+    const missing = ids.filter((eid) => !foundSet.has(eid));
+    if (missing.length) throw new Error(`Employee(s) not found: ${missing.join(", ")}`);
+
     const activeMemberships = await tx.teamMembership.findMany({
       where: {
         teamId,
-        employeeId: { in: ids },
+        employeeId: { in: ids }, // business id
         leftAt: null,
       },
       select: { id: true, employeeId: true },
@@ -54,6 +72,7 @@ export async function hrUnassignTeamMembers(authHeader, { teamId, employeeIds })
         where: { id: { in: activeMemberships.map((m) => m.id) } },
         data: { leftAt: now },
       });
+
       removed.push(...activeMemberships.map((m) => m.employeeId));
     }
 

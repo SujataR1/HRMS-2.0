@@ -16,6 +16,11 @@ const prisma = new PrismaClient();
  *
  * Constraint:
  * - max 3 active leaders per team (role=leader AND leftAt=null)
+ *
+ * IMPORTANT:
+ * - Input employeeIds are Employee.employeeId (business id)
+ * - TeamMembership.employeeId ALSO stores Employee.employeeId (business id)
+ * - We DO NOT use Employee.id (UUID) at all here
  */
 export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeIds }) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -30,6 +35,7 @@ export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeId
   if (!["leader", "member"].includes(role)) throw new Error("Invalid role");
   if (!Array.isArray(employeeIds) || employeeIds.length === 0) throw new Error("employeeIds is required");
 
+  // These are BUSINESS employeeIds (Employee.employeeId)
   const ids = Array.from(
     new Set(
       employeeIds
@@ -38,37 +44,37 @@ export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeId
         .filter(Boolean)
     )
   );
-  if (ids.length === 0) throw new Error("employeeIds must contain at least one valid id");
+  if (ids.length === 0) throw new Error("employeeIds must contain at least one valid employeeId");
 
   return await prisma.$transaction(async (tx) => {
     const team = await tx.team.findUnique({ where: { id: teamId } });
     if (!team) throw new Error("Team not found");
     if (!team.isActive) throw new Error("Team is inactive");
 
+    // Validate employees exist by Employee.employeeId
     const foundEmployees = await tx.employee.findMany({
-      where: { id: { in: ids } },
-      select: { id: true },
+      where: { employeeId: { in: ids } },
+      select: { employeeId: true },
     });
-    const foundSet = new Set(foundEmployees.map((e) => e.id));
-    const missing = ids.filter((id) => !foundSet.has(id));
+    const foundSet = new Set(foundEmployees.map((e) => e.employeeId));
+    const missing = ids.filter((eid) => !foundSet.has(eid));
     if (missing.length) throw new Error(`Employee(s) not found: ${missing.join(", ")}`);
 
+    // Existing memberships are also keyed by business employeeId
     const existingMemberships = await tx.teamMembership.findMany({
       where: { teamId, employeeId: { in: ids } },
       select: { id: true, employeeId: true, role: true, leftAt: true },
     });
     const existingByEmployeeId = new Map(existingMemberships.map((m) => [m.employeeId, m]));
 
-    // Conflict detection: any existing membership with different role
+    // Conflict: membership exists with different role (active OR inactive)
     const conflicts = ids.filter((eid) => {
       const m = existingByEmployeeId.get(eid);
       return m && m.role !== role;
     });
     if (conflicts.length) {
       throw new Error(
-        `Role conflict for employee(s): ${conflicts.join(
-          ", "
-        )}. Use the role-update endpoint to change roles.`
+        `Role conflict for employee(s): ${conflicts.join(", ")}. Use the role-update endpoint to change roles.`
       );
     }
 
@@ -78,11 +84,11 @@ export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeId
         where: { teamId, role: "leader", leftAt: null },
       });
 
-      // New/Reactivate leaders among input (only those not already active leaders)
+      // willActivate = those who will become active leaders due to this call
       const willActivate = ids.filter((eid) => {
         const m = existingByEmployeeId.get(eid);
-        if (!m) return true; // new leader
-        return m.leftAt !== null; // reactivating leader
+        if (!m) return true; // new membership
+        return m.leftAt !== null; // reactivating membership
       });
 
       const leadersAfter = currentActiveLeaders + willActivate.length;
@@ -108,7 +114,7 @@ export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeId
         continue;
       }
 
-      // same role guaranteed (conflict checked above)
+      // same role guaranteed
       if (existing.leftAt === null) {
         unchanged.push(employeeId);
         continue;
@@ -116,7 +122,7 @@ export async function hrAssignTeamMembers(authHeader, { teamId, role, employeeId
 
       await tx.teamMembership.update({
         where: { id: existing.id },
-        data: { leftAt: null }, // reactivate ONLY (no role mutation)
+        data: { leftAt: null }, // reactivate ONLY
       });
       reactivated.push(employeeId);
     }
