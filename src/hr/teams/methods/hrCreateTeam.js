@@ -19,9 +19,34 @@ export async function hrCreateTeam(authHeader, { name, description }) {
   const teamName = name.trim();
   const desc = description === undefined ? null : description;
 
-  const existing = await prisma.team.findUnique({ where: { name: teamName } });
+  const existing = await prisma.team.findUnique({
+  where: { name: teamName },
+  select: { id: true, name: true, isActive: true },
+  });
+
   if (existing) {
-    throw new Error(`Team "${teamName}" already exists`);
+    if (existing.isActive) {
+      // already active => true conflict (same semantics as before)
+      throw new Error(`Team "${teamName}" already exists`);
+    }
+
+    // exists but inactive => reactivate
+    const reactivated = await prisma.team.update({
+      where: { id: existing.id }, // safest (name may be unique too, but id is universal)
+      data: {
+        isActive: true,
+      },
+      select: { id: true, name: true, isActive: true },
+    });
+
+    return {
+      status: "success",
+      data: {
+        teamId: reactivated.id,
+        name: reactivated.name,
+        action: "reactivated",
+      },
+    };
   }
 
   const team = await prisma.team.create({
