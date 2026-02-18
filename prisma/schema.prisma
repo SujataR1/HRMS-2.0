@@ -599,7 +599,7 @@ model ProjectMember {
   leftAt      DateTime?
 
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee    Employee @relation(fields: [employeeId], references: [employeeId], onDelete: Cascade)
 
   taskAssignments     TaskAssignment[]
   taskTimelines       TaskTimeline[]
