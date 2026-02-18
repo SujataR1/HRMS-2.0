@@ -99,6 +99,17 @@ import hrGetProjectMembersByProjectIdRoute from "./src/hr/projects/routes/hrGetP
 import hrAssignProjectMembersRoute from "./src/hr/projects/routes/hrAssignProjectMembersRoute.js";
 import hrUnassignProjectMembersRoute from "./src/hr/projects/routes/hrUnassignProjectMembersRoute.js";
 import hrUpdateProjectMemberRolesRoute from "./src/hr/projects/routes/hrUpdateProjectMemberRolesRoute.js";
+import hrCreateTaskRoute from "./src/hr/project-management/routes/hrCreateTaskRoute.js";
+import hrEditTaskRoute from "./src/hr/project-management/routes/hrEditTaskRoute.js";
+import hrGetTaskByIdRoute from "./src/hr/project-management/routes/hrGetTaskByIdRoute.js";
+import hrAssignTaskRoute from "./src/hr/project-management/routes/hrAssignTaskRoute.js";
+import hrUnassignTaskRoute from "./src/hr/project-management/routes/hrUnassignTaskRoute.js";
+import hrGetTasksByProjectRoute from "./src/hr/project-management/routes/hrGetTasksByProjectRoute.js";
+import hrRequestStatusChangeRoute from "./src/hr/project-management/routes/hrRequestStatusChangeRoute.js";
+import hrApproveStatusChangeRoute from "./src/hr/project-management/routes/hrApproveStatusChangeRoute.js";
+import hrRejectStatusChangeRoute from "./src/hr/project-management/routes/hrRejectStatusChangeRoute.js";
+import hrGetTaskStatusHistoryRoute from "./src/hr/project-management/routes/hrGetTaskStatusHistoryRoute.js";
+import hrGetTaskTimelineRoute from "./src/hr/project-management/routes/hrGetTaskTimelineRoute.js";
 
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
 import employeeMakeOrRefreshAttendanceRoute from "./src/employee/attendance/routes/employeeMakeOrRefreshAttendanceRoute.js";
@@ -283,6 +294,17 @@ await app.register(hrGetProjectMembersByProjectIdRoute);
 await app.register(hrAssignProjectMembersRoute);
 await app.register(hrUnassignProjectMembersRoute);
 await app.register(hrUpdateProjectMemberRolesRoute);
+await app.register(hrCreateTaskRoute);
+await app.register(hrEditTaskRoute);
+await app.register(hrGetTaskByIdRoute);
+await app.register(hrAssignTaskRoute);
+await app.register(hrUnassignTaskRoute);
+await app.register(hrGetTasksByProjectRoute);
+await app.register(hrRequestStatusChangeRoute);
+await app.register(hrApproveStatusChangeRoute);
+await app.register(hrRejectStatusChangeRoute);
+await app.register(hrGetTaskStatusHistoryRoute);
+await app.register(hrGetTaskStatusHistoryRoute);
 
 await app.register(employeeLoginRoute);
 await app.register(employeeLogoutRoute);
