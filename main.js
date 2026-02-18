@@ -304,7 +304,7 @@ await app.register(hrRequestStatusChangeRoute);
 await app.register(hrApproveStatusChangeRoute);
 await app.register(hrRejectStatusChangeRoute);
 await app.register(hrGetTaskStatusHistoryRoute);
-await app.register(hrGetTaskStatusHistoryRoute);
+await app.register(hrGetTaskTimelineRoute);
 
 await app.register(employeeLoginRoute);
 await app.register(employeeLogoutRoute);
