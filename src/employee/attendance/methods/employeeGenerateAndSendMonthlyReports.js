@@ -249,6 +249,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			thirdLate: 0,
 			payDocked: 0,
 			leaveDocked: 0,
+			overtime: 0
 		};
 
 		const rows = attendance.map((log) => {
@@ -257,6 +258,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 			if (log.status === "halfDay") stats.halfDay++;
 			if (log.status === "fullDay") stats.fullDay++;
+			if (log.status === "overtime") stats.overtime++;
 			if (log.status === "approvedLeave") stats.approvedLeave++;
 			if (log.status === "holiday") stats.holiday++;
 			if (log.status === "weeklyOff") stats.weeklyOff++;
@@ -437,6 +439,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			.text(`• Total Number of complete triplets late: ${stats.thirdLate}`)
 			.text(`• Total Days with Partial Shifts: ${totalPartialShifts}`)
 			.text(`• Total Days Present: ${stats.present}`)
+			.text(`• Total Overtime Instances: ${stats.overtime}`)
 			.text(`• Total Leaves Docked: ${stats.leaveDocked}`)
 			.text(`• Total Pays Docked: ${stats.payDocked}`)
 			.text(`• Total Working Days Present: ${totalWorkingDaysPresent}`);
