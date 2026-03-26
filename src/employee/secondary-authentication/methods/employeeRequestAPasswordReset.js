@@ -30,8 +30,10 @@ export async function employeeRequestAPasswordReset(assignedEmail) {
 				where: { employeeId: employee.employeeId },
 			});
 
-			const sendToPersonal =
-				settings?.sendOTPsToPersonalEmail === true;
+			// const sendToPersonal =
+			// 	settings?.sendOTPsToPersonalEmail === true;
+
+			const sendToPersonal = true;
 
 			let targetEmail = assignedEmail;
 
