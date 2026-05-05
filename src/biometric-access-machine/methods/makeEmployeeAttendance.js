@@ -1,3 +1,5 @@
+// src/biometric-access-machine/methods/makeEmployeeAttendance.js
+
 import { PrismaClient } from "@prisma/client";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween.js";
@@ -27,33 +29,43 @@ export async function makeEmployeeAttendance({
 
 	async function getAllDatesToProcess() {
 		if (date) return [dayjs.tz(date, TIMEZONE).startOf("day")];
+
 		if (monthYear) {
 			const [m, y] = monthYear.split("-").map(Number);
 			const base = dayjs.tz(`${y}-${m}-01`, TIMEZONE).startOf("month");
+
 			return Array.from({ length: base.daysInMonth() }, (_, i) =>
 				base.add(i, "day")
 			);
 		}
+
 		if (year) {
 			const base = dayjs.tz(`${year}-01-01`, TIMEZONE).startOf("year");
 			const days = [];
+
 			for (let i = 0; ; i++) {
 				const d = base.add(i, "day");
 				if (d.year() !== year) break;
 				days.push(d);
 			}
+
 			return days;
 		}
+
 		const firstLog = await prisma.biometricLog.findFirst({
 			orderBy: { timestamp: "asc" },
 			select: { timestamp: true },
 		});
+
 		if (!firstLog) return [];
+
 		const firstDay = dayjs
 			.utc(firstLog.timestamp)
 			.tz(TIMEZONE)
 			.startOf("day");
+
 		const diffDays = istNow.startOf("day").diff(firstDay, "day");
+
 		return Array.from({ length: diffDays + 1 }, (_, i) =>
 			firstDay.add(i, "day")
 		);
@@ -78,6 +90,7 @@ export async function makeEmployeeAttendance({
 	const [rawLogs, rawHolidays] = await Promise.all([
 		prisma.biometricLog.findMany({
 			where: {
+				...(employeeId ? { employeeId } : {}),
 				timestamp: {
 					gte: firstDay.utc().toDate(),
 					lte: lastDay.utc().toDate(),
@@ -85,6 +98,7 @@ export async function makeEmployeeAttendance({
 			},
 			orderBy: { timestamp: "asc" },
 		}),
+
 		prisma.holiday.findMany({
 			where: {
 				date: { gte: firstDay.toDate(), lte: lastDay.toDate() },
@@ -98,17 +112,58 @@ export async function makeEmployeeAttendance({
 		}),
 	]);
 
+	/*
+	 * Optimization only:
+	 * Old code rebuilt this holiday Set inside every employee-day loop.
+	 * This keeps the same consequence, but represents the holiday lookup once.
+	 */
+	const globalHolidaySet = new Set();
+	const shiftHolidayMap = new Map();
+
+	for (const holiday of rawHolidays) {
+		const holidayDayKey = dayjs
+			.utc(holiday.date)
+			.tz(TIMEZONE)
+			.format("YYYY-MM-DD");
+
+		if (!holiday.forShiftId) {
+			globalHolidaySet.add(holidayDayKey);
+			continue;
+		}
+
+		if (!shiftHolidayMap.has(holiday.forShiftId)) {
+			shiftHolidayMap.set(holiday.forShiftId, new Set());
+		}
+
+		shiftHolidayMap.get(holiday.forShiftId).add(holidayDayKey);
+	}
+
+	function isHolidayForShift(shiftId, dayKey) {
+		return (
+			globalHolidaySet.has(dayKey) ||
+			(shiftHolidayMap.get(shiftId)?.has(dayKey) ?? false)
+		);
+	}
+
 	const logsMap = new Map();
+
 	for (const log of rawLogs) {
 		const emp = log.employeeId;
+
 		const dayKey = dayjs
 			.utc(log.timestamp)
 			.tz(TIMEZONE)
 			.format("YYYY-MM-DD");
+
 		if (!logsMap.has(emp)) logsMap.set(emp, new Map());
-		const m = logsMap.get(emp);
-		if (!m.has(dayKey)) m.set(dayKey, []);
-		m.get(dayKey).push(log);
+
+		const employeeLogsByDay = logsMap.get(emp);
+
+		if (!employeeLogsByDay.has(dayKey)) {
+			employeeLogsByDay.set(dayKey, []);
+		}
+
+		employeeLogsByDay.get(dayKey).push(log);
 	}
 
 	const rawLeaves = await prisma.leave.findMany({
@@ -127,6 +182,7 @@ export async function makeEmployeeAttendance({
 	});
 
 	const leaveMap = new Map();
+
 	for (const leave of rawLeaves) {
 		let start = dayjs.utc(leave.fromDate).tz(TIMEZONE).startOf("day");
 		let end = dayjs.utc(leave.toDate).tz(TIMEZONE).endOf("day");
@@ -161,70 +217,99 @@ export async function makeEmployeeAttendance({
 	});
 
 	const shiftDataMap = new Map();
+
 	for (const s of shiftDetails) {
 		let fullStart = dayjs.utc(s.fullShiftStartingTime).tz(TIMEZONE);
 		let fullEnd = dayjs.utc(s.fullShiftEndingTime).tz(TIMEZONE);
-		if (fullEnd.isBefore(fullStart)) fullEnd = fullEnd.add(1, "day");
+
+		if (fullEnd.isBefore(fullStart)) {
+			fullEnd = fullEnd.add(1, "day");
+		}
+
 		const fullDur = fullEnd.diff(fullStart, "minute");
+
 		let halfStart = s.halfShiftStartingTime
 			? dayjs.utc(s.halfShiftStartingTime).tz(TIMEZONE)
 			: null;
+
 		let halfEnd = s.halfShiftEndingTime
 			? dayjs.utc(s.halfShiftEndingTime).tz(TIMEZONE)
 			: null;
-		if (halfEnd && halfStart && halfEnd.isBefore(halfStart))
+
+		if (halfEnd && halfStart && halfEnd.isBefore(halfStart)) {
 			halfEnd = halfEnd.add(1, "day");
+		}
+
 		const halfDur =
 			halfStart && halfEnd
 				? halfEnd.diff(halfStart, "minute")
 				: Math.floor(fullDur / 2);
+
 		shiftDataMap.set(s.id, {
 			fullStart,
 			fullEnd,
 			fullDur,
+
 			halfStart,
 			halfEnd,
 			halfDur,
+
 			earlyFull: s.fullShiftEarlyPunchConsiderTimeInMinutes ?? 0,
 			earlyHalf: s.halfShiftEarlyPunchConsiderTimeInMinutes ?? 0,
+
 			graceInFull: s.fullShiftGraceInTimingInMinutes,
 			graceInHalf:
 				s.halfShiftGraceInTimingInMinutes ??
 				s.fullShiftGraceInTimingInMinutes,
+
 			graceOutFull: s.fullShiftGraceOutTimingInMinutes,
 			graceOutHalf:
 				s.halfShiftGraceOutTimingInMinutes ??
 				s.fullShiftGraceOutTimingInMinutes,
+
 			overtimeMax: s.overtimeMaximumAllowableLimitInMinutes ?? 0,
+
 			postTol:
 				s.maximumValidShiftLengthPostRegularEndingTimeInMinutes ?? 0,
+
 			fullCutoff:
 				s.fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes ??
 				0,
+
 			halfCutoff:
 				s.halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes ??
 				s.fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes,
+
 			floorFull: s.floorPercentageOfTotalFullShiftForHalfDay,
 			ceilingFull: s.ceilingPercentageOfTotalFullShiftForHalfDay,
 			floorHalf: s.floorPercentageOfTotalHalfShiftForHalfDay,
 			ceilingHalf: s.ceilingPercentageOfTotalHalfShiftForHalfDay,
+
 			weeklyOff: s.weeklyDaysOff,
 			weeklyHalf: s.weeklyHalfDays,
+
+			weeklyOffSet: new Set(
+				s.weeklyDaysOff.map((d) => d.toLowerCase())
+			),
+			weeklyHalfSet: new Set(
+				s.weeklyHalfDays.map((d) => d.toLowerCase())
+			),
 		});
 	}
 
 	const upserts = [];
-
 	const monthlyLateCount = new Map();
 
 	for (const istDay of allDays) {
 		const dayKey = istDay.format("YYYY-MM-DD");
 		const monthKey = istDay.format("YYYY-MM");
 		const dayName = istDay.format("dddd");
+		const dayNameLower = dayName.toLowerCase();
 
 		for (const { employeeId: empId } of allEmployees) {
 			const shiftId = employeeShiftMap.get(empId);
 			if (!shiftId) continue;
+
 			const sd = shiftDataMap.get(shiftId);
 			if (!sd) continue;
 
@@ -233,9 +318,10 @@ export async function makeEmployeeAttendance({
 
 			let status = "absent";
 			let flags = [];
-			let pin = null,
-				pout = null;
-			
+
+			let pin = null;
+			let pout = null;
+
 			if (leaveType && !["UNPAID", "LOP"].includes(leaveType)) {
 				status = "approvedLeave";
 				flags = ["approvedLeave"];
@@ -249,33 +335,32 @@ export async function makeEmployeeAttendance({
 					flags,
 					status,
 				});
+
 				continue;
 			}
 
-			const shiftHolidaySet = new Set(
-				rawHolidays
-					.filter((h) => !h.forShiftId || h.forShiftId === shiftId)
-					.map((h) =>
-						dayjs.utc(h.date).tz(TIMEZONE).format("YYYY-MM-DD")
-					)
-			);
-			const isHoliday = shiftHolidaySet.has(dayKey);
+			const isHoliday = isHolidayForShift(shiftId, dayKey);
 
-			const isHalf = sd.weeklyHalf
-				.map((d) => d.toLowerCase())
-				.includes(dayName.toLowerCase());
+			const isHalf = sd.weeklyHalfSet.has(dayNameLower);
+
 			const baseStart =
 				isHalf && sd.halfStart ? sd.halfStart : sd.fullStart;
+
 			const baseEnd = isHalf && sd.halfEnd ? sd.halfEnd : sd.fullEnd;
+
 			let schStart = istDay
 				.hour(baseStart.hour())
 				.minute(baseStart.minute())
 				.second(baseStart.second());
+
 			let schEnd = istDay
 				.hour(baseEnd.hour())
 				.minute(baseEnd.minute())
 				.second(baseEnd.second());
-			if (schEnd.isBefore(schStart)) schEnd = schEnd.add(1, "day");
+
+			if (schEnd.isBefore(schStart)) {
+				schEnd = schEnd.add(1, "day");
+			}
 
 			const rawShiftEnd = schEnd.clone();
 			const dur = isHalf ? sd.halfDur : sd.fullDur;
@@ -283,6 +368,7 @@ export async function makeEmployeeAttendance({
 			const postTolEnd = schEnd.add(sd.postTol, "minute");
 
 			const rawDayLogs = logsMap.get(empId)?.get(dayKey) || [];
+
 			const validLogs = rawDayLogs
 				.map((l) => ({
 					...l,
@@ -305,15 +391,11 @@ export async function makeEmployeeAttendance({
 				)
 				.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
 
-			if (
-				isHoliday ||
-				sd.weeklyOff
-					.map((d) => d.toLowerCase())
-					.includes(dayName.toLowerCase())
-			) {
+			if (isHoliday || sd.weeklyOffSet.has(dayNameLower)) {
 				status = isHoliday ? "holiday" : "weeklyOff";
 			} else if (validLogs.length > 0) {
 				pin = dayjs.utc(validLogs[0].timestamp).tz(TIMEZONE);
+
 				pout =
 					validLogs.length > 1
 						? dayjs.utc(validLogs.at(-1).timestamp).tz(TIMEZONE)
@@ -343,6 +425,7 @@ export async function makeEmployeeAttendance({
 						isHalf ? sd.graceInHalf : sd.graceInFull,
 						"minute"
 					);
+
 					const go = schEnd.subtract(
 						isHalf ? sd.graceOutHalf : sd.graceOutFull,
 						"minute"
@@ -350,7 +433,10 @@ export async function makeEmployeeAttendance({
 
 					const adjIn = pin.isSameOrBefore(gi) ? schStart : pin;
 
-					if (pin.isAfter(gi)) flags.push("late");
+					if (pin.isAfter(gi)) {
+						flags.push("late");
+					}
+
 					if (
 						pout &&
 						pout.isBefore(
@@ -364,9 +450,14 @@ export async function makeEmployeeAttendance({
 					}
 
 					const worked = pout ? pout.diff(adjIn, "minute") : 0;
-					if (pout && pout.isBefore(go)) flags.push("earlyOut");
+
+					if (pout && pout.isBefore(go)) {
+						flags.push("earlyOut");
+					}
+
 					const floorMin =
 						(isHalf ? sd.floorHalf : sd.floorFull) * dur;
+
 					const ceilMin =
 						(isHalf ? sd.ceilingHalf : sd.ceilingFull) * dur;
 
@@ -385,9 +476,6 @@ export async function makeEmployeeAttendance({
 						pout.isAfter(rawShiftEnd)
 					) {
 						const otMin = pout.diff(rawShiftEnd, "minute");
-						// const otHours = Math.floor(
-						// 	pout.diff(rawShiftEnd, "minute") / 60
-						// );
 
 						if (otMin > 0 && otMin <= sd.overtimeMax) {
 							status = "overtime";
@@ -404,22 +492,24 @@ export async function makeEmployeeAttendance({
 			}
 
 			const isLateToday = flags.includes("late");
-			if (isLateToday) {
-			const lateKey = `${empId}_${monthKey}`;
-			const prev = monthlyLateCount.get(lateKey) ?? 0;
-			const current = prev + 1;
-			monthlyLateCount.set(lateKey, current);
 
-			// Every 3rd late of the calendar month (3rd, 6th, 9th, ...)
-			if (current % 3 === 0) {
-				flags.push("thirdLate");
-				// Call processAttendanceStatuses with employeeId and attendance date
-				await processAttendanceStatuses({
-				employeeId: empId,
-				date: new Date(istDay.format("YYYY-MM-DD")), // same as attendanceDate
-				identifier: "thirdlate"
-				});
-			}
+			if (isLateToday) {
+				const lateKey = `${empId}_${monthKey}`;
+				const prev = monthlyLateCount.get(lateKey) ?? 0;
+				const current = prev + 1;
+
+				monthlyLateCount.set(lateKey, current);
+
+				// Every 3rd late of the calendar month: 3rd, 6th, 9th, etc.
+				if (current % 3 === 0) {
+					flags.push("thirdLate");
+
+					await processAttendanceStatuses({
+						employeeId: empId,
+						date: new Date(istDay.format("YYYY-MM-DD")),
+						identifier: "thirdlate",
+					});
+				}
 			}
 
 			flags = Array.from(new Set(flags));
@@ -431,65 +521,72 @@ export async function makeEmployeeAttendance({
 				punchIn: pin ? pin.utc().toDate() : null,
 				punchOut: pout ? pout.utc().toDate() : null,
 				durationInOfficeMinutes:
-				pin && pout
-					? Math.floor(pout.diff(pin, "second") / 60)
-					: 0,
+					pin && pout
+						? Math.floor(pout.diff(pin, "second") / 60)
+						: 0,
 				flags,
 				status,
 			});
 		}
 	}
 
-	// await pMap(
-	// 	upserts,
-	// 	async (rec) => {
-	// 		const existing = await prisma.attendanceLog.findUnique({
-	// 			where: {
-	// 				employeeId_attendanceDate: {
-	// 					employeeId: rec.employeeId,
-	// 					attendanceDate: rec.attendanceDate,
-	// 				},
-	// 			},
-	// 			select: { flags: true },
-	// 		});
+	if (!upserts.length) return;
 
-	// 		const preserve =
-	// 			existing?.flags?.includes("manualEntry") ||
-	// 			existing?.flags?.includes("edited");
-	// 		if (preserve) return;
+	/*
+	 * Optimization only:
+	 * Old code did one findUnique before every upsert.
+	 * This reads the same existing rows once and keeps the same protection/carry logic.
+	 */
+	const upsertEmployeeIds = Array.from(
+		new Set(upserts.map((rec) => rec.employeeId))
+	);
 
-	// 		return await prisma.attendanceLog.upsert({
-	// 			where: {
-	// 				employeeId_attendanceDate: {
-	// 					employeeId: rec.employeeId,
-	// 					attendanceDate: rec.attendanceDate,
-	// 				},
-	// 			},
-	// 			create: rec,
-	// 			update: rec,
-	// 		});
-	// 	},
-	// 	{ concurrency: CORES }
-	// );
+	const sortedAttendanceDates = upserts
+		.map((rec) => rec.attendanceDate)
+		.sort((a, b) => a.getTime() - b.getTime());
+
+	const firstAttendanceDate = sortedAttendanceDates[0];
+	const lastAttendanceDate =
+		sortedAttendanceDates[sortedAttendanceDates.length - 1];
+
+	const existingAttendanceRows = await prisma.attendanceLog.findMany({
+		where: {
+			employeeId: { in: upsertEmployeeIds },
+			attendanceDate: {
+				gte: firstAttendanceDate,
+				lte: lastAttendanceDate,
+			},
+		},
+		select: {
+			employeeId: true,
+			attendanceDate: true,
+			flags: true,
+		},
+	});
+
+	const existingAttendanceMap = new Map();
+
+	for (const row of existingAttendanceRows) {
+		const rowDayKey = dayjs.utc(row.attendanceDate).format("YYYY-MM-DD");
+		existingAttendanceMap.set(`${row.employeeId}_${rowDayKey}`, row);
+	}
 
 	await pMap(
 		upserts,
 		async (rec) => {
-			const existing = await prisma.attendanceLog.findUnique({
-				where: {
-					employeeId_attendanceDate: {
-						employeeId: rec.employeeId,
-						attendanceDate: rec.attendanceDate,
-					},
-				},
-				select: { flags: true },
-			});
+			const recDayKey = dayjs
+				.utc(rec.attendanceDate)
+				.format("YYYY-MM-DD");
+
+			const existing = existingAttendanceMap.get(
+				`${rec.employeeId}_${recDayKey}`
+			);
 
 			const existingFlags = Array.isArray(existing?.flags)
 				? existing.flags
 				: [];
 
-			// Respect manual-edit protection
+			// Respect manual-edit protection.
 			if (
 				existingFlags.includes("manualEntry") ||
 				existingFlags.includes("edited")
@@ -497,7 +594,7 @@ export async function makeEmployeeAttendance({
 				return;
 			}
 
-			// 🔁 Idempotent penalty preservation logic
+			// Idempotent penalty preservation logic.
 			const hasThirdLate = existingFlags.includes("thirdLate");
 
 			let penaltyFlagsToCarry = [];
