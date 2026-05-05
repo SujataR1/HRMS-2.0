@@ -19,3 +19,4 @@ bun.lock
 hrms
 start.sh
 .vscode
+forUpload/
