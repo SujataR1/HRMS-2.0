@@ -410,7 +410,7 @@ export async function makeEmployeeAttendance({
 					)
 				) {
 					status = "absent";
-					flags.push("firstPunchBeyondCutoff");
+					flags.push("late", "firstPunchBeyondCutoff");
 				} else if (validLogs.length === 1) {
 					if (pin.isSameOrBefore(halfMark)) {
 						status = "absent";
