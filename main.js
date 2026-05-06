@@ -135,10 +135,7 @@ const prisma = new PrismaClient();
 const app = Fastify({
 	trustProxy: true,
 	logger: {
-		level: "info",
-		transport: {
-			target: "pino-pretty",
-		},
+		level: process.env.LOG_LEVEL || "info",
 	},
 });
 
