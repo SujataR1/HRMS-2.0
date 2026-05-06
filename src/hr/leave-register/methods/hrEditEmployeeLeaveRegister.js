@@ -1,72 +1,108 @@
+// src/hr/leave-register/methods/hrEditEmployeeLeaveRegister.js
+
 import { PrismaClient } from "@prisma/client";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
+import {
+	buildLeaveRegisterChangedRows,
+	buildLeaveRegisterRows,
+	calculateGrandTotal,
+	getMailTimestamp,
+	sanitizeLeaveRegisterUpdateData,
+	sendLeaveRegisterMailSafely,
+} from "./leaveRegisterMailHelpers.js";
+
 const prisma = new PrismaClient();
 
-const ALL_EDITABLE_FIELDS = [
-  "casualCurrent", "casualCarried", "casualTotal",
-  "sickCurrent", "sickCarried", "sickTotal",
-  "bereavementCurrent", "bereavementCarried", "bereavementTotal",
-  "maternityCurrent", "maternityCarried", "maternityTotal",
-  "paternityCurrent", "paternityCarried", "paternityTotal",
-  "earnedCurrent", "earnedCarried", "earnedTotal",
-  "compOffCurrent", "compOffCarried", "compOffTotal",
-  "otherCurrent", "otherCarried", "otherTotal"
-];
+/**
+ * HR-only: edit an employee leave register.
+ *
+ * @param {string} authHeader – "Bearer <token>"
+ * @param {object} data – { employeeId, casualCurrent, sickCurrent, ... }
+ */
+export async function hrEditEmployeeLeaveRegister(authHeader, data = {}) {
+	if (!authHeader?.startsWith("Bearer ")) {
+		throw new Error("Missing or invalid Authorization header");
+	}
 
-const CURRENT_FIELDS_ONLY = ALL_EDITABLE_FIELDS.filter(f => f.endsWith("Current"));
+	const { employeeId } = data;
+	if (!employeeId) {
+		throw new Error("employeeId is required");
+	}
 
-export async function hrEditEmployeeLeaveRegister(authHeader, { employeeId, edits }) {
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("Missing or invalid Authorization header");
-  }
+	const updateData = sanitizeLeaveRegisterUpdateData(data);
 
-  const { hrId } = await verifyHrJWT(authHeader);
-  const hr = await prisma.hr.findUnique({ where: { id: hrId } });
-  if (!hr) throw new Error("HR account not found");
+	const result = await prisma.$transaction(async (tx) => {
+		const { hrId } = await verifyHrJWT(authHeader);
 
-  const existing = await prisma.leaveRegister.findUnique({ where: { employeeId } });
-  if (!existing) throw new Error("Leave register not found for this employee");
+		const hr = await tx.hr.findUnique({ where: { id: hrId } });
+		if (!hr) throw new Error("HR account not found");
 
-  const updates = {};
+		const employee = await tx.employee.findUnique({
+			where: { employeeId },
+			select: {
+				employeeId: true,
+				name: true,
+				assignedEmail: true,
+			},
+		});
+		if (!employee) throw new Error("Employee not found");
 
-  for (const edit of edits) {
-    const { field, mode, val } = edit;
+		const existing = await tx.leaveRegister.findUnique({
+			where: { employeeId },
+		});
+		if (!existing) {
+			throw new Error("Leave register not found for this employee");
+		}
 
-    if (!ALL_EDITABLE_FIELDS.includes(field)) {
-      throw new Error(`Invalid editable field: ${field}`);
-    }
+		const merged = {
+			...existing,
+			...updateData,
+		};
 
-    const currentVal = existing[field] ?? 0;
+		const finalUpdateData = {
+			...updateData,
+			grandTotal: calculateGrandTotal(merged),
+		};
 
-    if (mode === "increment") {
-      if (typeof val !== "number" || val < 0) throw new Error(`Invalid increment value for ${field}`);
-      updates[field] = currentVal + val;
-    } else if (mode === "decrement") {
-      if (typeof val !== "number" || val < 0) throw new Error(`Invalid decrement value for ${field}`);
-      if (currentVal - val < 0) throw new Error(`Cannot decrement ${field} below 0`);
-      updates[field] = currentVal - val;
-    } else if (mode === "reset") {
-      updates[field] = typeof val === "number" ? Math.max(val, 0) : 0;
-    } else {
-      throw new Error(`Invalid mode: ${mode}`);
-    }
-  }
+		const updated = await tx.leaveRegister.update({
+			where: { employeeId },
+			data: finalUpdateData,
+		});
 
-  // Recalculate grandTotal using current fields only
-  updates.grandTotal = CURRENT_FIELDS_ONLY.reduce(
-    (sum, field) => sum + (updates[field] ?? existing[field] ?? 0),
-    0
-  );
+		return {
+			hr,
+			employee,
+			before: existing,
+			after: updated,
+		};
+	});
 
-  const updated = await prisma.leaveRegister.update({
-    where: { employeeId },
-    data: updates,
-  });
+	const mail = await sendLeaveRegisterMailSafely({
+		to: result.employee.assignedEmail,
+		purpose: "leaveRegisterUpdated",
+		context: {
+			employeeId: result.employee.employeeId,
+			registerId: result.after.id,
+		},
+		payload: {
+			subject: "Your Leave Register Was Updated",
+			name: result.employee.name,
+			employeeId: result.employee.employeeId,
+			updateTimestamp: getMailTimestamp(),
+			changedRows: buildLeaveRegisterChangedRows(
+				result.before,
+				result.after
+			),
+			currentLeaveRegisterRows: buildLeaveRegisterRows(result.after),
+		},
+	});
 
-  return {
-    success: true,
-    message: "Leave register updated successfully",
-    updated,
-  };
+	return {
+		success: true,
+		message: "Leave register updated",
+		previous: result.before,
+		updated: result.after,
+		mail,
+	};
 }

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8" />
+		<title>Leave Register Reset</title>
+	</head>
+
+	<body style="font-family: sans-serif; padding: 1rem; color: #222;">
+		<h2>⚠️ Your Leave Register Was Reset</h2>
+
+		<p>
+			Hello {{ name }},<br />
+			This is to inform you that your leave register for employee ID
+			<strong>{{ employeeId }}</strong> was reset by HR on
+			<strong>{{ updateTimestamp }}</strong>.
+		</p>
+
+		<h3>Balances Changed During Reset</h3>
+
+		<table style="border-collapse: collapse; width: 100%; max-width: 720px;">
+			<thead>
+				<tr>
+					<th style="padding: 8px; border: 1px solid #ddd; text-align: left;">
+						Leave Field
+					</th>
+					<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">
+						Previous
+					</th>
+					<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">
+						Updated
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{ changedRows }}
+			</tbody>
+		</table>
+
+		<h3>Current Leave Register</h3>
+
+		<table style="border-collapse: collapse; width: 100%; max-width: 720px;">
+			<thead>
+				<tr>
+					<th style="padding: 8px; border: 1px solid #ddd; text-align: left;">
+						Leave Field
+					</th>
+					<th style="padding: 8px; border: 1px solid #ddd; text-align: right;">
+						Balance
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				{{ currentLeaveRegisterRows }}
+			</tbody>
+		</table>
+
+		<p>
+			If you believe this reset was incorrect or have any concerns, please contact
+			your HR or reporting manager.
+		</p>
+
+		<p>Thank you,<br />HRMS Leave Management System</p>
+	</body>
+</html>
