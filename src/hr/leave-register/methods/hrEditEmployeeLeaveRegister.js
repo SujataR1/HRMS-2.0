@@ -51,7 +51,7 @@ const FIELD_LABELS = {
 
 function calculateGrandTotal(register) {
 	return CURRENT_FIELDS.reduce(
-		(sum, field) => sum + Number(register[field] || 0),
+		(sum, field) => sum + Number(register[field] ?? 0),
 		0
 	);
 }
@@ -66,28 +66,27 @@ function buildEditSummary({ before, after, edits }) {
 			const operation =
 				mode === "reset"
 					? "reset to 0"
-					: `${mode}ed by ${val ?? 0}`;
+					: `${mode}ed by ${val}`;
 
 			return `<li><strong>${label}</strong>: ${operation}. Previous: ${oldValue}, Updated: ${newValue}</li>`;
 		})
 		.join("");
 }
 
-/**
- * HR-only: edit an employee leave register.
- *
- * Schema shape:
- * {
- *   employeeId,
- *   edits: [{ field, mode: "increment" | "decrement" | "reset", val }]
- * }
- */
 export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 	if (!authHeader?.startsWith("Bearer ")) {
 		throw new Error("Missing or invalid Authorization header");
 	}
 
 	const { employeeId, edits } = data;
+
+	if (!employeeId) {
+		throw new Error("Employee ID is required");
+	}
+
+	if (!Array.isArray(edits) || edits.length === 0) {
+		throw new Error("At least one edit must be specified");
+	}
 
 	const { hrId } = await verifyHrJWT(authHeader);
 	const hr = await prisma.hr.findUnique({ where: { id: hrId } });
@@ -104,13 +103,20 @@ export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 	if (!existing) throw new Error("Leave register not found for this employee");
 
 	const next = { ...existing };
+	const touchedFields = new Set();
 
 	for (const edit of edits) {
 		const { field, mode, val } = edit;
+
+		if (!field || !mode) {
+			throw new Error("Each edit must include field and mode");
+		}
+
 		const currentValue = Number(next[field] ?? 0);
 
 		if (mode === "reset") {
 			next[field] = 0;
+			touchedFields.add(field);
 			continue;
 		}
 
@@ -120,26 +126,32 @@ export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 
 		if (mode === "increment") {
 			next[field] = currentValue + val;
+			touchedFields.add(field);
 			continue;
 		}
 
 		if (mode === "decrement") {
 			next[field] = Math.max(0, currentValue - val);
+			touchedFields.add(field);
 			continue;
 		}
 
 		throw new Error(`Unsupported edit mode: ${mode}`);
 	}
 
-	next.grandTotal = calculateGrandTotal(next);
-
 	const updateData = {};
 
-	for (const edit of edits) {
-		updateData[edit.field] = next[edit.field];
+	for (const field of touchedFields) {
+		updateData[field] = next[field];
 	}
 
-	updateData.grandTotal = next.grandTotal;
+	const currentFieldWasTouched = [...touchedFields].some((field) =>
+		CURRENT_FIELDS.includes(field)
+	);
+
+	if (currentFieldWasTouched) {
+		updateData.grandTotal = calculateGrandTotal(next);
+	}
 
 	const updated = await prisma.leaveRegister.update({
 		where: { employeeId },
