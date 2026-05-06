@@ -63,16 +63,44 @@ function buildEditSummary({ before, after, edits }) {
 			const oldValue = before[field] ?? 0;
 			const newValue = after[field] ?? 0;
 
-			const operation =
-				mode === "reset"
-					? "reset to 0"
-					: `${mode}ed by ${val}`;
+			let operation;
+
+			if (mode === "reset") {
+				operation = `reset to ${Number(val ?? 0)}`;
+			} else if (mode === "increment") {
+				operation = `incremented by ${val}`;
+			} else if (mode === "decrement") {
+				operation = `decremented by ${val}`;
+			} else {
+				operation = mode;
+			}
 
 			return `<li><strong>${label}</strong>: ${operation}. Previous: ${oldValue}, Updated: ${newValue}</li>`;
 		})
 		.join("");
 }
 
+/**
+ * HR-only: edit an employee leave register.
+ *
+ * Expected payload:
+ * {
+ *   employeeId: string,
+ *   edits: [
+ *     {
+ *       field: string,
+ *       mode: "increment" | "decrement" | "reset",
+ *       val?: number
+ *     }
+ *   ]
+ * }
+ *
+ * Existing FE contract:
+ * - increment + val => old + val
+ * - decrement + val => max(0, old - val)
+ * - reset + val => set field to val
+ * - reset without val => set field to 0
+ */
 export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 	if (!authHeader?.startsWith("Bearer ")) {
 		throw new Error("Missing or invalid Authorization header");
@@ -89,7 +117,10 @@ export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 	}
 
 	const { hrId } = await verifyHrJWT(authHeader);
-	const hr = await prisma.hr.findUnique({ where: { id: hrId } });
+
+	const hr = await prisma.hr.findUnique({
+		where: { id: hrId },
+	});
 	if (!hr) throw new Error("HR account not found");
 
 	const employee = await prisma.employee.findUnique({
@@ -115,7 +146,7 @@ export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 		const currentValue = Number(next[field] ?? 0);
 
 		if (mode === "reset") {
-			next[field] = 0;
+			next[field] = Number(val ?? 0);
 			touchedFields.add(field);
 			continue;
 		}
