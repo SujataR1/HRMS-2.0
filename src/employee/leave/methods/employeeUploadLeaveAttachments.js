@@ -221,7 +221,7 @@ export async function employeeUploadLeaveAttachments(authHeader, { leaveId, save
 
 	if (employee?.assignedEmail) {
 		await sendEmployeeMailWithAttachments({
-			employeeId: employee.employeeId,
+			employeeId,
 			to: employee.assignedEmail,
 			purpose: "leave-attachments-uploaded",
 			payload: {
