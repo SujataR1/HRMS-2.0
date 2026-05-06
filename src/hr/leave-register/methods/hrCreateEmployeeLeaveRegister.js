@@ -1,15 +1,6 @@
-// src/hr/leave-register/methods/hrCreateEmployeeLeaveRegister.js
-
 import { PrismaClient } from "@prisma/client";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-import {
-	buildLeaveRegisterRows,
-	calculateGrandTotal,
-	getMailTimestamp,
-	sanitizeLeaveRegisterCreateData,
-	sendLeaveRegisterMailSafely,
-} from "./leaveRegisterMailHelpers.js";
+import { sendHrMail } from "../../mailer/methods/hrMailer.js";
 
 const prisma = new PrismaClient();
 
@@ -19,73 +10,94 @@ const prisma = new PrismaClient();
  * @param {string} authHeader – "Bearer <token>"
  * @param {object} data – { employeeId, casualCurrent, sickCurrent, earnedCurrent, ... }
  */
-export async function hrCreateEmployeeLeaveRegister(authHeader, data = {}) {
+export async function hrCreateEmployeeLeaveRegister(authHeader, data) {
 	if (!authHeader?.startsWith("Bearer ")) {
 		throw new Error("Missing or invalid Authorization header");
 	}
 
-	const { employeeId } = data;
-	if (!employeeId) {
-		throw new Error("employeeId is required");
-	}
+	const { hrId } = await verifyHrJWT(authHeader);
+	const hr = await prisma.hr.findUnique({ where: { id: hrId } });
+	if (!hr) throw new Error("HR account not found");
 
-	const createData = sanitizeLeaveRegisterCreateData(data);
-	createData.grandTotal = calculateGrandTotal(createData);
-	createData.lastResetYear = new Date().getFullYear();
+	const {
+		employeeId,
+		casualCurrent = 0,
+		sickCurrent = 0,
+		bereavementCurrent = 0,
+		maternityCurrent = 0,
+		paternityCurrent = 0,
+		earnedCurrent = 0,
+		compOffCurrent = 0,
+		otherCurrent = 0,
+	} = data;
 
-	const result = await prisma.$transaction(async (tx) => {
-		const { hrId } = await verifyHrJWT(authHeader);
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId },
+	});
+	if (!employee) throw new Error("Employee not found");
 
-		const hr = await tx.hr.findUnique({ where: { id: hrId } });
-		if (!hr) throw new Error("HR account not found");
+	// prevent dupes
+	const exists = await prisma.leaveRegister.findUnique({
+		where: { employeeId },
+	});
+	if (exists) throw new Error("Leave register already exists for this employee");
 
-		const employee = await tx.employee.findUnique({
-			where: { employeeId },
-			select: {
-				employeeId: true,
-				name: true,
-				assignedEmail: true,
-			},
-		});
-		if (!employee) throw new Error("Employee not found");
+	// Calculate grand total manually
+	const grandTotal =
+		casualCurrent +
+		sickCurrent +
+		bereavementCurrent +
+		maternityCurrent +
+		paternityCurrent +
+		earnedCurrent +
+		compOffCurrent +
+		otherCurrent;
 
-		const existing = await tx.leaveRegister.findUnique({
-			where: { employeeId },
-		});
-		if (existing) {
-			throw new Error("Leave register already exists for this employee");
-		}
+	const nowYear = new Date().getFullYear();
 
-		const register = await tx.leaveRegister.create({
-			data: {
-				employeeId,
-				...createData,
-			},
-		});
+	const newRegister = await prisma.leaveRegister.create({
+		data: {
+			employeeId,
 
-		return { hr, employee, register };
+			casualCurrent,
+			sickCurrent,
+			bereavementCurrent,
+			maternityCurrent,
+			paternityCurrent,
+			earnedCurrent,
+			compOffCurrent,
+			otherCurrent,
+
+			// carried + total all default to 0
+			grandTotal,
+			lastResetYear: nowYear,
+		},
 	});
 
-	const mail = await sendLeaveRegisterMailSafely({
-		to: result.employee.assignedEmail,
+	await sendHrMail({
+		to: employee.assignedEmail,
 		purpose: "leaveRegisterCreated",
-		context: {
-			employeeId: result.employee.employeeId,
-			registerId: result.register.id,
-		},
 		payload: {
-			subject: "Your Leave Register Has Been Created",
-			name: result.employee.name,
-			employeeId: result.employee.employeeId,
-			updateTimestamp: getMailTimestamp(),
-			leaveRegisterRows: buildLeaveRegisterRows(result.register),
+			name: employee.name,
+			employeeId: employee.employeeId,
+
+			casualCurrent,
+			sickCurrent,
+			bereavementCurrent,
+			maternityCurrent,
+			paternityCurrent,
+			earnedCurrent,
+			compOffCurrent,
+			otherCurrent,
+			grandTotal,
+
+			subject: "Your Leave Register Was Created",
 		},
 	});
 
 	return {
 		success: true,
 		message: "Leave register created",
-		register: result.register,
-		mail,
+		register: newRegister,
 	};
 }
