@@ -1,11 +1,13 @@
 import { PrismaClient } from "@prisma/client";
-import { sendEmployeeMail } from "../../../employee/mailer/methods/employeeMailer.js";
+import { sendEmployeeMail } from "./employeeMailer.js";
 
 const prisma = new PrismaClient();
 
 /**
  * Best-effort notification:
  * - never throws unless throwOnFailure=true
+ * - assigned email is mandatory delivery
+ * - personal email is additional best-effort delivery
  * - payload must match template contract: { employeeName }
  */
 export async function hrSendShiftAssignedMail({
@@ -17,26 +19,44 @@ export async function hrSendShiftAssignedMail({
 	try {
 		const employee = await prisma.employee.findUnique({
 			where: { employeeId },
-			select: { name: true, assignedEmail: true },
-		});
-
-		// If no email, we silently skip (assignment should still succeed)
-		if (!employee?.assignedEmail) {
-			return { attempted: true, sent: false, reason: "Missing assignedEmail" };
-		}
-
-		await sendEmployeeMail({
-			to: employee.assignedEmail,
-			purpose: "shift-assigned",
-			payload: {
-				employeeName: (employee.name && employee.name.trim()) || "there",
+			select: {
+				employeeId: true,
+				name: true,
+				assignedEmail: true,
 			},
 		});
 
-		return { attempted: true, sent: true };
+		if (!employee?.assignedEmail) {
+			return {
+				attempted: true,
+				sent: false,
+				reason: "Missing assignedEmail",
+			};
+		}
+
+		const mailResult = await sendEmployeeMail({
+			employeeId: employee.employeeId,
+			to: employee.assignedEmail,
+			purpose: "shift-assigned",
+			payload: {
+				employeeName: employee.name?.trim() || "there",
+			},
+		});
+
+		return {
+			attempted: true,
+			sent: true,
+			mail: mailResult,
+		};
 	} catch (err) {
 		if (throwOnFailure) throw err;
+
 		console.error("⚠️ Shift assigned mail failed:", err);
-		return { attempted: true, sent: false, reason: err?.message || String(err) };
+
+		return {
+			attempted: true,
+			sent: false,
+			reason: err?.message || String(err),
+		};
 	}
 }

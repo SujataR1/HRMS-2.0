@@ -3,12 +3,14 @@
  *
  * Invariants:
  * - Source of truth: EmployeeDetails.assignedShiftId === shiftId
+ * - Assigned email is mandatory delivery
+ * - Personal email is additional best-effort delivery
  * - Email is best-effort: never blocks shift edit unless throwOnFailure=true
  * - Payload matches template contract: { employeeName }
  */
 
 import { PrismaClient } from "@prisma/client";
-import { sendEmployeeMail } from "../../../employee/mailer/methods/employeeMailer.js";
+import { sendEmployeeMail } from "./employeeMailer.js";
 
 const prisma = new PrismaClient();
 
@@ -19,7 +21,6 @@ export async function hrNotifyEmployeesShiftUpdated({
 }) {
 	if (!shiftId) throw new Error("Missing required field: shiftId");
 
-	// 1) Who is assigned to this shift? (truth source)
 	const assignments = await prisma.employeeDetails.findMany({
 		where: { assignedShiftId: shiftId },
 		select: { employeeId: true },
@@ -39,31 +40,40 @@ export async function hrNotifyEmployeesShiftUpdated({
 		};
 	}
 
-	// 2) Get emails + names
 	const employees = await prisma.employee.findMany({
 		where: { employeeId: { in: employeeIds } },
-		select: { employeeId: true, name: true, assignedEmail: true },
+		select: {
+			employeeId: true,
+			name: true,
+			assignedEmail: true,
+		},
 	});
 
-	// 3) Prepare tasks (one per recipient)
-	const tasks = employees.map((e) => async () => {
-		if (!e.assignedEmail) {
-			return { status: "skipped", employeeId: e.employeeId, reason: "Missing assignedEmail" };
+	const tasks = employees.map((employee) => async () => {
+		if (!employee.assignedEmail) {
+			return {
+				status: "skipped",
+				employeeId: employee.employeeId,
+				reason: "Missing assignedEmail",
+			};
 		}
 
-		// Template contract: ONLY employeeName is required
-		await sendEmployeeMail({
-			to: e.assignedEmail,
+		const mailResult = await sendEmployeeMail({
+			employeeId: employee.employeeId,
+			to: employee.assignedEmail,
 			purpose: "shift-updated",
 			payload: {
-				employeeName: (e.name && e.name.trim()) || "there",
+				employeeName: employee.name?.trim() || "there",
 			},
 		});
 
-		return { status: "sent", employeeId: e.employeeId };
+		return {
+			status: "sent",
+			employeeId: employee.employeeId,
+			mail: mailResult,
+		};
 	});
 
-	// 4) Run with concurrency cap (careful to SMTP + CPU)
 	const results = await runWithConcurrency(tasks, concurrency);
 
 	const failures = results.filter((r) => r.status === "failed");
@@ -72,7 +82,11 @@ export async function hrNotifyEmployeesShiftUpdated({
 
 	if (throwOnFailure && failures.length > 0) {
 		const err = new Error("Some shift-updated mails failed");
-		err.meta = { failures, skipped, sent: sent.length };
+		err.meta = {
+			failures,
+			skipped,
+			sent: sent.length,
+		};
 		throw err;
 	}
 

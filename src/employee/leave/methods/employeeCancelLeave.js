@@ -50,6 +50,7 @@ export async function employeeCancelLeave(authHeader, { leaveId }) {
 
 	if (employee?.assignedEmail) {
 		await sendEmployeeMail({
+			employeeId: employee.employeeId,
 			to: employee.assignedEmail,
 			purpose: "leave-cancelled",
 			payload: {

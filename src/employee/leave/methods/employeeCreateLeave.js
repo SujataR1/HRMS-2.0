@@ -89,6 +89,7 @@ export async function employeeCreateLeave(authHeader, data) {
 
 	if (employee?.assignedEmail) {
 		await sendEmployeeMail({
+			employeeId: employee.employeeId,
 			to: employee.assignedEmail,
 			purpose: "leave-applied",
 			payload: {

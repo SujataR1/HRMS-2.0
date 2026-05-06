@@ -352,6 +352,7 @@ export async function hrApproveOrRejectLeave(
 	if (employee?.assignedEmail) {
 		if (attachmentFiles.length > 0) {
 			await sendEmployeeMailWithAttachments({
+				employeeId: employee.employeeId,
 				to: employee.assignedEmail,
 				purpose: `leave-${action}`, // 'leave-approved' or 'leave-rejected'
 				payload,
@@ -359,6 +360,7 @@ export async function hrApproveOrRejectLeave(
 			});
 		} else {
 			await sendEmployeeMail({
+				employeeId: employee.employeeId,
 				to: employee.assignedEmail,
 				purpose: `leave-${action}`,
 				payload,

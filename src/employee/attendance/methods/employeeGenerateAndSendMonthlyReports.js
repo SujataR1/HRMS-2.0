@@ -477,6 +477,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 	setImmediate(async () => {
 	try {
 		await sendEmployeeMailWithAttachments({
+		employeeId: employee.employeeId,
 		to: employee.assignedEmail,
 		purpose: "monthlyAttendanceReports",
 		payload: {

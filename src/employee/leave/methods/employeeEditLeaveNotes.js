@@ -65,6 +65,7 @@ export async function employeeEditLeaveNotes(authHeader, { leaveId, applicationN
 
 	if (employee?.assignedEmail) {
 		await sendEmployeeMail({
+			employeeId: employee.employeeId,
 			to: employee.assignedEmail,
 			purpose: "leave-notes-updated",
 			payload: {
