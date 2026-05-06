@@ -47,6 +47,7 @@ export async function hrResetEmployeeLeaveRegister(authHeader, employeeId) {
 	});
 
 	await sendHrMail({
+		employeeId: employee.employeeId,
 		to: employee.assignedEmail,
 		purpose: "leaveRegisterReset",
 		payload: {

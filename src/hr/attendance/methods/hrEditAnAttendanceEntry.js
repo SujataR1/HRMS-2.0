@@ -93,6 +93,7 @@ export async function hrEditAnAttendanceEntry(
 
 			/* 6️⃣  Notify employee */
 			await sendHrMail({
+				employeeId: employee.employeeId,
 				to: employee.assignedEmail,
 				purpose: "attendanceEntryEdited",
 				payload: {

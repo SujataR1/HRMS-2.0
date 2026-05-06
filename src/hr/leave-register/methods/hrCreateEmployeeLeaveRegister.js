@@ -75,6 +75,7 @@ export async function hrCreateEmployeeLeaveRegister(authHeader, data) {
 	});
 
 	await sendHrMail({
+		employeeId: employee.employeeId,
 		to: employee.assignedEmail,
 		purpose: "leaveRegisterCreated",
 		payload: {

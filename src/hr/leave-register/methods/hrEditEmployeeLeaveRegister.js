@@ -190,6 +190,7 @@ export async function hrEditEmployeeLeaveRegister(authHeader, data) {
 	});
 
 	await sendHrMail({
+		employeeId: employee.employeeId,
 		to: employee.assignedEmail,
 		purpose: "leaveRegisterEdited",
 		payload: {
