@@ -1,6 +1,6 @@
 import { cleanupExpiredSessions } from "../methods/cleanupExpiredSessions.js";
 
-const DEFAULT_INTERVAL_MS = 60 * 1000;
+const DEFAULT_INTERVAL_MS =24 * 60 * 60 * 1000;
 
 let timer = null;
 let isRunning = false;
