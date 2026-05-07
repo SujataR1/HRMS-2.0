@@ -353,6 +353,11 @@ process.on("SIGTERM", () => {
 
 try {
 	await app.listen({ port: PORT, host: HOST });
+
+	startExpiredSessionCleanupJob({
+		logger: app.log,
+	});
+
 	app.log.info(`🔥 The server is live`);
 } catch (err) {
 	app.log.error({ err }, "❌ Failed to start server");
