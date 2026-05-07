@@ -1,7 +1,7 @@
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
-import { prisma } from "./src/db/prisma.js";
+import { prisma } from "#src/db/prisma.js";
 import Fastify from "fastify";
 import path from "path";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
@@ -337,6 +337,7 @@ try {
 process.on("SIGTERM", async () => {
 	console.log("🛑 SIGTERM received. Flushing audit log queue...");
 	await gracefulAuditShutdown();
-	console.log("✅ Audit queue flushed. Exiting now.");
+	await prisma.$disconnect();
+	console.log("✅ Audit queue flushed and Prisma disconnected. Exiting now.");
 	process.exit(0);
 });
