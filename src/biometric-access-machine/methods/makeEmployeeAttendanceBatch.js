@@ -5,6 +5,7 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import pMap from "p-map";
+import { processAttendanceStatuses } from "./processAttendanceStatuses.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -179,8 +180,7 @@ function buildShiftDataMap(shiftDetails) {
 				s.maximumValidShiftLengthPostRegularEndingTimeInMinutes ?? 0,
 
 			fullCutoff:
-				s.fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes ??
-				0,
+				s.fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes ?? 0,
 
 			halfCutoff:
 				s.halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes ??
@@ -212,6 +212,109 @@ function buildExistingAttendanceMap(existingAttendanceRows) {
 	}
 
 	return existingAttendanceMap;
+}
+
+function buildMonthlyLateCountMap(existingAttendanceRows, records) {
+	const monthlyLateCount = new Map();
+	const rowsByEmployeeMonth = new Map();
+
+	for (const row of existingAttendanceRows) {
+		const day = dayjs.utc(row.attendanceDate).tz(TIMEZONE);
+		const monthKey = day.format("YYYY-MM");
+		const key = `${row.employeeId}_${monthKey}`;
+
+		if (!rowsByEmployeeMonth.has(key)) {
+			rowsByEmployeeMonth.set(key, []);
+		}
+
+		rowsByEmployeeMonth.get(key).push({
+			employeeId: row.employeeId,
+			dayKey: day.format("YYYY-MM-DD"),
+			attendanceDate: row.attendanceDate,
+			flags: Array.isArray(row.flags) ? row.flags : [],
+		});
+	}
+
+	for (const rec of records) {
+		const day = dayjs.utc(rec.attendanceDate).tz(TIMEZONE);
+		const monthKey = day.format("YYYY-MM");
+		const key = `${rec.employeeId}_${monthKey}`;
+
+		if (!rowsByEmployeeMonth.has(key)) {
+			rowsByEmployeeMonth.set(key, []);
+		}
+
+		const dayKey = day.format("YYYY-MM-DD");
+		const monthRows = rowsByEmployeeMonth.get(key);
+		const existingIndex = monthRows.findIndex((row) => row.dayKey === dayKey);
+
+		const replacement = {
+			employeeId: rec.employeeId,
+			dayKey,
+			attendanceDate: rec.attendanceDate,
+			flags: Array.isArray(rec.flags) ? rec.flags : [],
+		};
+
+		if (existingIndex >= 0) {
+			monthRows[existingIndex] = replacement;
+		} else {
+			monthRows.push(replacement);
+		}
+	}
+
+	for (const [key, rows] of rowsByEmployeeMonth.entries()) {
+		const lateRows = rows
+			.filter((row) => row.flags.includes("late"))
+			.sort((a, b) => {
+				const byDate =
+					new Date(a.attendanceDate).getTime() -
+					new Date(b.attendanceDate).getTime();
+
+				if (byDate !== 0) return byDate;
+
+				return a.dayKey.localeCompare(b.dayKey);
+			});
+
+		monthlyLateCount.set(
+			key,
+			new Map(
+				lateRows.map((row, index) => [
+					row.dayKey,
+					{
+						count: index + 1,
+						isThirdLate: (index + 1) % 3 === 0,
+					},
+				])
+			)
+		);
+	}
+
+	return monthlyLateCount;
+}
+
+function applyThirdLateFlags({ records, existingAttendanceRows }) {
+	const monthlyLateCount = buildMonthlyLateCountMap(
+		existingAttendanceRows,
+		records
+	);
+
+	const thirdLateRecords = [];
+
+	for (const rec of records) {
+		const day = dayjs.utc(rec.attendanceDate).tz(TIMEZONE);
+		const monthKey = day.format("YYYY-MM");
+		const dayKey = day.format("YYYY-MM-DD");
+		const lateKey = `${rec.employeeId}_${monthKey}`;
+
+		const lateInfo = monthlyLateCount.get(lateKey)?.get(dayKey);
+
+		if (!lateInfo?.isThirdLate) continue;
+
+		rec.flags = Array.from(new Set([...(rec.flags || []), "thirdLate"]));
+		thirdLateRecords.push(rec);
+	}
+
+	return thirdLateRecords;
 }
 
 function computeAttendanceRecord({
@@ -551,14 +654,17 @@ export async function makeEmployeeAttendanceBatch({ employeeDays = [] } = {}) {
 		};
 	}
 
+	const firstAffectedMonth = firstDay.startOf("month");
+	const lastAffectedMonth = lastDay.endOf("month");
+
 	const existingAttendanceRows = await prisma.attendanceLog.findMany({
 		where: {
 			employeeId: {
 				in: employeeIds,
 			},
 			attendanceDate: {
-				gte: firstDay.toDate(),
-				lte: lastDay.toDate(),
+				gte: firstAffectedMonth.toDate(),
+				lte: lastAffectedMonth.toDate(),
 			},
 		},
 		select: {
@@ -569,17 +675,22 @@ export async function makeEmployeeAttendanceBatch({ employeeDays = [] } = {}) {
 	});
 
 	const existingAttendanceMap = buildExistingAttendanceMap(existingAttendanceRows);
+	const thirdLateRecords = applyThirdLateFlags({
+		records,
+		existingAttendanceRows,
+	});
 
 	let upserted = 0;
 	let skippedManual = 0;
+	const upsertedThirdLateKeys = new Set();
 
 	await pMap(
 		records,
 		async (rec) => {
 			const recDayKey = dayjs.utc(rec.attendanceDate).format("YYYY-MM-DD");
-			const existing = existingAttendanceMap.get(
-				`${rec.employeeId}_${recDayKey}`
-			);
+			const recordKey = `${rec.employeeId}_${recDayKey}`;
+
+			const existing = existingAttendanceMap.get(recordKey);
 
 			const existingFlags = Array.isArray(existing?.flags)
 				? existing.flags
@@ -618,12 +729,29 @@ export async function makeEmployeeAttendanceBatch({ employeeDays = [] } = {}) {
 				update: rec,
 			});
 
+			if ((rec.flags || []).includes("thirdLate")) {
+				upsertedThirdLateKeys.add(recordKey);
+			}
+
 			upserted += 1;
 		},
 		{
 			concurrency: ATTENDANCE_WRITE_CONCURRENCY,
 		}
 	);
+
+	for (const rec of thirdLateRecords) {
+		const recDayKey = dayjs.utc(rec.attendanceDate).format("YYYY-MM-DD");
+		const recordKey = `${rec.employeeId}_${recDayKey}`;
+
+		if (!upsertedThirdLateKeys.has(recordKey)) continue;
+
+		await processAttendanceStatuses({
+			employeeId: rec.employeeId,
+			date: rec.attendanceDate,
+			identifier: "thirdlate",
+		});
+	}
 
 	return {
 		processed: normalizedEmployeeDays.length,
