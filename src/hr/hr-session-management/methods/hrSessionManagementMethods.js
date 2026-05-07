@@ -27,7 +27,6 @@ export async function createHrJWT(hrId, payload = {}) {
 		
 
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredHrTokens(tx);
 
 			const fullPayload = { hrId, ...payload };
 			const encryptedToken = jwt.sign(fullPayload, JWT_SECRET);
@@ -73,7 +72,6 @@ export async function verifyHrJWT(authHeader = "") {
 		
 
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredHrTokens(tx);
 
 			if (!authHeader.startsWith("Bearer "))
 				throw new Error("Invalid auth header");

@@ -28,7 +28,6 @@ export async function createAdminJWT(adminId, payload = {}) {
 		
 
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredAdminTokens(tx);
 
 			const fullPayload = { adminId, ...payload };
 			const jwtToken = jwt.sign(fullPayload, JWT_SECRET, {
@@ -73,7 +72,6 @@ export async function verifyAdminJWT(authHeader = "") {
 	try {
 		db = prisma;
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredAdminTokens(tx);
 
 			if (!authHeader.startsWith("Bearer "))
 				throw new Error("Invalid auth header");

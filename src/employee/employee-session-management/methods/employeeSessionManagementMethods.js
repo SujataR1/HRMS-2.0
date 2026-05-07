@@ -28,7 +28,6 @@ export async function createEmployeeJWT(employeeId, payload = {}) {
 		
 
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredEmployeeTokens(tx);
 
 			const fullPayload = { employeeId, ...payload };
 			const jwtToken = jwt.sign(fullPayload, JWT_SECRET, {
@@ -76,8 +75,7 @@ export async function verifyEmployeeJWT(authHeader = "") {
 		
 
 		const result = await db.$transaction(async (tx) => {
-			await deleteExpiredEmployeeTokens(tx);
-
+			
 			if (!authHeader.startsWith("Bearer "))
 				throw new Error("Invalid auth header");
 
