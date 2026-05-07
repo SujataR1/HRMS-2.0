@@ -1,10 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { createEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { employeeVerifyOTP } from "../../otp/methods/employeeVerifyOTP.js";
-
-const prisma = new PrismaClient();
-
 export async function employeeVerify2FAAndLogin(assignedEmail, password, otp) {
 	let db;
 

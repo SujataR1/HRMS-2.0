@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 export async function hrChangePassword(authHeader, oldPassword, newPassword) {

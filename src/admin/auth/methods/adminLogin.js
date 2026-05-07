@@ -1,12 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
 import { createAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
 import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 import { adminCreateOTP } from "../../otp/methods/adminCreateOTP.js";
-
-const prisma = new PrismaClient();
-
 export async function adminLogin({ email, password }, meta = {}) {
 	let db;
 	try {

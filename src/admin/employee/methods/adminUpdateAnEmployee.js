@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function adminUpdateAnEmployee({ employeeId, updates }) {
   if (!employeeId || !updates) {
     throw new Error("Both employeeId and updates are required");

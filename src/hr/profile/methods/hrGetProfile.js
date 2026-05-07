@@ -1,11 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dotenv from "dotenv";
 import { DateTime } from "luxon";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 
 dotenv.config();
-
-const prisma = new PrismaClient();
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 export async function hrGetProfile(authHeader) {

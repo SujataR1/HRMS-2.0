@@ -1,10 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { createHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 import { hrVerifyOTP } from "../../otp/methods/hrVerifyOTP.js";
-
-const prisma = new PrismaClient();
-
 export async function hrVerify2FAAndLogin(email, password, otp) {
 	let db;
 

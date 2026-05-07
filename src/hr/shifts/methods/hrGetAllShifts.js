@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function hrGetAllShifts() {
 	return await prisma.$transaction(async (tx) => {
 		const shifts = await tx.shift.findMany({

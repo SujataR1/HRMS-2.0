@@ -1,11 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 
 dayjs.extend(timezone);
-
-const prisma = new PrismaClient();
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 /**

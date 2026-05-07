@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 import { sendHrMail } from "../../mailer/methods/hrMailer.js";
-
-const prisma = new PrismaClient();
-
 /**
  * HR-only: create a LeaveRegister for an employee with initial current leave values.
  *

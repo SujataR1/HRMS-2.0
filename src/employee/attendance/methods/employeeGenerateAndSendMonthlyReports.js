@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
@@ -10,8 +10,6 @@ import { sendEmployeeMailWithAttachments } from "../../mailer/methods/employeeMa
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const prisma = new PrismaClient();
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 const formatStatus = (status) => {

@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 /**
  * Fetches all employees and manually joins their employeeDetails using employeeId.
  * @returns Array of employee objects with their corresponding employeeDetails (or null if not found).

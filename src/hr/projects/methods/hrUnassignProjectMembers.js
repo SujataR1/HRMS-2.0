@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 export async function hrUnassignProjectMembers(authHeader, { projectId, employeeIds }) {
   if (!authHeader || !authHeader.startsWith("Bearer ")) throw new Error("Authorization header missing or invalid");
 

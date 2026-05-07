@@ -1,11 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { createHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 import { sendHrMail } from "../../mailer/methods/hrMailer.js";
 import { hrCreateOTP } from "../../otp/methods/hrCreateOTP.js";
-
-const prisma = new PrismaClient();
-
 export async function hrLogin({ email, password }) {
 	let db;
 	try {

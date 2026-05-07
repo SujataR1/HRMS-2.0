@@ -1,6 +1,6 @@
 // src/biometric-access-machine/methods/makeEmployeeAttendance.js
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween.js";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
@@ -14,8 +14,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
-
-const prisma = new PrismaClient();
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 const CORES = os.cpus().length;
 

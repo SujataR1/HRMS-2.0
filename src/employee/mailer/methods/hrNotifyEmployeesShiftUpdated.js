@@ -9,11 +9,8 @@
  * - Payload matches template contract: { employeeName }
  */
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { sendEmployeeMail } from "./employeeMailer.js";
-
-const prisma = new PrismaClient();
-
 export async function hrNotifyEmployeesShiftUpdated({
 	shiftId,
 	throwOnFailure = false,

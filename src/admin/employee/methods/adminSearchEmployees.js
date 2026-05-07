@@ -1,4 +1,4 @@
-// import { PrismaClient } from "@prisma/client";
+// import { prisma } from "#src/db/prisma.js";
 // import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
 
 // const prisma = new PrismaClient();
@@ -183,11 +183,8 @@
 // }
 
 // adminSearchEmployees.js
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Admin fuzzy+weighted employee search (signature & return unchanged).
  * Args: (authHeader, { searchText, limit = 50, fuzzyLimit = 0.25 })

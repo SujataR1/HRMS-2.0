@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { hrSendShiftAssignedMail } from "../../../employee/mailer/methods/hrSendShiftAssignedMail.js"
-
-const prisma = new PrismaClient();
-
 export async function hrAssignAnEmployeeAShift({ employeeId, shiftId }) {
 	if (!employeeId || !shiftId) {
 		throw new Error("Both employeeId and shiftId are required");

@@ -1,13 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dotenv from "dotenv";
 import { SMTPClient } from "emailjs";
 import fs from "fs";
 import path from "path";
 
 dotenv.config();
-
-const prisma = new PrismaClient();
-
 const TEMPLATES_DIR = path.resolve("src", "hr", "mailer", "templates");
 
 const client = new SMTPClient({

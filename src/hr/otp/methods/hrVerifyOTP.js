@@ -1,14 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-
-const prisma = new PrismaClient();
-
 export async function hrVerifyOTP(email, purpose, otp) {
 	let db;
 

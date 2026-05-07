@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
-
-const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 export async function adminCreate({ name, email, password }, meta = {}) {

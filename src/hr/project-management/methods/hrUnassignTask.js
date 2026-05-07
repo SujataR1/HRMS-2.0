@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Unassign task from project members (bulk).
  * Idempotent: if not assigned => unchanged.

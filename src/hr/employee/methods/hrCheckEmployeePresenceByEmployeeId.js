@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * HR: check if an employee exists (by employeeId).
  * Returns exactly: { presence: "true" } or { presence: "false" }

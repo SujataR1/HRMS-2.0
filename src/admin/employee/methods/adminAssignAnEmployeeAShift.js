@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function adminAssignAnEmployeeAShift({ employeeId, shiftId }) {
   if (!employeeId || !shiftId) {
     throw new Error("Both employeeId and shiftId are required");

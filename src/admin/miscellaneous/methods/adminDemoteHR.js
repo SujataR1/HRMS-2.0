@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
 import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Demotes (deletes) an HR account based on employeeId.
  * Requires valid admin JWT.

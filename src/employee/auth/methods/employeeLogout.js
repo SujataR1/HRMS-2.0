@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 export async function employeeLogout(authHeader = "", meta = {}) {
 	let decoded = null;
 

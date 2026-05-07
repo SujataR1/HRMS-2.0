@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import fs from "fs/promises";
 import mime from "mime-types";
 import path from "path";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
 const MEDIA_BASE_PATH = process.env.MEDIA_BASE_PATH || path.join(process.cwd(), "media");
 
 /**

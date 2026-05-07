@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import { adminVerifyOTP } from "../../otp/methods/adminVerifyOTP.js";
-
-const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 export async function adminResetPassword(email, otp, newPassword) {

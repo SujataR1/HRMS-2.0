@@ -1,11 +1,8 @@
 // admin/infra-requests/methods/adminActOnUserInfraRequest.js
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 export async function adminActOnUserInfraRequest({
 	authHeader,
 	requestId,

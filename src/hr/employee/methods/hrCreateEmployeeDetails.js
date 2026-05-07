@@ -1,12 +1,10 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const prisma = new PrismaClient();
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 export async function hrCreateEmployeeDetails(details) {

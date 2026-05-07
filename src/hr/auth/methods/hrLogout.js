@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 export async function hrLogout(authHeader = "") {
 	try {
 		if (!authHeader || !authHeader.startsWith("Bearer ")) {

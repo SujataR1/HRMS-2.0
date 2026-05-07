@@ -1,7 +1,7 @@
 import fastifyCors from "@fastify/cors";
 import fastifyMultipart from "@fastify/multipart";
 import fastifyStatic from "@fastify/static";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./src/db/prisma.js";
 import Fastify from "fastify";
 import path from "path";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
@@ -129,8 +129,6 @@ import employeeChangePasswordRoute from "./src/employee/secondary-authentication
 import employeeRequestAPasswordResetRoute from "./src/employee/secondary-authentication/routes/employeeRequestAPasswordResetRoute.js";
 import employeeResetPasswordRoute from "./src/employee/secondary-authentication/routes/employeeResetPasswordRoute.js";
 import employeeVerify2FAAndLoginRoute from "./src/employee/secondary-authentication/routes/employeeVerify2FAAndLoginRoute.js";
-
-const prisma = new PrismaClient();
 
 const app = Fastify({
 	trustProxy: true,

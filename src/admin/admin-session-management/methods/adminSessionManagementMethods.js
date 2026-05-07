@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import crypto from "crypto";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -7,9 +7,6 @@ import jwt from "jsonwebtoken";
 
 dotenv.config();
 dayjs.extend(utc);
-
-const prisma = new PrismaClient();
-
 const JWT_SECRET = process.env.JWT_SECRET;
 const AES_SECRET = process.env.AES_SECRET;
 const AES_ALGO = "aes-256-cbc";

@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { sendEmployeeMail } from "./employeeMailer.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Best-effort notification:
  * - never throws unless throwOnFailure=true

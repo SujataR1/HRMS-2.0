@@ -1,7 +1,7 @@
 // import fs from "fs";
 // import path from "path";
 // import { randomUUID } from "crypto";
-// import { PrismaClient } from "@prisma/client";
+// import { prisma } from "#src/db/prisma.js";
 // import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 // import { sendEmployeeMailWithAttachments } from "../../mailer/methods/employeeMailer.js";
 // import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
@@ -140,7 +140,7 @@
 // }
 
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
@@ -152,9 +152,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
-
-const prisma = new PrismaClient();
-
 export async function employeeUploadLeaveAttachments(authHeader, { leaveId, savedPaths, attachmentsToSend }) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		throw new Error("Authorization header missing or invalid");

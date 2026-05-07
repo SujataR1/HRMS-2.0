@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function adminCreateEmployeeDetails({ employeeId, details }) {
   if (!employeeId || !details) {
     throw new Error("Both employeeId and details are required");

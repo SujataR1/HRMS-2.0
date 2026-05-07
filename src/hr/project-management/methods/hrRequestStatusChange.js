@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Creates a TaskStatusChange as PENDING and sets Task.latestPendingStatusChangeId.
  * Requires actorProjectMemberId (active member of that task's project).

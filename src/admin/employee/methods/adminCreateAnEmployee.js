@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { auditor } from "../../../utils/logging/methods/auditor.js";
 import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
-
-const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 function generateRandomPassword(length = 12) {

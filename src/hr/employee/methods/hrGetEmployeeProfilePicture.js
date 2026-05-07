@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import fs from "fs/promises";
 import mime from "mime-types";
 import path from "path";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
 const MEDIA_BASE_PATH = path.join(process.cwd(), "media");
 
 /**

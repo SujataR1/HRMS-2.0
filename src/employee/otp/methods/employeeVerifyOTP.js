@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function employeeVerifyOTP(assignedEmail, purpose, otp) {
 	let db;
 

@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Admin: check if an employee exists (by employeeId).
  * Returns exactly: { presence: "true" } or { presence: "false" }

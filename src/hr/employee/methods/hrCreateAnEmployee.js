@@ -1,7 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import bcrypt from "bcrypt";
-
-const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 export async function hrCreateAnEmployee({

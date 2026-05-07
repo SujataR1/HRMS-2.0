@@ -7,6 +7,9 @@
 		"format": "prettier --write .",
 		"start": "node main.js"
 	},
+	"imports": {
+	"#src/*": "./src/*"
+	},
 	"keywords": [],
 	"author": "",
 	"license": "ISC",

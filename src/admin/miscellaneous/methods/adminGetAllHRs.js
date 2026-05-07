@@ -1,9 +1,6 @@
 // src/admin/employee/methods/hrGetAllHREmployeeIDs.js
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Get all HR employees (based on Hr model) with core identity from Employee table
  * Returns: employeeId, assignedEmail, name

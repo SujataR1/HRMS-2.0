@@ -1,11 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 dotenv.config();
-
-const prisma = new PrismaClient();
-
 const LOG_DIR = process.env.AUDIT_LOG_BACKLOG_PATH || "./logging-backlogs";
 const BACKLOG_FILE = path.join(LOG_DIR, "backlogs.jsonl");
 

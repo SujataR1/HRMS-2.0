@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
-
-const prisma = new PrismaClient();
-
 export async function employeeCreateOTP(assignedEmail, purpose) {
 	let db;
 

@@ -1,7 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
-
+import { prisma } from "#src/db/prisma.js";
 export async function adminGetEmployeeDetails(employeeId) {
   if (!employeeId) {
     throw new Error("employeeId is required");

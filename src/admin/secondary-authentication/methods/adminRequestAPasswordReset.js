@@ -1,9 +1,6 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { sendAdminMail } from "../../mailer/methods/adminMailer.js";
 import { adminCreateOTP } from "../../otp/methods/adminCreateOTP.js";
-
-const prisma = new PrismaClient();
-
 export async function adminRequestAPasswordReset(email) {
 	let db;
 	try {

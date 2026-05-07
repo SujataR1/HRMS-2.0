@@ -1,4 +1,4 @@
-// import { PrismaClient } from "@prisma/client";
+// import { prisma } from "#src/db/prisma.js";
 // import dayjs from "dayjs";
 // import timezone from "dayjs/plugin/timezone.js";
 // import utc from "dayjs/plugin/utc.js";
@@ -155,7 +155,7 @@
 // 	};
 // }
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
@@ -169,9 +169,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
-
-const prisma = new PrismaClient();
-
 const ALLOWED_PAYMENT_STATUSES = ["PAID", "UNPAID", "LOP", "COMP_OFF"];
 const CONFLICTING_COMBOS = [
 	["PAID", "UNPAID"],

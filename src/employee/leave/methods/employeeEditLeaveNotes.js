@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
 import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
@@ -10,10 +10,6 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
-
-
-const prisma = new PrismaClient();
-
 export async function employeeEditLeaveNotes(authHeader, { leaveId, applicationNotes, otherTypeDescription }) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		throw new Error("Authorization header missing or invalid");

@@ -1,11 +1,8 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
 import { sendEmployeeMail } from "../../mailer/methods/employeeMailer.js";
 import { notifyAllHR } from "../../../hr/mailer/methods/notifyAllHR.js";
 import dayjs from "dayjs";
-
-const prisma = new PrismaClient();
-
 export async function employeeCancelLeave(authHeader, { leaveId }) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		throw new Error("Authorization header missing or invalid");

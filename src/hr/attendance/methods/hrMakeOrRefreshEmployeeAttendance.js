@@ -1,15 +1,12 @@
 import { makeEmployeeAttendance } from "../../../biometric-access-machine/methods/makeEmployeeAttendance.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 import dayjs from "dayjs";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const prisma = new PrismaClient();
-
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 export async function hrMakeOrRefreshEmployeeAttendance({

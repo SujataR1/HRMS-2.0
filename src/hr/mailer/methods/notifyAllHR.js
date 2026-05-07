@@ -1,8 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import { sendHrMail, sendHrEmailWithAttachments } from "./hrMailer.js";
-
-const prisma = new PrismaClient();
-
 /**
  * Notifies all HRs via email using a shared template.
  * Only sends to HRs with verified email (`isEmailVerified = true`)

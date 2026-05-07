@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
@@ -6,9 +6,6 @@ import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManage
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-const prisma = new PrismaClient();
-
 export async function hrGetPendingLeaves(authHeader) {
 	if (!authHeader || !authHeader.startsWith("Bearer ")) {
 		throw new Error("Authorization header missing or invalid");
