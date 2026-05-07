@@ -2,7 +2,7 @@ import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import { makeEmployeeAttendance } from "./makeEmployeeAttendance.js";
+import { makeEmployeeAttendanceBatch } from "./makeEmployeeAttendanceBatch.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -48,14 +48,9 @@ export async function insertBiometricLogs(logs = []) {
 			}
 		}
 
-		await Promise.allSettled(
-			Array.from(affectedEmployeeDays.values()).map(({ employeeId, date }) =>
-				makeEmployeeAttendance({
-					employeeId,
-					date,
-				})
-			)
-		);
+		await makeEmployeeAttendanceBatch({
+	employeeDays: Array.from(affectedEmployeeDays.values()),
+});
 	} catch (err) {
 		console.error("🔥 insertBiometricLogs failed:", err);
 		throw err;
