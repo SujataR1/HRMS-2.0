@@ -7,6 +7,10 @@ import path from "path";
 import requestMetaPlugin from "./src/plugins/requestMetaPlugins.js";
 import verifyAuthPlugin from "./src/plugins/verifyAuthPlugin.js";
 import { gracefulAuditShutdown } from "./src/utils/logging/methods/logQueue.js";
+import {
+	startExpiredSessionCleanupJob,
+	stopExpiredSessionCleanupJob,
+} from "#src/session-cleanup/jobs/expiredSessionCleanupJob.js";
 
 import handleGetRequestRoute from "./src/biometric-access-machine/routes/handleGetRequestRoute.js";
 import postBiometricLogsRoute from "./src/biometric-access-machine/routes/handlePostBiometricLogsRoute.js";
@@ -185,13 +189,6 @@ app.register(fastifyMultipart, {
   addToBody: true,
 });
 
-process.on("SIGINT", async () => {
-	console.log("🛑 SIGINT received. Flushing audit log queue...");
-	await gracefulAuditShutdown();
-	await prisma.$disconnect();
-	console.log("✅ Audit queue flushed and Prisma disconnected. Exiting now.");
-	process.exit(0);
-});
 
 app.get("/", async (req, reply) => {
 	return reply.code(200).send("This is the HRMS backend!\n [x-auth-sign: `70ad4dbf27e3a2ddfd453514165fc4c9 ||| 7540aa6b11c733ebea260c15e542f361c10230aad1339eab7016df181694d7be9c58b65f3c3ed3865259d11b22adb736`]");
@@ -327,6 +324,33 @@ await app.register(employeeEditLeaveNotesRoute);
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0"
 
+let isShuttingDown = false;
+
+async function shutdown(signal) {
+	if (isShuttingDown) return;
+	isShuttingDown = true;
+
+	console.log(`🛑 ${signal} received. Stopping lifecycle jobs...`);
+
+	stopExpiredSessionCleanupJob();
+
+	console.log("🧹 Flushing audit log queue...");
+	await gracefulAuditShutdown();
+
+	await prisma.$disconnect();
+
+	console.log("✅ Cleanup complete. Exiting now.");
+	process.exit(0);
+}
+
+process.on("SIGINT", () => {
+	void shutdown("SIGINT");
+});
+
+process.on("SIGTERM", () => {
+	void shutdown("SIGTERM");
+});
+
 try {
 	await app.listen({ port: PORT, host: HOST });
 	app.log.info(`🔥 The server is live`);
@@ -335,10 +359,3 @@ try {
 	process.exit(1);
 }
 
-process.on("SIGTERM", async () => {
-	console.log("🛑 SIGTERM received. Flushing audit log queue...");
-	await gracefulAuditShutdown();
-	await prisma.$disconnect();
-	console.log("✅ Audit queue flushed and Prisma disconnected. Exiting now.");
-	process.exit(0);
-});

@@ -5,16 +5,20 @@ import { deleteExpiredEmployeeTokens } from "#src/employee/employee-session-mana
 
 export async function cleanupExpiredSessions() {
 	return await prisma.$transaction(async (tx) => {
-		const [adminResult, hrResult, employeeResult] = await Promise.all([
-			deleteExpiredAdminTokens(tx),
-			deleteExpiredHrTokens(tx),
-			deleteExpiredEmployeeTokens(tx),
-		]);
+		const adminResult = await deleteExpiredAdminTokens(tx);
+		const hrResult = await deleteExpiredHrTokens(tx);
+		const employeeResult = await deleteExpiredEmployeeTokens(tx);
+
+		const adminDeleted = adminResult.count;
+		const hrDeleted = hrResult.count;
+		const employeeDeleted = employeeResult.count;
 
 		return {
-			adminDeleted: adminResult.count,
-			hrDeleted: hrResult.count,
-			employeeDeleted: employeeResult.count,
+			adminDeleted,
+			hrDeleted,
+			employeeDeleted,
+			totalDeleted: adminDeleted + hrDeleted + employeeDeleted,
+			cleanedAt: new Date().toISOString(),
 		};
 	});
 }
