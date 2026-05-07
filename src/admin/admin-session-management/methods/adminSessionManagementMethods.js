@@ -11,8 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const AES_SECRET = process.env.AES_SECRET;
 const AES_ALGO = "aes-256-cbc";
 
-async function deleteExpiredAdminTokens(tx) {
-	await tx.adminActiveSessions.deleteMany({
+export async function deleteExpiredAdminTokens(tx) {
+	return await tx.adminActiveSessions.deleteMany({
 		where: {
 			expiresAt: {
 				lt: new Date(),

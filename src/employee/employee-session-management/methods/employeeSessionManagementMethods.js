@@ -11,8 +11,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const AES_SECRET = process.env.AES_SECRET;
 const AES_ALGO = "aes-256-cbc";
 
-async function deleteExpiredEmployeeTokens(tx) {
-	await tx.employeeActiveSessions.deleteMany({
+export async function deleteExpiredEmployeeTokens(tx) {
+	return await tx.employeeActiveSessions.deleteMany({
 		where: {
 			expiresAt: {
 				lt: new Date(),

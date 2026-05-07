@@ -10,8 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const AES_SECRET = process.env.AES_SECRET;
 const AES_ALGO = "aes-256-cbc";
 
-async function deleteExpiredHrTokens(tx) {
-	await tx.hrActiveSessions.deleteMany({
+export async function deleteExpiredHrTokens(tx) {
+	return await tx.hrActiveSessions.deleteMany({
 		where: {
 			expiresAt: {
 				lt: new Date(),
