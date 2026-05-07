@@ -188,7 +188,8 @@ app.register(fastifyMultipart, {
 process.on("SIGINT", async () => {
 	console.log("🛑 SIGINT received. Flushing audit log queue...");
 	await gracefulAuditShutdown();
-	console.log("✅ Audit queue flushed. Exiting now.");
+	await prisma.$disconnect();
+	console.log("✅ Audit queue flushed and Prisma disconnected. Exiting now.");
 	process.exit(0);
 });
 
