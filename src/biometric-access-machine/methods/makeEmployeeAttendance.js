@@ -6,7 +6,6 @@ import isBetween from "dayjs/plugin/isBetween.js";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import os from "os";
 import pMap from "p-map";
 import { processAttendanceStatuses } from "./processAttendanceStatuses.js";
 
@@ -15,7 +14,9 @@ dayjs.extend(timezone);
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
-const CORES = os.cpus().length;
+const ATTENDANCE_WRITE_CONCURRENCY = Number(
+	process.env.ATTENDANCE_WRITE_CONCURRENCY || 4
+);
 
 export async function makeEmployeeAttendance({
 	employeeId = null,
@@ -618,6 +619,6 @@ export async function makeEmployeeAttendance({
 				update: rec,
 			});
 		},
-		{ concurrency: CORES }
+		{ concurrency: ATTENDANCE_WRITE_CONCURRENCY }
 	);
 }
