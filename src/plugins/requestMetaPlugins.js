@@ -6,7 +6,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const AES_SECRET = process.env.AES_SECRET;
 const AES_ALGO = "aes-256-cbc";
 
-const hrEmployeeIdCache = new Map();
+const ACTOR_CACHE_TTL_MS = 5 * 60 * 1000;
+const actorCache = new Map();
 
 function getMetaFromRequest(request) {
 	return {
@@ -14,6 +15,36 @@ function getMetaFromRequest(request) {
 		ua: request.headers["user-agent"] || "",
 		ref: request.headers["referer"] || "",
 	};
+}
+
+function createUnknownActor(role = "unauthenticated") {
+	return {
+		role,
+		name: null,
+		id: null,
+	};
+}
+
+function getCachedActor(cacheKey) {
+	const cached = actorCache.get(cacheKey);
+
+	if (!cached) return null;
+
+	if (cached.expiresAt <= Date.now()) {
+		actorCache.delete(cacheKey);
+		return null;
+	}
+
+	return cached.actor;
+}
+
+function setCachedActor(cacheKey, actor) {
+	actorCache.set(cacheKey, {
+		actor,
+		expiresAt: Date.now() + ACTOR_CACHE_TTL_MS,
+	});
+
+	return actor;
 }
 
 function extractBearerToken(authHeader = "") {
@@ -67,97 +98,129 @@ function verifyJwtForLogging(jwtToken) {
 	}
 }
 
-async function getHrEmployeeId(fastify, hrId) {
-	if (!hrId) return null;
+async function resolveAdminActor(fastify, adminId) {
+	const cacheKey = `admin:${adminId}`;
+	const cached = getCachedActor(cacheKey);
+	if (cached) return cached;
 
-	if (hrEmployeeIdCache.has(hrId)) {
-		return hrEmployeeIdCache.get(hrId);
+	const admin = await fastify.prisma.admin.findUnique({
+		where: {
+			id: adminId,
+		},
+		select: {
+			id: true,
+			name: true,
+		},
+	});
+
+	if (!admin) {
+		return createUnknownActor("admin");
 	}
 
-	try {
-		const hr = await fastify.prisma.hr.findUnique({
-			where: {
-				id: hrId,
-			},
-			select: {
-				employeeId: true,
-			},
-		});
+	return setCachedActor(cacheKey, {
+		role: "admin",
+		name: admin.name || null,
+		id: admin.id,
+	});
+}
 
-		const employeeId = hr?.employeeId || null;
-		hrEmployeeIdCache.set(hrId, employeeId);
+async function resolveHrActor(fastify, hrId) {
+	const cacheKey = `hr:${hrId}`;
+	const cached = getCachedActor(cacheKey);
+	if (cached) return cached;
 
-		return employeeId;
-	} catch {
-		return null;
+	const hr = await fastify.prisma.hr.findUnique({
+		where: {
+			id: hrId,
+		},
+		select: {
+			name: true,
+			employeeId: true,
+		},
+	});
+
+	if (!hr) {
+		return createUnknownActor("hr");
 	}
+
+	return setCachedActor(cacheKey, {
+		role: "hr",
+		name: hr.name || null,
+		id: hr.employeeId,
+	});
+}
+
+async function resolveEmployeeActor(fastify, employeeId) {
+	const cacheKey = `employee:${employeeId}`;
+	const cached = getCachedActor(cacheKey);
+	if (cached) return cached;
+
+	const employee = await fastify.prisma.employee.findUnique({
+		where: {
+			employeeId,
+		},
+		select: {
+			name: true,
+			employeeId: true,
+		},
+	});
+
+	if (!employee) {
+		return createUnknownActor("employee");
+	}
+
+	return setCachedActor(cacheKey, {
+		role: "employee",
+		name: employee.name || null,
+		id: employee.employeeId,
+	});
 }
 
 async function resolveRequestActor(fastify, request) {
 	const token = extractBearerToken(request.headers.authorization || "");
 
 	if (!token) {
-		return {
-			role: "unauthenticated",
-			actorId: null,
-			employeeId: null,
-			adminId: null,
-			hrId: null,
-		};
+		return createUnknownActor("unauthenticated");
 	}
 
 	const jwtToken = resolveJwtTokenFromBearerToken(token);
 	const decoded = verifyJwtForLogging(jwtToken);
 
 	if (!decoded || typeof decoded !== "object") {
-		return {
-			role: "unknown",
-			actorId: null,
-			employeeId: null,
-			adminId: null,
-			hrId: null,
-		};
+		return createUnknownActor("unknown");
 	}
 
-	if (decoded.adminId) {
-		return {
-			role: "admin",
-			actorId: decoded.adminId,
-			employeeId: null,
-			adminId: decoded.adminId,
-			hrId: null,
-		};
+	try {
+		if (decoded.adminId) {
+			return await resolveAdminActor(fastify, decoded.adminId);
+		}
+
+		if (decoded.hrId) {
+			return await resolveHrActor(fastify, decoded.hrId);
+		}
+
+		if (decoded.employeeId) {
+			return await resolveEmployeeActor(fastify, decoded.employeeId);
+		}
+
+		return createUnknownActor("unknown");
+	} catch {
+		return createUnknownActor("unknown");
+	}
+}
+
+function formatActor(actor) {
+	if (!actor?.role) return "unknown";
+
+	if (actor.name && actor.id) {
+		return `${actor.role}: ${actor.name} (${actor.id})`;
 	}
 
-	if (decoded.hrId) {
-		const employeeId = await getHrEmployeeId(fastify, decoded.hrId);
-
-		return {
-			role: "hr",
-			actorId: decoded.hrId,
-			employeeId,
-			adminId: null,
-			hrId: decoded.hrId,
-		};
+	if (actor.id) {
+		return `${actor.role}: ${actor.id}`;
 	}
 
-	if (decoded.employeeId) {
-		return {
-			role: "employee",
-			actorId: decoded.employeeId,
-			employeeId: decoded.employeeId,
-			adminId: null,
-			hrId: null,
-		};
-	}
-
-	return {
-		role: "unknown",
-		actorId: null,
-		employeeId: null,
-		adminId: null,
-		hrId: null,
-	};
+	return actor.role;
 }
 
 export default fp(async function requestMetaPlugin(fastify) {
@@ -167,38 +230,24 @@ export default fp(async function requestMetaPlugin(fastify) {
 			startedAtMs: Date.now(),
 		};
 
-		request.actor = {
-			role: "unresolved",
-			actorId: null,
-			employeeId: null,
-			adminId: null,
-			hrId: null,
-		};
+		request.actor = createUnknownActor("unresolved");
 	});
 
 	fastify.addHook("preHandler", async (request, _reply) => {
-		try {
-			request.actor = await resolveRequestActor(fastify, request);
-			request.meta.actor = request.actor;
-		} catch {
-			request.actor = {
-				role: "unknown",
-				actorId: null,
-				employeeId: null,
-				adminId: null,
-				hrId: null,
-			};
-
-			request.meta.actor = request.actor;
-		}
+		request.actor = await resolveRequestActor(fastify, request);
+		request.meta.actor = request.actor;
 	});
 
 	fastify.addHook("onResponse", async (request, reply) => {
-		const responseTimeMs = Date.now() - (request.meta?.startedAtMs || Date.now());
+		const responseTimeMs =
+			Date.now() - (request.meta?.startedAtMs || Date.now());
 
 		request.log.info(
 			{
-				actor: request.actor,
+				actor: formatActor(request.actor),
+				role: request.actor.role,
+				name: request.actor.name,
+				id: request.actor.id,
 				method: request.method,
 				url: request.url,
 				statusCode: reply.statusCode,
