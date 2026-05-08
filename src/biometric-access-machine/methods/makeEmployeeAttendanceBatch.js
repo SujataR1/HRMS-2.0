@@ -569,6 +569,10 @@ export async function makeEmployeeAttendanceBatch({ employeeDays = [] } = {}) {
 					lte: lastDay.utc().toDate(),
 				},
 			},
+			select: {
+				employeeId: true,
+				timestamp: true,
+			},
 			orderBy: {
 				timestamp: "asc",
 			},
