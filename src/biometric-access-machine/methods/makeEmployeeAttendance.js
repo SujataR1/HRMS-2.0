@@ -495,18 +495,22 @@ async function fetchAttendanceInputs({
 }) {
 	return await Promise.all([
 		prisma.biometricLog.findMany({
-			where: {
-				...(employeeId ? { employeeId } : {}),
-				timestamp: {
-					gte: firstDay.utc().toDate(),
-					lte: lastDay.utc().toDate(),
-				},
-			},
-			orderBy: {
-				timestamp: "asc",
-			},
-		}),
-
+            where: {
+                ...(employeeId ? { employeeId } : {}),
+                timestamp: {
+                    gte: firstDay.utc().toDate(),
+                    lte: lastDay.utc().toDate(),
+                },
+            },
+            select: {
+                employeeId: true,
+                timestamp: true,
+            },
+            orderBy: {
+                timestamp: "asc",
+            },
+        }),
+        
 		prisma.holiday.findMany({
 			where: {
 				date: {
