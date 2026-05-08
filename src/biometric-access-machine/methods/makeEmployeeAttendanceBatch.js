@@ -13,8 +13,20 @@ dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
-const ATTENDANCE_WRITE_CONCURRENCY = Number(
-	process.env.ATTENDANCE_WRITE_CONCURRENCY || 4
+function readPositiveIntEnv(name, fallback, { min = 1, max = 10 } = {}) {
+	const value = Number(process.env[name]);
+
+	if (!Number.isInteger(value)) return fallback;
+	if (value < min) return fallback;
+	if (value > max) return max;
+
+	return value;
+}
+
+const ATTENDANCE_WRITE_CONCURRENCY = readPositiveIntEnv(
+	"ATTENDANCE_WRITE_CONCURRENCY",
+	4,
+	{ min: 1, max: 10 }
 );
 
 function normalizeEmployeeDays(employeeDays) {
