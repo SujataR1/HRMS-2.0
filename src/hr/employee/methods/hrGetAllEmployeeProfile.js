@@ -1,13 +1,80 @@
 import { prisma } from "#src/db/prisma.js";
-export async function getAllEmployeeProfile() {
-	return await prisma.$transaction(async (tx) => {
-		return await tx.employee.findMany({
-			select: {
-				employeeId: true,
-				name: true,
-				assignedEmail: true,
-				updatedAt: true,
-			},
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
+
+function isPaginationRequested({ page, limit } = {}) {
+	return page !== undefined || limit !== undefined;
+}
+
+function normalizePagination({ page, limit } = {}) {
+	const parsedPage = Number(page);
+	const parsedLimit = Number(limit);
+
+	const safePage =
+		Number.isInteger(parsedPage) && parsedPage > 0
+			? parsedPage
+			: DEFAULT_PAGE;
+
+	const safeLimit =
+		Number.isInteger(parsedLimit) && parsedLimit > 0
+			? Math.min(parsedLimit, MAX_LIMIT)
+			: DEFAULT_LIMIT;
+
+	return {
+		page: safePage,
+		limit: safeLimit,
+		skip: (safePage - 1) * safeLimit,
+	};
+}
+
+const employeeListSelect = {
+	employeeId: true,
+	name: true,
+	assignedEmail: true,
+	updatedAt: true,
+};
+
+/**
+ * Live-safe behavior:
+ *
+ * - No pagination query params: preserves old behavior and returns full array.
+ * - page/limit present: returns paginated object.
+ */
+export async function getAllEmployeeProfile({ page, limit } = {}) {
+	if (!isPaginationRequested({ page, limit })) {
+		return await prisma.employee.findMany({
+			select: employeeListSelect,
 		});
-	});
+	}
+
+	const pagination = normalizePagination({ page, limit });
+
+	const [data, total] = await Promise.all([
+		prisma.employee.findMany({
+			orderBy: {
+				employeeId: "asc",
+			},
+			skip: pagination.skip,
+			take: pagination.limit,
+			select: employeeListSelect,
+		}),
+
+		prisma.employee.count(),
+	]);
+
+	const totalPages = Math.ceil(total / pagination.limit);
+
+	return {
+		data,
+		pagination: {
+			page: pagination.page,
+			limit: pagination.limit,
+			total,
+			totalPages,
+			hasNextPage: pagination.page < totalPages,
+			hasPreviousPage: pagination.page > 1,
+		},
+	};
 }
