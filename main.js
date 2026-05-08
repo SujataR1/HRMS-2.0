@@ -136,10 +136,15 @@ import employeeVerify2FAAndLoginRoute from "./src/employee/secondary-authenticat
 
 const app = Fastify({
 	trustProxy: true,
+	disableRequestLogging: true,
 	logger: {
 		level: "info",
 		transport: {
 			target: "pino-pretty",
+			options: {
+				ignore: "pid,hostname",
+				translateTime: "HH:MM:ss",
+			},
 		},
 	},
 });

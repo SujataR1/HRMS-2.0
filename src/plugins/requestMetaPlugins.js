@@ -234,11 +234,15 @@ export default fp(async function requestMetaPlugin(fastify) {
 	});
 
 	fastify.addHook("preHandler", async (request, _reply) => {
+		if (request.method === "OPTIONS") return;
+
 		request.actor = await resolveRequestActor(fastify, request);
 		request.meta.actor = request.actor;
 	});
 
 	fastify.addHook("onResponse", async (request, reply) => {
+		if (request.method === "OPTIONS") return;
+
 		const responseTimeMs =
 			Date.now() - (request.meta?.startedAtMs || Date.now());
 
