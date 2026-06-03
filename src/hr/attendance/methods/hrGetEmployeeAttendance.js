@@ -81,19 +81,9 @@ export async function hrGetEmployeeAttendance({
 	 * 3️⃣  Query Prisma for logs
 	 * -------------------------------------------------- */
 	let logs;
-	try {
-		const estimates = logs.length
-			? await prisma.attendancePresenceEstimate.findMany({
-					where: {
-						employeeId,
-						attendanceDate: {
-							in: logs.map((log) => log.attendanceDate),
-						},
-					},
-				})
-			: [];
+	let estimateMap = new Map();
 
-		const estimateMap = buildPresenceEstimateMap(estimates);
+	try {
 		logs = await prisma.attendanceLog.findMany({
 			where: {
 				employeeId,
@@ -107,6 +97,19 @@ export async function hrGetEmployeeAttendance({
 			},
 			orderBy: { attendanceDate: "asc" },
 		});
+
+		const estimates = logs.length
+			? await prisma.attendancePresenceEstimate.findMany({
+					where: {
+						employeeId,
+						attendanceDate: {
+							in: logs.map((log) => log.attendanceDate),
+						},
+					},
+				})
+			: [];
+
+		estimateMap = buildPresenceEstimateMap(estimates);
 	} catch (err) {
 		throw new Error(
 			"Database error while fetching attendance logs: " + err.message
