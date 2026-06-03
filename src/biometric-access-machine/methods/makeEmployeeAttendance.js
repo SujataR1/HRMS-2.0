@@ -298,6 +298,85 @@ function buildExistingAttendanceMap(existingAttendanceRows) {
 	return existingAttendanceMap;
 }
 
+function hasDirectionalPunchState(log) {
+	return log?.punchState === "in" || log?.punchState === "out";
+}
+
+function getLastMatchingLog(logs, predicate) {
+	for (let index = logs.length - 1; index >= 0; index -= 1) {
+		if (predicate(logs[index])) return logs[index];
+	}
+
+	return null;
+}
+
+function computeDurationInOfficeMinutes(pin, pout) {
+	if (!pin || !pout) return 0;
+	if (pout.isBefore(pin)) return 0;
+
+	return Math.floor(pout.diff(pin, "second") / 60);
+}
+
+function resolvePunchWindow(validLogs) {
+	if (!validLogs.length) {
+		return {
+			engine: "none",
+			pin: null,
+			pout: null,
+			flags: [],
+		};
+	}
+
+	const hasAllDirectionalLogs = validLogs.every(hasDirectionalPunchState);
+
+	if (!hasAllDirectionalLogs) {
+		return {
+			engine: "legacy",
+			pin: validLogs[0].timestamp,
+			pout:
+				validLogs.length > 1
+					? validLogs.at(-1).timestamp
+					: null,
+			flags: [],
+		};
+	}
+
+	const firstInLog = validLogs.find((log) => log.punchState === "in") ?? null;
+
+	const lastOutLog = getLastMatchingLog(
+		validLogs,
+		(log) => log.punchState === "out"
+	);
+
+	const pin = firstInLog?.timestamp ?? null;
+	const pout = lastOutLog?.timestamp ?? null;
+
+	const flags = ["directionalPunchState"];
+
+	if (!pin) {
+		flags.push("missingIn");
+	}
+
+	if (!pout) {
+		flags.push("missingOut");
+	}
+
+	if (!pin && pout) {
+		flags.push("singleExit");
+	}
+
+	if (pin && pout && pout.isBefore(pin)) {
+		flags.push("invalidDirectionOrder", "suspicious");
+	}
+
+	return {
+		engine: "directional",
+		pin,
+		pout,
+		flags,
+	};
+}
+
 function computeAttendanceRecord({
 	empId,
 	istDay,
@@ -391,14 +470,18 @@ function computeAttendanceRecord({
 	if (isHoliday || shift.weeklyOffSet.has(dayNameLower)) {
 		status = isHoliday ? "holiday" : "weeklyOff";
 	} else if (validLogs.length > 0) {
-		pin = dayjs.utc(validLogs[0].timestamp).tz(TIMEZONE);
+		const punchWindow = resolvePunchWindow(validLogs);
 
-		pout =
-			validLogs.length > 1
-				? dayjs.utc(validLogs.at(-1).timestamp).tz(TIMEZONE)
-				: null;
+		pin = punchWindow.pin;
+		pout = punchWindow.pout;
+		flags.push(...punchWindow.flags);
 
-		if (
+		if (!pin) {
+			status = "absent";
+		} else if (pout && pout.isBefore(pin)) {
+			status = "anomalous";
+			flags.push("invalidOut");
+		} else if (
 			pin.isAfter(
 				schStart.add(
 					isHalf ? shift.halfCutoff : shift.fullCutoff,
@@ -408,14 +491,14 @@ function computeAttendanceRecord({
 		) {
 			status = "absent";
 			flags.push("late", "firstPunchBeyondCutoff");
-		} else if (validLogs.length === 1) {
+		} else if (!pout) {
 			if (pin.isSameOrBefore(halfMark)) {
 				status = "absent";
-				flags = ["singleEntry", "autoOut"];
+				flags.push("singleEntry", "autoOut");
 				pout = schEnd.clone();
 			} else {
 				status = "absent";
-				flags = ["singleEntry"];
+				flags.push("singleEntry");
 			}
 		} else {
 			const gi = schStart.add(
@@ -492,8 +575,7 @@ function computeAttendanceRecord({
 		attendanceDay: dayName,
 		punchIn: pin ? pin.utc().toDate() : null,
 		punchOut: pout ? pout.utc().toDate() : null,
-		durationInOfficeMinutes:
-			pin && pout ? Math.floor(pout.diff(pin, "second") / 60) : 0,
+		durationInOfficeMinutes: computeDurationInOfficeMinutes(pin, pout),
 		flags,
 		status,
 	};
@@ -517,6 +599,7 @@ async function fetchAttendanceInputs({
             select: {
                 employeeId: true,
                 timestamp: true,
+				punchState: true
             },
             orderBy: {
                 timestamp: "asc",
