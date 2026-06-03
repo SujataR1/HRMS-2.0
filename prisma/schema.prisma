@@ -269,6 +269,42 @@ model AttendanceLog {
   @@index([punchOut])
 }
 
+enum PresenceEstimateConfidence {
+  high
+  medium
+  low
+  unknown
+}
+
+model AttendancePresenceEstimate {
+  id String @id @default(uuid())
+
+  employeeId      String
+  attendanceDate  DateTime
+
+  firstRawPunch DateTime?
+  lastRawPunch  DateTime?
+
+  estimatedInsideStart   DateTime?
+  estimatedInsideEnd     DateTime?
+  estimatedInsideMinutes Int?
+
+  confidence PresenceEstimateConfidence @default(unknown)
+  flags      String[]
+  clusters   Json?
+
+  algorithmVersion Int
+  inputHash        String?
+
+  computedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([employeeId, attendanceDate])
+  @@index([employeeId])
+  @@index([attendanceDate])
+  @@index([confidence])
+}
+
 model Hr {
   id              String   @id @default(uuid())
   employeeId      String   @unique
