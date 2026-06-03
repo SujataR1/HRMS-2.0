@@ -1,4 +1,5 @@
 import { prisma } from "#src/db/prisma.js";
+
 export async function hrGetAllShifts() {
 	return await prisma.$transaction(async (tx) => {
 		const shifts = await tx.shift.findMany({
@@ -21,6 +22,9 @@ export async function hrGetAllShifts() {
 				fullShiftEarlyPunchConsiderTimeInMinutes: true,
 				halfShiftEarlyPunchConsiderTimeInMinutes: true,
 
+				fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes: true,
+				halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes: true,
+
 				overtimeMaximumAllowableLimitInMinutes: true,
 				maximumValidShiftLengthPostRegularEndingTimeInMinutes: true,
 
@@ -28,8 +32,14 @@ export async function hrGetAllShifts() {
 				ceilingPercentageOfTotalFullShiftForHalfDay: true,
 				floorPercentageOfTotalHalfShiftForHalfDay: true,
 				ceilingPercentageOfTotalHalfShiftForHalfDay: true,
+
+				breakPolicy: true,
+			},
+			orderBy: {
+				shiftName: "asc",
 			},
 		});
+
 		return shifts;
 	});
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { shiftBreakPolicySchema } from "./shiftBreakPolicySchema.js";
 
 const dateField = z.preprocess(
 	(val) =>
@@ -52,4 +53,6 @@ export const hrEditAShiftSchema = z.object({
 
 	floorPercentageOfTotalHalfShiftForHalfDay: z.number().min(0).max(1),
 	ceilingPercentageOfTotalHalfShiftForHalfDay: z.number().min(0).max(1),
+
+	breakPolicy: shiftBreakPolicySchema,
 });

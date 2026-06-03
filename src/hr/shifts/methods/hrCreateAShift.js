@@ -5,30 +5,39 @@ import timezone from "dayjs/plugin/timezone.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 export async function hrCreateAShift({
 	shiftName,
 	weeklyDaysOff = [],
 	weeklyHalfDays = [],
+
 	fullShiftStartingTime,
 	fullShiftEndingTime,
 	halfShiftStartingTime = null,
 	halfShiftEndingTime = null,
+
 	fullShiftGraceInTimingInMinutes,
 	halfShiftGraceInTimingInMinutes = null,
 	fullShiftGraceOutTimingInMinutes,
 	halfShiftGraceOutTimingInMinutes = null,
+
 	fullShiftEarlyPunchConsiderTimeInMinutes,
 	halfShiftEarlyPunchConsiderTimeInMinutes,
+
 	fullShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes,
 	halfShiftTimeForFirstPunchBeyondWhichMarkedAbsentInMinutes = null,
+
 	overtimeMaximumAllowableLimitInMinutes = null,
 	maximumValidShiftLengthPostRegularEndingTimeInMinutes = null,
+
 	floorPercentageOfTotalFullShiftForHalfDay,
 	ceilingPercentageOfTotalFullShiftForHalfDay,
 	floorPercentageOfTotalHalfShiftForHalfDay,
 	ceilingPercentageOfTotalHalfShiftForHalfDay,
+
+	breakPolicy = null,
 }) {
 	if (
 		!shiftName ||
@@ -47,17 +56,25 @@ export async function hrCreateAShift({
 		throw new Error("Missing required fields.");
 	}
 
-	const toUTC = (t) => dayjs.tz(t, TIMEZONE).utc().toDate();
+	const toUTC = (timeValue) => dayjs.tz(timeValue, TIMEZONE).utc().toDate();
 
 	return await prisma.$transaction(async (tx) => {
-		const existing = await tx.shift.findUnique({ where: { shiftName } });
-		if (existing) throw new Error(`Shift "${shiftName}" already exists`);
+		const existing = await tx.shift.findUnique({
+			where: {
+				shiftName,
+			},
+		});
+
+		if (existing) {
+			throw new Error(`Shift "${shiftName}" already exists`);
+		}
 
 		const newShift = await tx.shift.create({
 			data: {
 				shiftName,
 				weeklyDaysOff,
 				weeklyHalfDays,
+
 				fullShiftStartingTime: toUTC(fullShiftStartingTime),
 				fullShiftEndingTime: toUTC(fullShiftEndingTime),
 				halfShiftStartingTime: halfShiftStartingTime
@@ -85,6 +102,8 @@ export async function hrCreateAShift({
 				ceilingPercentageOfTotalFullShiftForHalfDay,
 				floorPercentageOfTotalHalfShiftForHalfDay,
 				ceilingPercentageOfTotalHalfShiftForHalfDay,
+
+				breakPolicy,
 			},
 		});
 
