@@ -42,6 +42,12 @@ function formatTime(value) {
 export function serializeAttendancePresenceEstimate(estimate) {
 	if (!estimate) return null;
 
+	const estimatedOutsideMinutes =
+		estimate.clusters?.outsideIntervals?.reduce(
+			(total, interval) => total + (Number(interval?.minutes) || 0),
+			0
+		) ?? 0;
+
 	return {
 		id: estimate.id,
 
@@ -51,6 +57,7 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		estimatedInsideStart: formatTime(estimate.estimatedInsideStart),
 		estimatedInsideEnd: formatTime(estimate.estimatedInsideEnd),
 		estimatedInsideMinutes: estimate.estimatedInsideMinutes,
+		estimatedOutsideMinutes,
 
 		confidence: estimate.confidence,
 		flags: estimate.flags,
