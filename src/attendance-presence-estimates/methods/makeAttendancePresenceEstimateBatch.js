@@ -12,9 +12,9 @@ dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 1;
+const ALGORITHM_VERSION = 2;
 
-function readPositiveIntEnv(name, fallback, { min = 1, max = 180 } = {}) {
+function readPositiveIntEnv(name, fallback, { min = 1, max = 360 } = {}) {
 	const value = Number(process.env[name]);
 
 	if (!Number.isInteger(value)) return fallback;
@@ -24,15 +24,21 @@ function readPositiveIntEnv(name, fallback, { min = 1, max = 180 } = {}) {
 	return value;
 }
 
-const PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES = readPositiveIntEnv(
-	"PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES",
+const PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES = readPositiveIntEnv(
+	"PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES",
 	30,
 	{ min: 1, max: 180 }
 );
 
+const PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES = readPositiveIntEnv(
+	"PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES",
+	5,
+	{ min: 1, max: 60 }
+);
+
 const PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES = readPositiveIntEnv(
 	"PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES",
-	30,
+	10,
 	{ min: 1, max: 360 }
 );
 
@@ -44,15 +50,6 @@ const PRESENCE_ESTIMATE_WRITE_CONCURRENCY = readPositiveIntEnv(
 
 function toAttendanceDate(istDay) {
 	return new Date(istDay.format("YYYY-MM-DD"));
-}
-
-function toLocalStamp(value) {
-	if (!value) return null;
-
-	return dayjs
-		.utc(value)
-		.tz(TIMEZONE)
-		.format("YYYY-MM-DD HH:mm:ss");
 }
 
 function normalizeEmployeeDays(employeeDays) {
@@ -171,7 +168,7 @@ function buildShiftDataMap(shiftDetails) {
 	return shiftDataMap;
 }
 
-function buildClusters(logs) {
+function buildConsecutiveClusters(logs, windowMinutes) {
 	const clusters = [];
 
 	for (const log of logs) {
@@ -185,7 +182,7 @@ function buildClusters(logs) {
 		const previousLog = lastCluster.at(-1);
 		const gapMinutes = log.timestamp.diff(previousLog.timestamp, "minute");
 
-		if (gapMinutes <= PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES) {
+		if (gapMinutes <= windowMinutes) {
 			lastCluster.push(log);
 			continue;
 		}
@@ -193,40 +190,108 @@ function buildClusters(logs) {
 		clusters.push([log]);
 	}
 
-	return clusters.map((logsInCluster, index) => {
-		const first = logsInCluster[0];
-		const last = logsInCluster.at(-1);
-
-		return {
-			index,
-			first,
-			last,
-			logs: logsInCluster,
-		};
-	});
+	return clusters.map((logsInCluster, index) => ({
+		index,
+		first: logsInCluster[0],
+		last: logsInCluster.at(-1),
+		logs: logsInCluster,
+	}));
 }
 
-function serializeClusters(clusters) {
-	return clusters.map((cluster) => ({
-		index: cluster.index,
+function buildArrivalBoundaryCluster(logs) {
+	let endIndex = 0;
+
+	for (let i = 1; i < logs.length; i++) {
+		const gapMinutes = logs[i].timestamp.diff(
+			logs[i - 1].timestamp,
+			"minute"
+		);
+
+		if (gapMinutes > PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES) {
+			break;
+		}
+
+		endIndex = i;
+	}
+
+	const clusterLogs = logs.slice(0, endIndex + 1);
+
+	return {
+		index: 0,
+		startIndex: 0,
+		endIndex,
+		first: clusterLogs[0],
+		last: clusterLogs.at(-1),
+		logs: clusterLogs,
+	};
+}
+
+function buildExitBoundaryCluster(logs, minimumStartIndex) {
+	let startIndex = logs.length - 1;
+
+	for (let i = logs.length - 2; i >= minimumStartIndex; i--) {
+		const gapMinutes = logs[i + 1].timestamp.diff(
+			logs[i].timestamp,
+			"minute"
+		);
+
+		if (gapMinutes > PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES) {
+			break;
+		}
+
+		startIndex = i;
+	}
+
+	const clusterLogs = logs.slice(startIndex);
+
+	return {
+		index: 0,
+		startIndex,
+		endIndex: logs.length - 1,
+		first: clusterLogs[0],
+		last: clusterLogs.at(-1),
+		logs: clusterLogs,
+	};
+}
+
+function serializePunch(log) {
+	return {
+		atUtc: log.timestamp.utc().toISOString(),
+		atLocal: log.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		identifier: log.identifier,
+	};
+}
+
+function serializeCluster(
+	cluster,
+	{ role = "unknown", chosenBoundary = null, selectionRule = null } = {}
+) {
+	return {
+		role,
 		punchCount: cluster.logs.length,
 		firstPunchUtc: cluster.first.timestamp.utc().toISOString(),
 		firstPunchLocal: cluster.first.timestamp.format("YYYY-MM-DD HH:mm:ss"),
 		lastPunchUtc: cluster.last.timestamp.utc().toISOString(),
 		lastPunchLocal: cluster.last.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-		punches: cluster.logs.map((log) => ({
-			atUtc: log.timestamp.utc().toISOString(),
-			atLocal: log.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-			identifier: log.identifier,
-		})),
-	}));
+		chosenBoundaryUtc: chosenBoundary
+			? chosenBoundary.utc().toISOString()
+			: null,
+		chosenBoundaryLocal: chosenBoundary
+			? chosenBoundary.format("YYYY-MM-DD HH:mm:ss")
+			: null,
+		selectionRule,
+		punches: cluster.logs.map(serializePunch),
+	};
 }
 
 function buildInputHash({ item, shiftId, logs }) {
 	const payload = {
 		algorithmVersion: ALGORITHM_VERSION,
 		timezone: TIMEZONE,
-		clusterWindowMinutes: PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES,
+		boundaryClusterWindowMinutes:
+			PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+		breakClusterWindowMinutes:
+			PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
 		meaningfulOutsideGapMinutes:
 			PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
 		employeeId: item.employeeId,
@@ -306,11 +371,11 @@ function resolveWindowedLogs({
 	};
 }
 
-function getEstimateConfidence({ flags, clusters, usedShiftWindow }) {
+function getEstimateConfidence({ flags, middleClusters, usedShiftWindow }) {
 	if (flags.includes("noPunches")) return "unknown";
 	if (flags.includes("invalidEstimatedWindow")) return "low";
 	if (flags.includes("singlePunchOnly")) return "low";
-	if (flags.includes("singleClusterOnly")) return "low";
+	if (flags.includes("singleBoundaryClusterOnly")) return "low";
 	if (flags.includes("unpairedMiddleCluster")) return "low";
 	if (!usedShiftWindow) return "low";
 
@@ -320,7 +385,11 @@ function getEstimateConfidence({ flags, clusters, usedShiftWindow }) {
 
 	const hasOutsideDeduction = flags.includes("possibleOutsideIntervalDeducted");
 
-	if (clusters.length === 2 && !hasAdjustedBoundary && !hasOutsideDeduction) {
+	if (
+		middleClusters.length === 0 &&
+		!hasAdjustedBoundary &&
+		!hasOutsideDeduction
+	) {
 		return "high";
 	}
 
@@ -364,7 +433,19 @@ function computePresenceEstimateRecord({
 
 			confidence: "unknown",
 			flags,
-			clusters: [],
+			clusters: {
+				boundaryClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+				breakClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
+				meaningfulOutsideGapMinutes:
+					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+				arrival: null,
+				exit: null,
+				middle: [],
+				outsideIntervals: [],
+				notes: ["no raw punches found inside the estimate window"],
+			},
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -379,10 +460,15 @@ function computePresenceEstimateRecord({
 	const firstRawPunch = logs[0].timestamp.utc().toDate();
 	const lastRawPunch = logs.at(-1).timestamp.utc().toDate();
 
-	const clusters = buildClusters(logs);
-
 	if (logs.length === 1) {
 		flags.push("singlePunchOnly");
+
+		const singleCluster = {
+			index: 0,
+			first: logs[0],
+			last: logs[0],
+			logs,
+		};
 
 		return {
 			employeeId: item.employeeId,
@@ -397,7 +483,23 @@ function computePresenceEstimateRecord({
 
 			confidence: "low",
 			flags,
-			clusters: serializeClusters(clusters),
+			clusters: {
+				boundaryClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+				breakClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
+				meaningfulOutsideGapMinutes:
+					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+				arrival: serializeCluster(singleCluster, {
+					role: "singlePunch",
+					chosenBoundary: logs[0].timestamp,
+					selectionRule: "single punch only; cannot infer exit",
+				}),
+				exit: null,
+				middle: [],
+				outsideIntervals: [],
+				notes: ["single punch cannot produce inside-duration estimate"],
+			},
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -409,11 +511,17 @@ function computePresenceEstimateRecord({
 		};
 	}
 
-	if (clusters.length === 1) {
-		flags.push("singleClusterOnly");
+	const arrivalCluster = buildArrivalBoundaryCluster(logs);
 
-		if (clusters[0].logs.length > 1) {
-			flags.push("multiplePunchesInSingleCluster");
+	if (arrivalCluster.logs.length > 1) {
+		flags.push("multipleArrivalPunches", "arrivalBoundaryAdjusted");
+	}
+
+	if (arrivalCluster.endIndex >= logs.length - 1) {
+		flags.push("singleBoundaryClusterOnly");
+
+		if (arrivalCluster.logs.length > 1) {
+			flags.push("multiplePunchesInSingleBoundaryCluster");
 		}
 
 		return {
@@ -423,13 +531,33 @@ function computePresenceEstimateRecord({
 			firstRawPunch,
 			lastRawPunch,
 
-			estimatedInsideStart: clusters[0].last.timestamp.utc().toDate(),
+			estimatedInsideStart: arrivalCluster.last.timestamp.utc().toDate(),
 			estimatedInsideEnd: null,
 			estimatedInsideMinutes: null,
 
 			confidence: "low",
-			flags,
-			clusters: serializeClusters(clusters),
+			flags: Array.from(new Set(flags)),
+			clusters: {
+				boundaryClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+				breakClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
+				meaningfulOutsideGapMinutes:
+					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+				arrival: serializeCluster(arrivalCluster, {
+					role: "arrivalBoundary",
+					chosenBoundary: arrivalCluster.last.timestamp,
+					selectionRule:
+						"latest punch in arrival boundary cluster is estimated inside start",
+				}),
+				exit: null,
+				middle: [],
+				outsideIntervals: [],
+				notes: [
+					"all punches were absorbed into the arrival boundary cluster",
+					"this can estimate inside start but cannot estimate inside end",
+				],
+			},
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -441,16 +569,24 @@ function computePresenceEstimateRecord({
 		};
 	}
 
-	const arrivalCluster = clusters[0];
-	const exitCluster = clusters.at(-1);
-
-	if (arrivalCluster.logs.length > 1) {
-		flags.push("multipleArrivalPunches", "arrivalBoundaryAdjusted");
-	}
+	const exitCluster = buildExitBoundaryCluster(
+		logs,
+		arrivalCluster.endIndex + 1
+	);
 
 	if (exitCluster.logs.length > 1) {
 		flags.push("multipleExitPunches", "exitBoundaryAdjusted");
 	}
+
+	const middleLogs = logs.slice(
+		arrivalCluster.endIndex + 1,
+		exitCluster.startIndex
+	);
+
+	const middleClusters = buildConsecutiveClusters(
+		middleLogs,
+		PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES
+	);
 
 	const estimatedInsideStart = arrivalCluster.last.timestamp;
 	const estimatedInsideEnd = exitCluster.first.timestamp;
@@ -461,7 +597,6 @@ function computePresenceEstimateRecord({
 	);
 
 	const outsideIntervals = [];
-	const middleClusters = clusters.slice(1, -1);
 
 	for (let i = 0; i < middleClusters.length; i += 2) {
 		const possibleExitCluster = middleClusters[i];
@@ -490,6 +625,8 @@ function computePresenceEstimateRecord({
 				toUtc: possibleOutsideEnd.utc().toISOString(),
 				toLocal: possibleOutsideEnd.format("YYYY-MM-DD HH:mm:ss"),
 				minutes: possibleOutsideMinutes,
+				selectionRule:
+					"earliest punch in possible exit cluster to latest punch in possible re-entry cluster",
 			});
 
 			flags.push("possibleOutsideIntervalDeducted");
@@ -516,11 +653,34 @@ function computePresenceEstimateRecord({
 			confidence: "low",
 			flags: Array.from(new Set(flags)),
 			clusters: {
-				clusterWindowMinutes: PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES,
+				boundaryClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+				breakClusterWindowMinutes:
+					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
 				meaningfulOutsideGapMinutes:
 					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
-				items: serializeClusters(clusters),
+				arrival: serializeCluster(arrivalCluster, {
+					role: "arrivalBoundary",
+					chosenBoundary: arrivalCluster.last.timestamp,
+					selectionRule:
+						"latest punch in arrival boundary cluster is estimated inside start",
+				}),
+				exit: serializeCluster(exitCluster, {
+					role: "exitBoundary",
+					chosenBoundary: exitCluster.first.timestamp,
+					selectionRule:
+						"earliest punch in exit boundary cluster is estimated inside end",
+				}),
+				middle: middleClusters.map((cluster, index) =>
+					serializeCluster(cluster, {
+						role:
+							index % 2 === 0
+								? "possibleMiddleExit"
+								: "possibleMiddleReentry",
+					})
+				),
 				outsideIntervals,
+				notes: ["estimated inside end is not after estimated inside start"],
 			},
 
 			algorithmVersion: ALGORITHM_VERSION,
@@ -558,21 +718,44 @@ function computePresenceEstimateRecord({
 
 		confidence: getEstimateConfidence({
 			flags: uniqueFlags,
-			clusters,
+			middleClusters,
 			usedShiftWindow,
 		}),
 		flags: uniqueFlags,
 		clusters: {
-			clusterWindowMinutes: PRESENCE_ESTIMATE_CLUSTER_WINDOW_MINUTES,
+			boundaryClusterWindowMinutes:
+				PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+			breakClusterWindowMinutes:
+				PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
 			meaningfulOutsideGapMinutes:
 				PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
-			items: serializeClusters(clusters),
+			arrival: serializeCluster(arrivalCluster, {
+				role: "arrivalBoundary",
+				chosenBoundary: arrivalCluster.last.timestamp,
+				selectionRule:
+					"latest punch in arrival boundary cluster is estimated inside start",
+			}),
+			exit: serializeCluster(exitCluster, {
+				role: "exitBoundary",
+				chosenBoundary: exitCluster.first.timestamp,
+				selectionRule:
+					"earliest punch in exit boundary cluster is estimated inside end",
+			}),
+			middle: middleClusters.map((cluster, index) =>
+				serializeCluster(cluster, {
+					role:
+						index % 2 === 0
+							? "possibleMiddleExit"
+							: "possibleMiddleReentry",
+				})
+			),
 			outsideIntervals,
 			notes: [
-				"first cluster latest punch is treated as estimated inside start",
-				"last cluster earliest punch is treated as estimated inside end",
-				"middle cluster pairs may be treated as possible outside intervals",
 				"this is an estimate, not a hard direction fact",
+				"arrival and exit boundary clusters use the boundary ambiguity window",
+				"middle break clusters use the smaller break/noise window",
+				"middle cluster pairs are treated as possible exit and possible re-entry",
+				"outside interval is deducted only when it reaches the meaningful outside gap",
 			],
 		},
 
