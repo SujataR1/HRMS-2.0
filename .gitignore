@@ -8,7 +8,7 @@ attendance-reports
 scratchpads
 .eslintrc.json
 .prettierrc
-tree.txt
+tree.*
 schema.prisma.txt
 forUpload*.txt
 logs
