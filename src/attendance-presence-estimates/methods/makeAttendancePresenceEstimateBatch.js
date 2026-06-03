@@ -589,7 +589,7 @@ function computePresenceEstimateRecord({
 	);
 
 	const estimatedInsideStart = arrivalCluster.last.timestamp;
-	const estimatedInsideEnd = exitCluster.first.timestamp;
+	const estimatedInsideEnd = exitCluster.last.timestamp;
 
 	let grossInsideMinutes = estimatedInsideEnd.diff(
 		estimatedInsideStart,
@@ -607,7 +607,7 @@ function computePresenceEstimateRecord({
 			continue;
 		}
 
-		const possibleOutsideStart = possibleExitCluster.first.timestamp;
+		const possibleOutsideStart = possibleExitCluster.last.timestamp;
 		const possibleOutsideEnd = possibleReentryCluster.last.timestamp;
 
 		const possibleOutsideMinutes = possibleOutsideEnd.diff(
@@ -667,9 +667,9 @@ function computePresenceEstimateRecord({
 				}),
 				exit: serializeCluster(exitCluster, {
 					role: "exitBoundary",
-					chosenBoundary: exitCluster.first.timestamp,
+					chosenBoundary: exitCluster.last.timestamp,
 					selectionRule:
-						"earliest punch in exit boundary cluster is estimated inside end",
+						"latest punch in exit boundary cluster is estimated inside end",
 				}),
 				middle: middleClusters.map((cluster, index) =>
 					serializeCluster(cluster, {
@@ -737,9 +737,9 @@ function computePresenceEstimateRecord({
 			}),
 			exit: serializeCluster(exitCluster, {
 				role: "exitBoundary",
-				chosenBoundary: exitCluster.first.timestamp,
+				chosenBoundary: exitCluster.last.timestamp,
 				selectionRule:
-					"earliest punch in exit boundary cluster is estimated inside end",
+					"latest punch in exit boundary cluster is estimated inside end",
 			}),
 			middle: middleClusters.map((cluster, index) =>
 				serializeCluster(cluster, {
