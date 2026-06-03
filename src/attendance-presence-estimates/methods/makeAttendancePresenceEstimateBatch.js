@@ -12,7 +12,7 @@ dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 2;
+const ALGORITHM_VERSION = 3;
 
 function readPositiveIntEnv(name, fallback, { min = 1, max = 360 } = {}) {
 	const value = Number(process.env[name]);
@@ -158,6 +158,8 @@ function buildShiftDataMap(shiftDetails) {
 
 			postTol:
 				shift.maximumValidShiftLengthPostRegularEndingTimeInMinutes ?? 0,
+
+			overtimeMax: shift.overtimeMaximumAllowableLimitInMinutes ?? 0,
 
 			weeklyHalfSet: new Set(
 				(shift.weeklyHalfDays || []).map((day) => day.toLowerCase())
@@ -325,6 +327,8 @@ function resolveWindowedLogs({
 		return {
 			shiftId: shiftId || null,
 			usedShiftWindow: false,
+			regularShiftEnd: null,
+			overtimeMaxMinutes: 0,
 			logs: allEmployeeLogs.filter((log) =>
 				log.timestamp.isBetween(dayStart, dayEnd, null, "[]")
 			),
@@ -360,11 +364,20 @@ function resolveWindowedLogs({
 		"minute"
 	);
 
-	windowEnd = windowEnd.add(shift.postTol, "minute");
+	const regularShiftEnd = windowEnd.clone();
+
+	const postShiftLookaheadMinutes = Math.max(
+		shift.postTol || 0,
+		shift.overtimeMax || 0
+	);
+
+	windowEnd = windowEnd.add(postShiftLookaheadMinutes, "minute");
 
 	return {
 		shiftId,
 		usedShiftWindow: true,
+		regularShiftEnd,
+		overtimeMaxMinutes: shift.overtimeMax || 0,
 		logs: allEmployeeLogs.filter((log) =>
 			log.timestamp.isBetween(windowStart, windowEnd, null, "[]")
 		),
@@ -396,6 +409,27 @@ function getEstimateConfidence({ flags, middleClusters, usedShiftWindow }) {
 	return "medium";
 }
 
+function buildEmptyClustersPayload({
+	arrival = null,
+	exit = null,
+	middle = [],
+	outsideIntervals = [],
+	notes = [],
+}) {
+	return {
+		boundaryClusterWindowMinutes:
+			PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
+		breakClusterWindowMinutes: PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
+		meaningfulOutsideGapMinutes:
+			PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+		arrival,
+		exit,
+		middle,
+		outsideIntervals,
+		notes,
+	};
+}
+
 function computePresenceEstimateRecord({
 	item,
 	employeeShiftMap,
@@ -404,12 +438,13 @@ function computePresenceEstimateRecord({
 }) {
 	const flags = [];
 
-	const { shiftId, usedShiftWindow, logs } = resolveWindowedLogs({
-		item,
-		employeeShiftMap,
-		shiftDataMap,
-		employeeLogMap,
-	});
+	const { shiftId, usedShiftWindow, regularShiftEnd, overtimeMaxMinutes, logs } =
+		resolveWindowedLogs({
+			item,
+			employeeShiftMap,
+			shiftDataMap,
+			employeeLogMap,
+		});
 
 	if (!usedShiftWindow) {
 		flags.push("noAssignedShift", "calendarDayWindowUsed");
@@ -433,19 +468,9 @@ function computePresenceEstimateRecord({
 
 			confidence: "unknown",
 			flags,
-			clusters: {
-				boundaryClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
-				breakClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
-				meaningfulOutsideGapMinutes:
-					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
-				arrival: null,
-				exit: null,
-				middle: [],
-				outsideIntervals: [],
+			clusters: buildEmptyClustersPayload({
 				notes: ["no raw punches found inside the estimate window"],
-			},
+			}),
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -483,23 +508,14 @@ function computePresenceEstimateRecord({
 
 			confidence: "low",
 			flags,
-			clusters: {
-				boundaryClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
-				breakClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
-				meaningfulOutsideGapMinutes:
-					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+			clusters: buildEmptyClustersPayload({
 				arrival: serializeCluster(singleCluster, {
 					role: "singlePunch",
 					chosenBoundary: logs[0].timestamp,
 					selectionRule: "single punch only; cannot infer exit",
 				}),
-				exit: null,
-				middle: [],
-				outsideIntervals: [],
 				notes: ["single punch cannot produce inside-duration estimate"],
-			},
+			}),
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -537,27 +553,18 @@ function computePresenceEstimateRecord({
 
 			confidence: "low",
 			flags: Array.from(new Set(flags)),
-			clusters: {
-				boundaryClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
-				breakClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
-				meaningfulOutsideGapMinutes:
-					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+			clusters: buildEmptyClustersPayload({
 				arrival: serializeCluster(arrivalCluster, {
 					role: "arrivalBoundary",
 					chosenBoundary: arrivalCluster.last.timestamp,
 					selectionRule:
 						"latest punch in arrival boundary cluster is estimated inside start",
 				}),
-				exit: null,
-				middle: [],
-				outsideIntervals: [],
 				notes: [
 					"all punches were absorbed into the arrival boundary cluster",
 					"this can estimate inside start but cannot estimate inside end",
 				],
-			},
+			}),
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -578,18 +585,66 @@ function computePresenceEstimateRecord({
 		flags.push("multipleExitPunches", "exitBoundaryAdjusted");
 	}
 
-	const middleLogs = logs.slice(
+	const rawMiddleLogs = logs.slice(
 		arrivalCluster.endIndex + 1,
 		exitCluster.startIndex
 	);
+
+	const finalPunch = exitCluster.last.timestamp;
+
+	const overtimeLimitEnd =
+		regularShiftEnd && overtimeMaxMinutes > 0
+			? regularShiftEnd.add(overtimeMaxMinutes, "minute")
+			: null;
+
+	const finalPunchIsValidOvertime =
+		regularShiftEnd &&
+		overtimeLimitEnd &&
+		finalPunch.isAfter(regularShiftEnd) &&
+		finalPunch.valueOf() <= overtimeLimitEnd.valueOf();
+
+	const estimatedInsideStart = arrivalCluster.last.timestamp;
+
+	const estimatedInsideEnd = regularShiftEnd
+		? finalPunchIsValidOvertime
+			? finalPunch
+			: regularShiftEnd
+		: finalPunch;
+
+	if (regularShiftEnd && finalPunch.isBefore(regularShiftEnd)) {
+		flags.push("estimatedEndAnchoredToScheduledEnd");
+	}
+
+	if (finalPunchIsValidOvertime) {
+		flags.push("estimatedEndExtendedByValidOvertimePunch");
+	}
+
+	if (
+		regularShiftEnd &&
+		finalPunch.isAfter(regularShiftEnd) &&
+		!finalPunchIsValidOvertime
+	) {
+		flags.push("postShiftPunchIgnoredBeyondOvertimeLimit");
+	}
+
+	const middleLogs =
+		regularShiftEnd
+			? rawMiddleLogs.filter((log) => log.timestamp.isBefore(regularShiftEnd))
+			: rawMiddleLogs;
+
+	const ignoredPostShiftMiddleLogs =
+		regularShiftEnd
+			? rawMiddleLogs.filter((log) => !log.timestamp.isBefore(regularShiftEnd))
+			: [];
+
+	if (ignoredPostShiftMiddleLogs.length) {
+		flags.push("postShiftMiddlePunchesIgnoredForBreakInference");
+	}
 
 	const middleClusters = buildConsecutiveClusters(
 		middleLogs,
 		PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES
 	);
-
-	const estimatedInsideStart = arrivalCluster.last.timestamp;
-	const estimatedInsideEnd = exitCluster.last.timestamp;
 
 	let grossInsideMinutes = estimatedInsideEnd.diff(
 		estimatedInsideStart,
@@ -626,7 +681,7 @@ function computePresenceEstimateRecord({
 				toLocal: possibleOutsideEnd.format("YYYY-MM-DD HH:mm:ss"),
 				minutes: possibleOutsideMinutes,
 				selectionRule:
-					"earliest punch in possible exit cluster to latest punch in possible re-entry cluster",
+					"latest punch in possible exit cluster to latest punch in possible re-entry cluster",
 			});
 
 			flags.push("possibleOutsideIntervalDeducted");
@@ -652,13 +707,7 @@ function computePresenceEstimateRecord({
 
 			confidence: "low",
 			flags: Array.from(new Set(flags)),
-			clusters: {
-				boundaryClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
-				breakClusterWindowMinutes:
-					PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
-				meaningfulOutsideGapMinutes:
-					PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+			clusters: buildEmptyClustersPayload({
 				arrival: serializeCluster(arrivalCluster, {
 					role: "arrivalBoundary",
 					chosenBoundary: arrivalCluster.last.timestamp,
@@ -667,9 +716,9 @@ function computePresenceEstimateRecord({
 				}),
 				exit: serializeCluster(exitCluster, {
 					role: "exitBoundary",
-					chosenBoundary: exitCluster.last.timestamp,
+					chosenBoundary: estimatedInsideEnd,
 					selectionRule:
-						"latest punch in exit boundary cluster is estimated inside end",
+						"scheduled end is used by default; valid overtime final punch extends estimated inside end",
 				}),
 				middle: middleClusters.map((cluster, index) =>
 					serializeCluster(cluster, {
@@ -680,8 +729,10 @@ function computePresenceEstimateRecord({
 					})
 				),
 				outsideIntervals,
-				notes: ["estimated inside end is not after estimated inside start"],
-			},
+				notes: [
+					"estimated inside end is not after estimated inside start",
+				],
+			}),
 
 			algorithmVersion: ALGORITHM_VERSION,
 			inputHash: buildInputHash({
@@ -722,13 +773,7 @@ function computePresenceEstimateRecord({
 			usedShiftWindow,
 		}),
 		flags: uniqueFlags,
-		clusters: {
-			boundaryClusterWindowMinutes:
-				PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
-			breakClusterWindowMinutes:
-				PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
-			meaningfulOutsideGapMinutes:
-				PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES,
+		clusters: buildEmptyClustersPayload({
 			arrival: serializeCluster(arrivalCluster, {
 				role: "arrivalBoundary",
 				chosenBoundary: arrivalCluster.last.timestamp,
@@ -737,9 +782,9 @@ function computePresenceEstimateRecord({
 			}),
 			exit: serializeCluster(exitCluster, {
 				role: "exitBoundary",
-				chosenBoundary: exitCluster.last.timestamp,
+				chosenBoundary: estimatedInsideEnd,
 				selectionRule:
-					"latest punch in exit boundary cluster is estimated inside end",
+					"scheduled end is used by default; valid overtime final punch extends estimated inside end",
 			}),
 			middle: middleClusters.map((cluster, index) =>
 				serializeCluster(cluster, {
@@ -752,12 +797,15 @@ function computePresenceEstimateRecord({
 			outsideIntervals,
 			notes: [
 				"this is an estimate, not a hard direction fact",
-				"arrival and exit boundary clusters use the boundary ambiguity window",
+				"arrival boundary uses the boundary ambiguity window",
+				"normal estimated end is scheduled shift end when a shift is known",
+				"valid final overtime punch extends estimated inside end",
 				"middle break clusters use the smaller break/noise window",
 				"middle cluster pairs are treated as possible exit and possible re-entry",
 				"outside interval is deducted only when it reaches the meaningful outside gap",
+				"post-shift middle punches are ignored for break inference",
 			],
-		},
+		}),
 
 		algorithmVersion: ALGORITHM_VERSION,
 		inputHash: buildInputHash({
