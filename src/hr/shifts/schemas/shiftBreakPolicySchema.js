@@ -9,6 +9,66 @@ const hhMmTime = z
 
 const identifierSchema = z.enum(["fingerprint", "card", "unknown"]);
 
+function timeToMinutes(value) {
+	const [hour, minute] = value.split(":").map(Number);
+	return hour * 60 + minute;
+}
+
+function expandWindowToDayIntervals({ start, end }) {
+	const startMinutes = timeToMinutes(start);
+	const endMinutes = timeToMinutes(end);
+
+	if (startMinutes === endMinutes) {
+		return [];
+	}
+
+	if (startMinutes < endMinutes) {
+		return [
+			{
+				start: startMinutes,
+				end: endMinutes,
+			},
+		];
+	}
+
+	return [
+		{
+			start: startMinutes,
+			end: 24 * 60,
+		},
+		{
+			start: 0,
+			end: endMinutes,
+		},
+	];
+}
+
+function intervalsOverlap(a, b) {
+	return a.start < b.end && b.start < a.end;
+}
+
+function windowsOverlap(a, b) {
+	const aIntervals = expandWindowToDayIntervals({
+		start: a.windowStart,
+		end: a.windowEnd,
+	});
+
+	const bIntervals = expandWindowToDayIntervals({
+		start: b.windowStart,
+		end: b.windowEnd,
+	});
+
+	for (const aInterval of aIntervals) {
+		for (const bInterval of bIntervals) {
+			if (intervalsOverlap(aInterval, bInterval)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 const breakRuleSchema = z
 	.object({
 		key: z.string().trim().min(1),
@@ -56,6 +116,14 @@ const breakRuleSchema = z
 					code: z.ZodIssueCode.custom,
 					path: ["windowEnd"],
 					message: "windowEnd is required for timeBound breaks",
+				});
+			}
+
+			if (rule.windowStart && rule.windowEnd && rule.windowStart === rule.windowEnd) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ["windowEnd"],
+					message: "windowStart and windowEnd cannot be the same",
 				});
 			}
 		}
@@ -120,6 +188,47 @@ export const shiftBreakPolicySchema = z
 			}
 
 			seenKeys.add(rule.key);
+		}
+
+		const timeBoundBreaks = policy.breaks
+			.map((rule, index) => ({
+				...rule,
+				index,
+			}))
+			.filter(
+				(rule) =>
+					rule.kind === "timeBound" &&
+					rule.windowStart &&
+					rule.windowEnd &&
+					rule.windowStart !== rule.windowEnd
+			);
+
+		for (let i = 0; i < timeBoundBreaks.length; i += 1) {
+			for (let j = i + 1; j < timeBoundBreaks.length; j += 1) {
+				const left = timeBoundBreaks[i];
+				const right = timeBoundBreaks[j];
+
+				if (!windowsOverlap(left, right)) continue;
+
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ["breaks", right.index, "windowStart"],
+					message: `Break window overlaps with "${left.key}"`,
+				});
+			}
+		}
+
+		const exitSet = new Set(policy.signalHints.exitIdentifiers);
+		const entrySet = new Set(policy.signalHints.entryIdentifiers);
+
+		for (const identifier of entrySet) {
+			if (!exitSet.has(identifier)) continue;
+
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["signalHints", "entryIdentifiers"],
+				message: `Identifier "${identifier}" cannot be both entry-like and exit-like`,
+			});
 		}
 	})
 	.nullable()
