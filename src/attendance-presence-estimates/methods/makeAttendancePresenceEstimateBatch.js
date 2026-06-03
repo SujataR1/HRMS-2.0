@@ -1,735 +1,291 @@
-import { createHash } from "crypto";
-import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
-import isBetween from "dayjs/plugin/isBetween.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
-import pMap from "p-map";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 7;
+function formatTime(value) {
+	if (!value) return null;
 
-function readPositiveIntEnv(name, fallback, { min = 1, max = 360 } = {}) {
-	const value = Number(process.env[name]);
-
-	if (!Number.isInteger(value)) return fallback;
-	if (value < min) return fallback;
-	if (value > max) return max;
-
-	return value;
+	return dayjs.utc(value).tz(TIMEZONE).format("hh:mm:ss a");
 }
 
-const PRESENCE_ESTIMATE_WRITE_CONCURRENCY = readPositiveIntEnv(
-	"ATTENDANCE_WRITE_CONCURRENCY",
-	4,
-	{ min: 1, max: 10 }
-);
+function formatDateTime(value) {
+	if (!value) return null;
 
-function toAttendanceDate(istDay) {
-	return new Date(istDay.format("YYYY-MM-DD"));
+	return dayjs.utc(value).tz(TIMEZONE).format("YYYY-MM-DD hh:mm:ss a");
 }
 
-function normalizeEmployeeDays(employeeDays) {
-	const unique = new Map();
+function formatClusterLocalTime(value) {
+	if (!value) return null;
 
-	for (const item of employeeDays || []) {
-		const employeeId = String(item?.employeeId || "").trim();
-		const date = item?.date;
+	const parsed = dayjs.tz(value, "YYYY-MM-DD HH:mm:ss", TIMEZONE);
 
-		if (!employeeId || !date) continue;
-
-		const day = dayjs.tz(date, TIMEZONE).startOf("day");
-		if (!day.isValid()) continue;
-
-		const dayKey = day.format("YYYY-MM-DD");
-		const key = `${employeeId}_${dayKey}`;
-
-		if (!unique.has(key)) {
-			unique.set(key, {
-				employeeId,
-				day,
-				dayKey,
-			});
-		}
+	if (parsed.isValid()) {
+		return parsed.format("hh:mm:ss a");
 	}
 
-	return Array.from(unique.values()).sort((a, b) => {
-		const byDay = a.day.valueOf() - b.day.valueOf();
-		if (byDay !== 0) return byDay;
+	const fallback = dayjs(value);
 
-		return a.employeeId.localeCompare(b.employeeId);
+	return fallback.isValid() ? fallback.tz(TIMEZONE).format("hh:mm:ss a") : null;
+}
+
+function presenceEstimateDateKey(date) {
+	return dayjs.utc(date).tz(TIMEZONE).format("YYYY-MM-DD");
+}
+
+function buildPresenceEstimateMap(estimates = []) {
+	const map = new Map();
+
+	for (const estimate of estimates) {
+		map.set(presenceEstimateDateKey(estimate.attendanceDate), estimate);
+	}
+
+	return map;
+}
+
+function normalizeCompletedInsideSession(session) {
+	return {
+		type: "inside",
+		from: formatClusterLocalTime(session.fromLocal),
+		to: formatClusterLocalTime(session.toLocal),
+		fromLocal: session.fromLocal ?? null,
+		toLocal: session.toLocal ?? null,
+		fromUtc: session.fromUtc ?? null,
+		toUtc: session.toUtc ?? null,
+		minutes: Number.isFinite(Number(session.minutes))
+			? Number(session.minutes)
+			: null,
+		status: "closed",
+		source: session.source ?? "directionalPunchState",
+	};
+}
+
+function normalizeBreakInterval(interval) {
+	return {
+		type: "break",
+		from: formatClusterLocalTime(interval.fromLocal),
+		to: formatClusterLocalTime(interval.toLocal),
+		fromLocal: interval.fromLocal ?? null,
+		toLocal: interval.toLocal ?? null,
+		fromUtc: interval.fromUtc ?? null,
+		toUtc: interval.toUtc ?? null,
+		minutes: Number.isFinite(Number(interval.minutes))
+			? Number(interval.minutes)
+			: null,
+		status: "closed",
+		source: interval.source ?? "directionalPunchState",
+	};
+}
+
+function normalizeOpenInsideSession(openInsideSession) {
+	if (!openInsideSession) return null;
+
+	return {
+		type: "inside",
+		from: formatClusterLocalTime(openInsideSession.fromLocal),
+		to: null,
+		fromLocal: openInsideSession.fromLocal ?? null,
+		toLocal: null,
+		fromUtc: openInsideSession.fromUtc ?? null,
+		toUtc: null,
+		minutes: null,
+		status: "open",
+		source: openInsideSession.source ?? "directionalPunchState",
+	};
+}
+
+function sortHistory(history) {
+	return history.sort((left, right) => {
+		const leftValue =
+			Date.parse(left.fromUtc || left.fromLocal || "") || Number.MAX_SAFE_INTEGER;
+
+		const rightValue =
+			Date.parse(right.fromUtc || right.fromLocal || "") ||
+			Number.MAX_SAFE_INTEGER;
+
+		return leftValue - rightValue;
 	});
 }
 
-function normalizePunchState(value) {
-	if (value === "in") return "in";
-	if (value === "out") return "out";
+function sumMinutes(items) {
+	return items.reduce((total, item) => {
+		const minutes = Number(item.minutes);
 
-	return null;
+		return Number.isFinite(minutes) ? total + minutes : total;
+	}, 0);
 }
 
-function buildShiftDataMap(shiftDetails) {
-	const shiftDataMap = new Map();
-
-	for (const shift of shiftDetails) {
-		let fullStart = dayjs.utc(shift.fullShiftStartingTime).tz(TIMEZONE);
-		let fullEnd = dayjs.utc(shift.fullShiftEndingTime).tz(TIMEZONE);
-
-		if (fullEnd.isBefore(fullStart)) {
-			fullEnd = fullEnd.add(1, "day");
-		}
-
-		let halfStart = shift.halfShiftStartingTime
-			? dayjs.utc(shift.halfShiftStartingTime).tz(TIMEZONE)
-			: null;
-
-		let halfEnd = shift.halfShiftEndingTime
-			? dayjs.utc(shift.halfShiftEndingTime).tz(TIMEZONE)
-			: null;
-
-		if (halfEnd && halfStart && halfEnd.isBefore(halfStart)) {
-			halfEnd = halfEnd.add(1, "day");
-		}
-
-		shiftDataMap.set(shift.id, {
-			id: shift.id,
-
-			fullStart,
-			fullEnd,
-
-			halfStart,
-			halfEnd,
-
-			earlyFull: shift.fullShiftEarlyPunchConsiderTimeInMinutes ?? 0,
-			earlyHalf: shift.halfShiftEarlyPunchConsiderTimeInMinutes ?? 0,
-
-			postTol:
-				shift.maximumValidShiftLengthPostRegularEndingTimeInMinutes ?? 0,
-
-			overtimeMax: shift.overtimeMaximumAllowableLimitInMinutes ?? 0,
-
-			weeklyHalfSet: new Set(
-				(shift.weeklyHalfDays || []).map((day) => day.toLowerCase())
-			),
-		});
-	}
-
-	return shiftDataMap;
-}
-
-function buildEmployeeLogicalPunchMap(rawLogs) {
-	const employeePunchBucketMap = new Map();
-
-	for (const rawLog of rawLogs) {
-		const employeeId = rawLog.employeeId;
-
-		if (!employeePunchBucketMap.has(employeeId)) {
-			employeePunchBucketMap.set(employeeId, new Map());
-		}
-
-		const timestamp = dayjs
-			.utc(rawLog.timestamp)
-			.tz(TIMEZONE)
-			.second(0)
-			.millisecond(0);
-
-		const punchKey = timestamp.utc().toISOString();
-		const employeeBuckets = employeePunchBucketMap.get(employeeId);
-
-		if (!employeeBuckets.has(punchKey)) {
-			employeeBuckets.set(punchKey, {
-				employeeId,
-				timestamp,
-				identifiers: new Set(),
-				punchStates: new Set(),
-				rawRowCount: 0,
-			});
-		}
-
-		const bucket = employeeBuckets.get(punchKey);
-
-		bucket.identifiers.add(rawLog.identifier || "unknown");
-
-		const punchState = normalizePunchState(rawLog.punchState);
-
-		if (punchState) {
-			bucket.punchStates.add(punchState);
-		}
-
-		bucket.rawRowCount += 1;
-	}
-
-	const employeeLogicalPunchMap = new Map();
-
-	for (const [employeeId, bucketMap] of employeePunchBucketMap.entries()) {
-		const logicalPunches = Array.from(bucketMap.values())
-			.map((bucket) => {
-				const punchStates = Array.from(bucket.punchStates);
-				let punchState = null;
-
-				if (punchStates.length === 1) {
-					punchState = punchStates[0];
-				} else if (punchStates.length > 1) {
-					punchState = "conflict";
-				}
-
-				return {
-					employeeId,
-					timestamp: bucket.timestamp,
-					identifiers: Array.from(bucket.identifiers).sort(),
-					punchStates,
-					punchState,
-					rawRowCount: bucket.rawRowCount,
-				};
-			})
-			.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
-
-		employeeLogicalPunchMap.set(employeeId, logicalPunches);
-	}
-
-	return employeeLogicalPunchMap;
-}
-
-function classifyPunchStateCoverage(punches) {
-	let directionalCount = 0;
-	let unknownCount = 0;
-	let conflictCount = 0;
-
-	for (const punch of punches) {
-		if (punch.punchState === "in" || punch.punchState === "out") {
-			directionalCount += 1;
-			continue;
-		}
-
-		if (punch.punchState === "conflict") {
-			conflictCount += 1;
-			continue;
-		}
-
-		unknownCount += 1;
-	}
-
-	if (directionalCount === 0) {
+function buildState({ currentState, openInsideSession, history }) {
+	if (currentState === "inside") {
 		return {
-			mode: "undirected",
-			directionalCount,
-			unknownCount,
-			conflictCount,
+			current: "inside",
+			since: openInsideSession?.from ?? null,
+			sinceLocal: openInsideSession?.fromLocal ?? null,
+			sinceUtc: openInsideSession?.fromUtc ?? null,
+			openSession: openInsideSession,
 		};
 	}
 
-	if (unknownCount || conflictCount) {
+	if (currentState === "outside") {
+		const lastBreak = [...history]
+			.reverse()
+			.find((item) => item.type === "break");
+
 		return {
-			mode: "hybrid",
-			directionalCount,
-			unknownCount,
-			conflictCount,
+			current: "outside",
+			since: lastBreak?.from ?? null,
+			sinceLocal: lastBreak?.fromLocal ?? null,
+			sinceUtc: lastBreak?.fromUtc ?? null,
+			openSession: null,
 		};
 	}
 
 	return {
-		mode: "directional",
-		directionalCount,
-		unknownCount,
-		conflictCount,
+		current: "unknown",
+		since: null,
+		sinceLocal: null,
+		sinceUtc: null,
+		openSession: null,
 	};
 }
 
-function isFullyDirectionalEmployeeDay(punches) {
-	if (!punches.length) return false;
-
-	const directionCoverage = classifyPunchStateCoverage(punches);
-
-	if (directionCoverage.mode !== "directional") return false;
-
-	const hasIn = punches.some((punch) => punch.punchState === "in");
-	const hasOut = punches.some((punch) => punch.punchState === "out");
-
-	if (!hasIn || !hasOut) return false;
-
-	if (punches[0].punchState !== "in") return false;
-	if (punches.at(-1).punchState !== "out") return false;
-
-	return true;
-}
-
-function compressConsecutiveDirectionalPunches(punches) {
-	const compressed = [];
-	const flags = [];
-
-	for (const punch of punches) {
-		const previous = compressed.at(-1);
-
-		if (!previous) {
-			compressed.push(punch);
-			continue;
-		}
-
-		if (previous.punchState === punch.punchState) {
-			compressed[compressed.length - 1] = punch;
-
-			flags.push(
-				punch.punchState === "in"
-					? "consecutiveInPunchesCompressedToLatest"
-					: "consecutiveOutPunchesCompressedToLatest"
-			);
-
-			continue;
-		}
-
-		compressed.push(punch);
-	}
-
-	return {
-		punches: compressed,
-		flags: Array.from(new Set(flags)),
-	};
-}
-
-function serializePunch(punch) {
-	return {
-		atUtc: punch.timestamp.utc().toISOString(),
-		atLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-		identifiers: punch.identifiers,
-		punchState: punch.punchState,
-		punchStates: punch.punchStates,
-		rawRowCount: punch.rawRowCount,
-	};
-}
-
-function buildInputHash({ item, shiftId, punches }) {
-	const payload = {
-		algorithmVersion: ALGORITHM_VERSION,
-		timezone: TIMEZONE,
-		mode: "directionalOnly",
-		employeeId: item.employeeId,
-		dayKey: item.dayKey,
-		shiftId,
-		punches: punches.map((punch) => ({
-			atUtc: punch.timestamp.utc().toISOString(),
-			identifiers: punch.identifiers,
-			punchState: punch.punchState,
-			punchStates: punch.punchStates,
-			rawRowCount: punch.rawRowCount,
-		})),
-	};
-
-	return createHash("sha256")
-		.update(JSON.stringify(payload))
-		.digest("hex");
-}
-
-function resolveWindowedPunches({
-	item,
-	employeeShiftMap,
-	shiftDataMap,
-	employeeLogicalPunchMap,
-}) {
-	const allEmployeePunches = employeeLogicalPunchMap.get(item.employeeId) || [];
-	const shiftId = employeeShiftMap.get(item.employeeId);
-	const shift = shiftId ? shiftDataMap.get(shiftId) : null;
-
-	if (!shift) {
-		const dayStart = item.day.startOf("day");
-		const dayEnd = item.day.endOf("day");
-
+function buildAvailability(estimate, clusters) {
+	if (!estimate) {
 		return {
-			shiftId: shiftId || null,
-			usedShiftWindow: false,
-			punches: allEmployeePunches.filter((punch) =>
-				punch.timestamp.isBetween(dayStart, dayEnd, null, "[]")
-			),
+			available: false,
+			reason: "notComputed",
 		};
 	}
 
-	const dayNameLower = item.day.format("dddd").toLowerCase();
-	const isHalf = shift.weeklyHalfSet.has(dayNameLower);
-
-	const baseStart =
-		isHalf && shift.halfStart ? shift.halfStart : shift.fullStart;
-
-	const baseEnd = isHalf && shift.halfEnd ? shift.halfEnd : shift.fullEnd;
-
-	let windowStart = item.day
-		.hour(baseStart.hour())
-		.minute(baseStart.minute())
-		.second(baseStart.second())
-		.millisecond(0);
-
-	let windowEnd = item.day
-		.hour(baseEnd.hour())
-		.minute(baseEnd.minute())
-		.second(baseEnd.second())
-		.millisecond(0);
-
-	if (windowEnd.isBefore(windowStart)) {
-		windowEnd = windowEnd.add(1, "day");
-	}
-
-	windowStart = windowStart.subtract(
-		isHalf ? shift.earlyHalf : shift.earlyFull,
-		"minute"
-	);
-
-	const postShiftLookaheadMinutes = Math.max(
-		shift.postTol || 0,
-		shift.overtimeMax || 0
-	);
-
-	windowEnd = windowEnd.add(postShiftLookaheadMinutes, "minute");
-
-	return {
-		shiftId,
-		usedShiftWindow: true,
-		punches: allEmployeePunches.filter((punch) =>
-			punch.timestamp.isBetween(windowStart, windowEnd, null, "[]")
-		),
-	};
-}
-
-function buildDirectionalSessionsAndBreaks({ punches }) {
-	const insideSessions = [];
-	const outsideIntervals = [];
-
-	for (let i = 0; i < punches.length - 1; i += 1) {
-		const current = punches[i];
-		const next = punches[i + 1];
-
-		const minutes = next.timestamp.diff(current.timestamp, "minute");
-
-		if (minutes <= 0) {
-			return null;
-		}
-
-		if (current.punchState === "in" && next.punchState === "out") {
-			insideSessions.push({
-				fromUtc: current.timestamp.utc().toISOString(),
-				fromLocal: current.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-				toUtc: next.timestamp.utc().toISOString(),
-				toLocal: next.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-				minutes,
-				source: "directionalPunchState",
-			});
-
-			continue;
-		}
-
-		if (current.punchState === "out" && next.punchState === "in") {
-			outsideIntervals.push({
-				fromUtc: current.timestamp.utc().toISOString(),
-				fromLocal: current.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-				toUtc: next.timestamp.utc().toISOString(),
-				toLocal: next.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-				minutes,
-				source: "directionalPunchState",
-				selectionRule: "out punchState followed by in punchState",
-			});
-
-			continue;
-		}
-
-		return null;
-	}
-
-	return {
-		insideSessions,
-		outsideIntervals,
-	};
-}
-
-function buildClustersPayload({
-	directionCoverage,
-	rawLogicalPunches,
-	compressedDirectionalPunches,
-	insideSessions,
-	outsideIntervals,
-	notes = [],
-}) {
-	return {
-		mode: "directionalOnly",
-		directionCoverage,
-
-		rawLogicalPunches: rawLogicalPunches.map(serializePunch),
-		compressedDirectionalPunches:
-			compressedDirectionalPunches.map(serializePunch),
-
-		insideSessions,
-		outsideIntervals,
-
-		notes,
-	};
-}
-
-function buildDirectionalEstimate({
-	item,
-	shiftId,
-	usedShiftWindow,
-	rawLogicalPunches,
-	directionCoverage,
-}) {
-	const {
-		punches: compressedDirectionalPunches,
-		flags: compressionFlags,
-	} = compressConsecutiveDirectionalPunches(rawLogicalPunches);
-
-	if (!isFullyDirectionalEmployeeDay(compressedDirectionalPunches)) {
-		return null;
-	}
-
-	const sessionsAndBreaks = buildDirectionalSessionsAndBreaks({
-		punches: compressedDirectionalPunches,
-	});
-
-	if (!sessionsAndBreaks) {
-		return null;
-	}
-
-	const { insideSessions, outsideIntervals } = sessionsAndBreaks;
-
-	if (!insideSessions.length) {
-		return null;
-	}
-
-	const firstPunch = compressedDirectionalPunches[0];
-	const lastPunch = compressedDirectionalPunches.at(-1);
-
-	const estimatedInsideMinutes = insideSessions.reduce(
-		(total, session) => total + session.minutes,
-		0
-	);
-
-	const uniqueFlags = Array.from(
-		new Set([
-			"directionalPunchStateMode",
-			"fullyDirectionalPresenceEstimate",
-			"breaksDisplayedFromDirectionalOutInPairs",
-			...(usedShiftWindow ? [] : ["calendarDayWindowUsed"]),
-			...compressionFlags,
-		])
-	);
-
-	return {
-		employeeId: item.employeeId,
-		attendanceDate: toAttendanceDate(item.day),
-
-		firstRawPunch: rawLogicalPunches[0].timestamp.utc().toDate(),
-		lastRawPunch: rawLogicalPunches.at(-1).timestamp.utc().toDate(),
-
-		estimatedInsideStart: firstPunch.timestamp.utc().toDate(),
-		estimatedInsideEnd: lastPunch.timestamp.utc().toDate(),
-		estimatedInsideMinutes,
-
-		confidence: "high",
-		flags: uniqueFlags,
-
-		clusters: buildClustersPayload({
-			directionCoverage,
-			rawLogicalPunches,
-			compressedDirectionalPunches,
-			insideSessions,
-			outsideIntervals,
-			notes: [
-				"presence estimate is stored only for fully directional employee-days",
-				"every logical punch must have punchState in/out",
-				"no breakPolicy is used",
-				"no boundary fallback is used",
-				"inside sessions are direct in→out pairs",
-				"breaks are direct out→in intervals",
-				"mixed, null, conflict, or non-directional employee-days are skipped without DB mutation",
-			],
-		}),
-
-		algorithmVersion: ALGORITHM_VERSION,
-		inputHash: buildInputHash({
-			item,
-			shiftId,
-			punches: rawLogicalPunches,
-		}),
-		computedAt: new Date(),
-	};
-}
-
-function computePresenceEstimateRecord({
-	item,
-	employeeShiftMap,
-	shiftDataMap,
-	employeeLogicalPunchMap,
-}) {
-	const { shiftId, usedShiftWindow, punches } = resolveWindowedPunches({
-		item,
-		employeeShiftMap,
-		shiftDataMap,
-		employeeLogicalPunchMap,
-	});
-
-	if (!punches.length) {
-		return null;
-	}
-
-	const directionCoverage = classifyPunchStateCoverage(punches);
-
-	if (directionCoverage.mode !== "directional") {
-		return null;
-	}
-
-	if (!isFullyDirectionalEmployeeDay(punches)) {
-		return null;
-	}
-
-	return buildDirectionalEstimate({
-		item,
-		shiftId,
-		usedShiftWindow,
-		rawLogicalPunches: punches,
-		directionCoverage,
-	});
-}
-
-/**
- * Recompute stored presence estimates for explicit employee-day pairs.
- *
- * Raw biometric logs are facts.
- * Presence estimates are derived facts.
- *
- * This function does not create fallback estimates.
- * This function does not delete stale estimates.
- *
- * It only upserts when every logical punch for that employee-day has usable
- * directionality through BiometricLog.punchState.
- *
- * If an employee-day is mixed, null-only, conflict-heavy, or non-directional,
- * this function does nothing for that employee-day.
- *
- * @param {{
- *   employeeDays: Array<{ employeeId: string, date: string | Date }>
- * }} input
- */
-export async function makeAttendancePresenceEstimateBatch({
-	employeeDays = [],
-} = {}) {
-	const normalizedEmployeeDays = normalizeEmployeeDays(employeeDays);
-
-	if (!normalizedEmployeeDays.length) {
+	if (clusters?.mode !== "directionalOnly") {
 		return {
-			processed: 0,
-			upserted: 0,
+			available: false,
+			reason: "notDirectionalOnlyEstimate",
 		};
 	}
 
-	const employeeIds = Array.from(
-		new Set(normalizedEmployeeDays.map((item) => item.employeeId))
+	return {
+		available: true,
+		reason: null,
+	};
+}
+
+function buildRawPunchAudit(clusters) {
+	const rawPunches = clusters?.rawLogicalPunches;
+
+	if (!Array.isArray(rawPunches)) return [];
+
+	return rawPunches.map((punch) => ({
+		at: formatClusterLocalTime(punch.atLocal),
+		atLocal: punch.atLocal ?? null,
+		atUtc: punch.atUtc ?? null,
+		punchState: punch.punchState ?? null,
+		identifiers: punch.identifiers ?? [],
+		rawRowCount: punch.rawRowCount ?? null,
+	}));
+}
+
+export function serializeAttendancePresenceEstimate(estimate) {
+	if (!estimate) return null;
+
+	const clusters = estimate.clusters || {};
+
+	const availability = buildAvailability(estimate, clusters);
+
+	if (!availability.available) {
+		return {
+			id: estimate.id,
+			available: false,
+			reason: availability.reason,
+
+			confidence: estimate.confidence,
+			flags: estimate.flags ?? [],
+
+			audit: {
+				algorithmVersion: estimate.algorithmVersion,
+				inputHash: estimate.inputHash,
+				computedAt: formatDateTime(estimate.computedAt),
+				updatedAt: formatDateTime(estimate.updatedAt),
+			},
+		};
+	}
+
+	const insideSessions = Array.isArray(clusters.insideSessions)
+		? clusters.insideSessions.map(normalizeCompletedInsideSession)
+		: [];
+
+	const outsideIntervals = Array.isArray(clusters.outsideIntervals)
+		? clusters.outsideIntervals.map(normalizeBreakInterval)
+		: [];
+
+	const openInsideSession = normalizeOpenInsideSession(
+		clusters.openInsideSession
 	);
 
-	const firstDay = normalizedEmployeeDays[0].day.startOf("day");
-	const lastDay = normalizedEmployeeDays.at(-1).day.endOf("day");
+	const currentState =
+		clusters.currentState ||
+		(openInsideSession ? "inside" : "outside");
 
-	const assignments = await prisma.employeeDetails.findMany({
-		where: {
-			employeeId: {
-				in: employeeIds,
-			},
-		},
-		select: {
-			employeeId: true,
-			assignedShiftId: true,
-		},
-	});
-
-	const employeeShiftMap = new Map(
-		assignments
-			.filter((assignment) => assignment.assignedShiftId)
-			.map((assignment) => [
-				assignment.employeeId,
-				assignment.assignedShiftId,
-			])
-	);
-
-	const relevantShiftIds = Array.from(new Set(employeeShiftMap.values()));
-
-	const [rawLogs, shiftDetails] = await Promise.all([
-		prisma.biometricLog.findMany({
-			where: {
-				employeeId: {
-					in: employeeIds,
-				},
-				timestamp: {
-					gte: firstDay.subtract(1, "day").utc().toDate(),
-					lte: lastDay.add(1, "day").utc().toDate(),
-				},
-			},
-			select: {
-				employeeId: true,
-				timestamp: true,
-				identifier: true,
-				punchState: true,
-			},
-			orderBy: {
-				timestamp: "asc",
-			},
-		}),
-
-		relevantShiftIds.length
-			? prisma.shift.findMany({
-					where: {
-						id: {
-							in: relevantShiftIds,
-						},
-					},
-				})
-			: [],
+	const history = sortHistory([
+		...insideSessions,
+		...outsideIntervals,
+		...(openInsideSession ? [openInsideSession] : []),
 	]);
 
-	const employeeLogicalPunchMap = buildEmployeeLogicalPunchMap(rawLogs);
-	const shiftDataMap = buildShiftDataMap(shiftDetails);
-
-	const records = normalizedEmployeeDays
-		.map((item) =>
-			computePresenceEstimateRecord({
-				item,
-				employeeShiftMap,
-				shiftDataMap,
-				employeeLogicalPunchMap,
-			})
-		)
-		.filter(Boolean);
-
-	if (!records.length) {
-		return {
-			processed: normalizedEmployeeDays.length,
-			upserted: 0,
-		};
-	}
-
-	let upserted = 0;
-
-	await pMap(
-		records,
-		async (record) => {
-			await prisma.attendancePresenceEstimate.upsert({
-				where: {
-					employeeId_attendanceDate: {
-						employeeId: record.employeeId,
-						attendanceDate: record.attendanceDate,
-					},
-				},
-				create: record,
-				update: record,
-			});
-
-			upserted += 1;
-		},
-		{
-			concurrency: PRESENCE_ESTIMATE_WRITE_CONCURRENCY,
-		}
-	);
+	const completedInsideMinutes = sumMinutes(insideSessions);
+	const completedBreakMinutes = sumMinutes(outsideIntervals);
 
 	return {
-		processed: normalizedEmployeeDays.length,
-		upserted,
+		id: estimate.id,
+		available: true,
+
+		confidence: estimate.confidence,
+
+		state: buildState({
+			currentState,
+			openInsideSession,
+			history,
+		}),
+
+		totals: {
+			completedInsideMinutes,
+			completedBreakMinutes,
+
+			estimatedInsideMinutes: estimate.estimatedInsideMinutes,
+			estimatedOutsideMinutes: completedBreakMinutes,
+		},
+
+		bounds: {
+			firstPunch: formatTime(estimate.firstRawPunch),
+			lastPunch: formatTime(estimate.lastRawPunch),
+
+			start: formatTime(estimate.estimatedInsideStart),
+			end: formatTime(estimate.estimatedInsideEnd),
+		},
+
+		history,
+
+		breaks: outsideIntervals,
+		insideSessions,
+
+		audit: {
+			mode: clusters.mode ?? "directionalOnly",
+			directionCoverage: clusters.directionCoverage ?? null,
+			flags: estimate.flags ?? [],
+			rawPunches: buildRawPunchAudit(clusters),
+			algorithmVersion: estimate.algorithmVersion,
+			inputHash: estimate.inputHash,
+			computedAt: formatDateTime(estimate.computedAt),
+			updatedAt: formatDateTime(estimate.updatedAt),
+		},
 	};
 }
+
+export {
+	buildPresenceEstimateMap,
+	presenceEstimateDateKey,
+};
