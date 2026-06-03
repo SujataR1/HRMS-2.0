@@ -85,6 +85,7 @@ model Shift {
   ceilingPercentageOfTotalFullShiftForHalfDay                Float
   floorPercentageOfTotalHalfShiftForHalfDay                  Float
   ceilingPercentageOfTotalHalfShiftForHalfDay                Float
+  breakPolicy                                                Json?
 
   @@index([shiftName])
 }
