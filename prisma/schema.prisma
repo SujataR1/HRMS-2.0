@@ -12,6 +12,7 @@ model BiometricLog {
   employeeId String
   timestamp  DateTime
   identifier Identifier
+  punchState PunchState?
 
   @@unique([employeeId, timestamp, identifier])
   @@index([employeeId])
@@ -401,6 +402,11 @@ enum Identifier {
   fingerprint
   card
   unknown
+}
+
+enum PunchState {
+  in
+  out
 }
 
 enum AttendanceStatusProcessingIdentifiers {
