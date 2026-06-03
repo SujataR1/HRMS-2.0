@@ -12,7 +12,7 @@ dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 4;
+const ALGORITHM_VERSION = 5;
 
 function readPositiveIntEnv(name, fallback, { min = 1, max = 360 } = {}) {
 	const value = Number(process.env[name]);
@@ -42,11 +42,11 @@ const PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES = readPositiveIntEnv(
 	{ min: 1, max: 360 }
 );
 
-const PRESENCE_ESTIMATE_MAX_UNCLASSIFIED_OUTSIDE_GAP_MINUTES = readPositiveIntEnv(
-	"PRESENCE_ESTIMATE_MAX_UNCLASSIFIED_OUTSIDE_GAP_MINUTES",
-	90,
-	{ min: 1, max: 480 }
-);
+const PRESENCE_ESTIMATE_MAX_UNCLASSIFIED_OUTSIDE_GAP_MINUTES =
+	readPositiveIntEnv("PRESENCE_ESTIMATE_MAX_UNCLASSIFIED_OUTSIDE_GAP_MINUTES", 90, {
+		min: 1,
+		max: 480,
+	});
 
 const PRESENCE_ESTIMATE_WRITE_CONCURRENCY = readPositiveIntEnv(
 	"ATTENDANCE_WRITE_CONCURRENCY",
@@ -62,6 +62,7 @@ const DEFAULT_SIGNAL_HINTS = {
 
 const DEFAULT_BREAK_POLICY = {
 	version: 1,
+	source: "fallback",
 	signalHints: DEFAULT_SIGNAL_HINTS,
 	breaks: [],
 	unclassifiedBreaks: {
@@ -106,38 +107,18 @@ function normalizeEmployeeDays(employeeDays) {
 	});
 }
 
-function buildEmployeeLogMap(rawLogs) {
-	const employeeLogMap = new Map();
+function normalizePunchState(value) {
+	if (value === "in") return "in";
+	if (value === "out") return "out";
 
-	for (const rawLog of rawLogs) {
-		const employeeId = rawLog.employeeId;
-
-		if (!employeeLogMap.has(employeeId)) {
-			employeeLogMap.set(employeeId, []);
-		}
-
-		employeeLogMap.get(employeeId).push({
-			employeeId,
-			identifier: rawLog.identifier,
-			timestamp: dayjs
-				.utc(rawLog.timestamp)
-				.tz(TIMEZONE)
-				.second(0)
-				.millisecond(0),
-		});
-	}
-
-	for (const logs of employeeLogMap.values()) {
-		logs.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
-	}
-
-	return employeeLogMap;
+	return null;
 }
 
 function normalizeIdentifierArray(value, fallback) {
 	if (!Array.isArray(value)) return fallback;
 
 	const allowed = new Set(["fingerprint", "card", "unknown"]);
+
 	const normalized = value
 		.map((item) => String(item || "").trim())
 		.filter((item) => allowed.has(item));
@@ -162,7 +143,33 @@ function normalizeBreakRule(rawRule) {
 	const kind = rawRule.kind;
 
 	if (!key || !label) return null;
-	if (!["timeBound", "freeDuration"].includes(kind)) return null;
+
+	if (!["timeBound", "freeDuration", "floatingAllowance"].includes(kind)) {
+		return null;
+	}
+
+	if (kind === "floatingAllowance") {
+		const minSegmentMinutes = normalizePositiveInteger(
+			rawRule.minSegmentMinutes ?? rawRule.minMinutes,
+			1
+		);
+
+		const maxTotalMinutes = normalizePositiveInteger(
+			rawRule.maxTotalMinutes ?? rawRule.maxMinutes,
+			null
+		);
+
+		if (!maxTotalMinutes) return null;
+
+		return {
+			key,
+			label,
+			kind,
+			minSegmentMinutes,
+			maxTotalMinutes,
+			deduct: rawRule.deduct !== false,
+		};
+	}
 
 	const minMinutes = normalizePositiveInteger(rawRule.minMinutes, null);
 	const maxMinutes = normalizePositiveInteger(rawRule.maxMinutes, null);
@@ -321,42 +328,113 @@ function buildShiftDataMap(shiftDetails) {
 	return shiftDataMap;
 }
 
-function buildConsecutiveClusters(logs, windowMinutes) {
+function buildEmployeeLogicalPunchMap(rawLogs) {
+	const employeePunchBucketMap = new Map();
+
+	for (const rawLog of rawLogs) {
+		const employeeId = rawLog.employeeId;
+
+		if (!employeePunchBucketMap.has(employeeId)) {
+			employeePunchBucketMap.set(employeeId, new Map());
+		}
+
+		const timestamp = dayjs
+			.utc(rawLog.timestamp)
+			.tz(TIMEZONE)
+			.second(0)
+			.millisecond(0);
+
+		const punchKey = timestamp.utc().toISOString();
+		const employeeBuckets = employeePunchBucketMap.get(employeeId);
+
+		if (!employeeBuckets.has(punchKey)) {
+			employeeBuckets.set(punchKey, {
+				employeeId,
+				timestamp,
+				identifiers: new Set(),
+				punchStates: new Set(),
+				rawRowCount: 0,
+			});
+		}
+
+		const bucket = employeeBuckets.get(punchKey);
+		bucket.identifiers.add(rawLog.identifier || "unknown");
+
+		const punchState = normalizePunchState(rawLog.punchState);
+		if (punchState) {
+			bucket.punchStates.add(punchState);
+		}
+
+		bucket.rawRowCount += 1;
+	}
+
+	const employeeLogicalPunchMap = new Map();
+
+	for (const [employeeId, bucketMap] of employeePunchBucketMap.entries()) {
+		const logicalPunches = Array.from(bucketMap.values())
+			.map((bucket) => {
+				const punchStates = Array.from(bucket.punchStates);
+				let punchState = null;
+
+				if (punchStates.length === 1) {
+					punchState = punchStates[0];
+				} else if (punchStates.length > 1) {
+					punchState = "conflict";
+				}
+
+				return {
+					employeeId,
+					timestamp: bucket.timestamp,
+					identifiers: Array.from(bucket.identifiers).sort(),
+					punchStates,
+					punchState,
+					rawRowCount: bucket.rawRowCount,
+				};
+			})
+			.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
+
+		employeeLogicalPunchMap.set(employeeId, logicalPunches);
+	}
+
+	return employeeLogicalPunchMap;
+}
+
+function buildConsecutiveClusters(punches, windowMinutes) {
 	const clusters = [];
 
-	for (const log of logs) {
+	for (const punch of punches) {
 		const lastCluster = clusters.at(-1);
 
 		if (!lastCluster) {
-			clusters.push([log]);
+			clusters.push([punch]);
 			continue;
 		}
 
-		const previousLog = lastCluster.at(-1);
-		const gapMinutes = log.timestamp.diff(previousLog.timestamp, "minute");
+		const previousPunch = lastCluster.at(-1);
+		const gapMinutes = punch.timestamp.diff(previousPunch.timestamp, "minute");
 
 		if (gapMinutes <= windowMinutes) {
-			lastCluster.push(log);
+			lastCluster.push(punch);
 			continue;
 		}
 
-		clusters.push([log]);
+		clusters.push([punch]);
 	}
 
-	return clusters.map((logsInCluster, index) => ({
+	return clusters.map((punchesInCluster, index) => ({
 		index,
-		first: logsInCluster[0],
-		last: logsInCluster.at(-1),
-		logs: logsInCluster,
+		first: punchesInCluster[0],
+		last: punchesInCluster.at(-1),
+		punches: punchesInCluster,
 	}));
 }
 
-function buildArrivalBoundaryCluster(logs) {
+function buildArrivalBoundaryCluster(punches) {
 	let endIndex = 0;
 
-	for (let i = 1; i < logs.length; i++) {
-		const gapMinutes = logs[i].timestamp.diff(
-			logs[i - 1].timestamp,
+	for (let i = 1; i < punches.length; i++) {
+		const gapMinutes = punches[i].timestamp.diff(
+			punches[i - 1].timestamp,
 			"minute"
 		);
 
@@ -367,24 +445,24 @@ function buildArrivalBoundaryCluster(logs) {
 		endIndex = i;
 	}
 
-	const clusterLogs = logs.slice(0, endIndex + 1);
+	const clusterPunches = punches.slice(0, endIndex + 1);
 
 	return {
 		index: 0,
 		startIndex: 0,
 		endIndex,
-		first: clusterLogs[0],
-		last: clusterLogs.at(-1),
-		logs: clusterLogs,
+		first: clusterPunches[0],
+		last: clusterPunches.at(-1),
+		punches: clusterPunches,
 	};
 }
 
-function buildExitBoundaryCluster(logs, minimumStartIndex) {
-	let startIndex = logs.length - 1;
+function buildExitBoundaryCluster(punches, minimumStartIndex) {
+	let startIndex = punches.length - 1;
 
-	for (let i = logs.length - 2; i >= minimumStartIndex; i--) {
-		const gapMinutes = logs[i + 1].timestamp.diff(
-			logs[i].timestamp,
+	for (let i = punches.length - 2; i >= minimumStartIndex; i--) {
+		const gapMinutes = punches[i + 1].timestamp.diff(
+			punches[i].timestamp,
 			"minute"
 		);
 
@@ -395,23 +473,26 @@ function buildExitBoundaryCluster(logs, minimumStartIndex) {
 		startIndex = i;
 	}
 
-	const clusterLogs = logs.slice(startIndex);
+	const clusterPunches = punches.slice(startIndex);
 
 	return {
 		index: 0,
 		startIndex,
-		endIndex: logs.length - 1,
-		first: clusterLogs[0],
-		last: clusterLogs.at(-1),
-		logs: clusterLogs,
+		endIndex: punches.length - 1,
+		first: clusterPunches[0],
+		last: clusterPunches.at(-1),
+		punches: clusterPunches,
 	};
 }
 
-function serializePunch(log) {
+function serializePunch(punch) {
 	return {
-		atUtc: log.timestamp.utc().toISOString(),
-		atLocal: log.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-		identifier: log.identifier,
+		atUtc: punch.timestamp.utc().toISOString(),
+		atLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		identifiers: punch.identifiers,
+		punchState: punch.punchState,
+		punchStates: punch.punchStates,
+		rawRowCount: punch.rawRowCount,
 	};
 }
 
@@ -422,24 +503,30 @@ function serializeCluster(
 	return {
 		role,
 		sideHint,
-		punchCount: cluster.logs.length,
+		punchCount: cluster.punches.length,
 		firstPunchUtc: cluster.first.timestamp.utc().toISOString(),
 		firstPunchLocal: cluster.first.timestamp.format("YYYY-MM-DD HH:mm:ss"),
 		lastPunchUtc: cluster.last.timestamp.utc().toISOString(),
 		lastPunchLocal: cluster.last.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-		chosenBoundaryUtc: chosenBoundary
-			? chosenBoundary.utc().toISOString()
-			: null,
+		chosenBoundaryUtc: chosenBoundary ? chosenBoundary.utc().toISOString() : null,
 		chosenBoundaryLocal: chosenBoundary
 			? chosenBoundary.format("YYYY-MM-DD HH:mm:ss")
 			: null,
 		selectionRule,
-		punches: cluster.logs.map(serializePunch),
+		punches: cluster.punches.map(serializePunch),
 	};
 }
 
 function identifierSetFromCluster(cluster) {
-	return new Set(cluster.logs.map((log) => log.identifier));
+	const identifiers = new Set();
+
+	for (const punch of cluster.punches) {
+		for (const identifier of punch.identifiers || []) {
+			identifiers.add(identifier);
+		}
+	}
+
+	return identifiers;
 }
 
 function getClusterSideHint(cluster, breakPolicy) {
@@ -475,6 +562,51 @@ function getClusterSideHint(cluster, breakPolicy) {
 	if (hasNonIgnoredUnknown) return "ambiguous";
 
 	return "ignored";
+}
+
+function classifyPunchStateCoverage(punches) {
+	let directionalCount = 0;
+	let unknownCount = 0;
+	let conflictCount = 0;
+
+	for (const punch of punches) {
+		if (punch.punchState === "in" || punch.punchState === "out") {
+			directionalCount += 1;
+			continue;
+		}
+
+		if (punch.punchState === "conflict") {
+			conflictCount += 1;
+			continue;
+		}
+
+		unknownCount += 1;
+	}
+
+	if (directionalCount === 0) {
+		return {
+			mode: "undirected",
+			directionalCount,
+			unknownCount,
+			conflictCount,
+		};
+	}
+
+	if (unknownCount || conflictCount) {
+		return {
+			mode: "hybrid",
+			directionalCount,
+			unknownCount,
+			conflictCount,
+		};
+	}
+
+	return {
+		mode: "directional",
+		directionalCount,
+		unknownCount,
+		conflictCount,
+	};
 }
 
 function parseHHmm(value) {
@@ -541,17 +673,38 @@ function candidateOverlapsTimeWindow(candidate, rule, day) {
 	return false;
 }
 
-function ruleOccurrenceLimitReached(rule, ruleUseCount) {
+function ruleOccurrenceLimitReached(rule, ruleState) {
 	if (!rule.maxOccurrences) return false;
 
-	return (ruleUseCount.get(rule.key) || 0) >= rule.maxOccurrences;
+	const used = ruleState.occurrences.get(rule.key) || 0;
+	return used >= rule.maxOccurrences;
 }
 
-function incrementRuleUse(rule, ruleUseCount) {
-	ruleUseCount.set(rule.key, (ruleUseCount.get(rule.key) || 0) + 1);
+function incrementRuleOccurrence(rule, ruleState) {
+	ruleState.occurrences.set(
+		rule.key,
+		(ruleState.occurrences.get(rule.key) || 0) + 1
+	);
 }
 
-function classifyBreakCandidate({ candidate, breakPolicy, day, ruleUseCount }) {
+function getFloatingRuleRemaining(rule, ruleState) {
+	return Math.max(0, rule.maxTotalMinutes - (ruleState.minutes.get(rule.key) || 0));
+}
+
+function consumeFloatingRule(rule, minutes, ruleState) {
+	ruleState.minutes.set(
+		rule.key,
+		(ruleState.minutes.get(rule.key) || 0) + minutes
+	);
+}
+
+function classifyBreakCandidate({
+	candidate,
+	breakPolicy,
+	day,
+	ruleState,
+	directionIsFact,
+}) {
 	const timeBoundRules = breakPolicy.breaks.filter(
 		(rule) => rule.kind === "timeBound"
 	);
@@ -560,42 +713,80 @@ function classifyBreakCandidate({ candidate, breakPolicy, day, ruleUseCount }) {
 		(rule) => rule.kind === "freeDuration"
 	);
 
+	const floatingRules = breakPolicy.breaks.filter(
+		(rule) => rule.kind === "floatingAllowance"
+	);
+
 	for (const rule of timeBoundRules) {
-		if (ruleOccurrenceLimitReached(rule, ruleUseCount)) continue;
+		if (ruleOccurrenceLimitReached(rule, ruleState)) continue;
 		if (candidate.minutes < rule.minMinutes) continue;
 		if (candidate.minutes > rule.maxMinutes) continue;
 		if (!candidateOverlapsTimeWindow(candidate, rule, day)) continue;
 
-		incrementRuleUse(rule, ruleUseCount);
+		incrementRuleOccurrence(rule, ruleState);
 
 		return {
 			classification: "classified",
 			breakKey: rule.key,
 			breakLabel: rule.label,
 			breakKind: rule.kind,
-			deducted: rule.deduct,
+			policyCountedMinutes: rule.deduct ? candidate.minutes : 0,
+			exceededPolicyMinutes: 0,
+			countsTowardInsideEstimate: directionIsFact ? true : rule.deduct,
 			reason: "matchedTimeBoundBreakPolicy",
 		};
 	}
 
 	for (const rule of freeDurationRules) {
-		if (ruleOccurrenceLimitReached(rule, ruleUseCount)) continue;
+		if (ruleOccurrenceLimitReached(rule, ruleState)) continue;
 		if (candidate.minutes < rule.minMinutes) continue;
 		if (candidate.minutes > rule.maxMinutes) continue;
 
-		incrementRuleUse(rule, ruleUseCount);
+		incrementRuleOccurrence(rule, ruleState);
 
 		return {
 			classification: "classified",
 			breakKey: rule.key,
 			breakLabel: rule.label,
 			breakKind: rule.kind,
-			deducted: rule.deduct,
+			policyCountedMinutes: rule.deduct ? candidate.minutes : 0,
+			exceededPolicyMinutes: 0,
+			countsTowardInsideEstimate: directionIsFact ? true : rule.deduct,
 			reason: "matchedFreeDurationBreakPolicy",
 		};
 	}
 
+	for (const rule of floatingRules) {
+		if (candidate.minutes < rule.minSegmentMinutes) continue;
+
+		const remaining = getFloatingRuleRemaining(rule, ruleState);
+		if (remaining <= 0) continue;
+
+		const policyCountedMinutes = Math.min(candidate.minutes, remaining);
+		const exceededPolicyMinutes = Math.max(
+			0,
+			candidate.minutes - policyCountedMinutes
+		);
+
+		consumeFloatingRule(rule, policyCountedMinutes, ruleState);
+
+		return {
+			classification: "classified",
+			breakKey: rule.key,
+			breakLabel: rule.label,
+			breakKind: rule.kind,
+			policyCountedMinutes: rule.deduct ? policyCountedMinutes : 0,
+			exceededPolicyMinutes,
+			countsTowardInsideEstimate: directionIsFact ? true : rule.deduct,
+			reason:
+				exceededPolicyMinutes > 0
+					? "matchedFloatingAllowanceButExceededRemainingAllowance"
+					: "matchedFloatingAllowance",
+		};
+	}
+
 	if (
+		!directionIsFact &&
 		breakPolicy.unclassifiedBreaks.deduct &&
 		candidate.minutes >= PRESENCE_ESTIMATE_MEANINGFUL_OUTSIDE_GAP_MINUTES &&
 		candidate.minutes <= PRESENCE_ESTIMATE_MAX_UNCLASSIFIED_OUTSIDE_GAP_MINUTES
@@ -605,7 +796,9 @@ function classifyBreakCandidate({ candidate, breakPolicy, day, ruleUseCount }) {
 			breakKey: "unclassified",
 			breakLabel: "Unclassified Break",
 			breakKind: "unclassified",
-			deducted: true,
+			policyCountedMinutes: candidate.minutes,
+			exceededPolicyMinutes: 0,
+			countsTowardInsideEstimate: true,
 			reason: "deductedByUnclassifiedFallbackBounds",
 		};
 	}
@@ -615,127 +808,12 @@ function classifyBreakCandidate({ candidate, breakPolicy, day, ruleUseCount }) {
 		breakKey: null,
 		breakLabel: null,
 		breakKind: null,
-		deducted: false,
-		reason: "didNotMatchBreakPolicy",
-	};
-}
-
-function pairAndClassifyMiddleBreaks({ middleClusters, breakPolicy, day, flags }) {
-	const pairedCandidates = [];
-	const outsideIntervals = [];
-	const ruleUseCount = new Map();
-
-	let openExitCluster = null;
-
-	for (const cluster of middleClusters) {
-		const sideHint = getClusterSideHint(cluster, breakPolicy);
-		cluster.sideHint = sideHint;
-
-		if (sideHint === "ignored") {
-			flags.push("ignoredMiddleClusterWithoutSideEvidence");
-			continue;
-		}
-
-		if (sideHint === "mixed" || sideHint === "ambiguous") {
-			flags.push("ambiguousMiddleClusterIgnored");
-			continue;
-		}
-
-		if (sideHint === "exitLike") {
-			if (openExitCluster) {
-				flags.push("consecutiveExitLikeClusterReplaced");
-			}
-
-			openExitCluster = cluster;
-			continue;
-		}
-
-		if (sideHint === "entryLike") {
-			if (!openExitCluster) {
-				flags.push("entryLikeClusterWithoutPriorExitIgnored");
-				continue;
-			}
-
-			const possibleOutsideStart = openExitCluster.last.timestamp;
-			const possibleOutsideEnd = cluster.last.timestamp;
-			const possibleOutsideMinutes = possibleOutsideEnd.diff(
-				possibleOutsideStart,
-				"minute"
-			);
-
-			const candidateBase = {
-				from: possibleOutsideStart,
-				to: possibleOutsideEnd,
-				minutes: possibleOutsideMinutes,
-				exitCluster: openExitCluster,
-				entryCluster: cluster,
-				exitSideHint: openExitCluster.sideHint,
-				entrySideHint: cluster.sideHint,
-			};
-
-			openExitCluster = null;
-
-			if (possibleOutsideMinutes <= 0) {
-				flags.push("invalidBreakCandidateIgnored");
-				pairedCandidates.push({
-					...serializeBreakCandidate(candidateBase),
-					classification: "invalid",
-					deducted: false,
-					reason: "candidateEndIsNotAfterCandidateStart",
-				});
-				continue;
-			}
-
-			const classification = classifyBreakCandidate({
-				candidate: candidateBase,
-				breakPolicy,
-				day,
-				ruleUseCount,
-			});
-
-			const serializedCandidate = {
-				...serializeBreakCandidate(candidateBase),
-				...classification,
-			};
-
-			pairedCandidates.push(serializedCandidate);
-
-			if (!classification.deducted) {
-				flags.push(
-					classification.classification === "classified"
-						? "classifiedBreakNotDeducted"
-						: "unclassifiedBreakCandidateIgnored"
-				);
-				continue;
-			}
-
-			outsideIntervals.push({
-				fromUtc: possibleOutsideStart.utc().toISOString(),
-				fromLocal: possibleOutsideStart.format("YYYY-MM-DD HH:mm:ss"),
-				toUtc: possibleOutsideEnd.utc().toISOString(),
-				toLocal: possibleOutsideEnd.format("YYYY-MM-DD HH:mm:ss"),
-				minutes: possibleOutsideMinutes,
-				breakKey: classification.breakKey,
-				breakLabel: classification.breakLabel,
-				breakKind: classification.breakKind,
-				classification: classification.classification,
-				reason: classification.reason,
-				selectionRule:
-					"exit-like cluster followed by entry-like cluster and classified by shift breakPolicy",
-			});
-
-			flags.push("classifiedOutsideIntervalDeducted");
-		}
-	}
-
-	if (openExitCluster) {
-		flags.push("unpairedExitLikeMiddleCluster");
-	}
-
-	return {
-		pairedCandidates,
-		outsideIntervals,
-		middleClusters,
+		policyCountedMinutes: 0,
+		exceededPolicyMinutes: 0,
+		countsTowardInsideEstimate: directionIsFact,
+		reason: directionIsFact
+			? "directionalOutsideIntervalDidNotMatchBreakPolicy"
+			: "didNotMatchBreakPolicy",
 	};
 }
 
@@ -746,23 +824,55 @@ function serializeBreakCandidate(candidate) {
 		toUtc: candidate.to.utc().toISOString(),
 		toLocal: candidate.to.format("YYYY-MM-DD HH:mm:ss"),
 		minutes: candidate.minutes,
-		exitSideHint: candidate.exitSideHint,
-		entrySideHint: candidate.entrySideHint,
-		exitCluster: serializeCluster(candidate.exitCluster, {
-			role: "candidateBreakExit",
-			sideHint: candidate.exitSideHint,
-		}),
-		entryCluster: serializeCluster(candidate.entryCluster, {
-			role: "candidateBreakReentry",
-			sideHint: candidate.entrySideHint,
-		}),
+		source: candidate.source,
+		exitPunch: candidate.exitPunch ? serializePunch(candidate.exitPunch) : null,
+		entryPunch: candidate.entryPunch ? serializePunch(candidate.entryPunch) : null,
+		exitCluster: candidate.exitCluster
+			? serializeCluster(candidate.exitCluster, {
+					role: "candidateBreakExit",
+					sideHint: candidate.exitSideHint,
+				})
+			: null,
+		entryCluster: candidate.entryCluster
+			? serializeCluster(candidate.entryCluster, {
+					role: "candidateBreakReentry",
+					sideHint: candidate.entrySideHint,
+				})
+			: null,
 	};
 }
 
-function buildInputHash({ item, shiftId, logs, breakPolicy }) {
+function buildOutsideInterval(candidate, classification) {
+	return {
+		fromUtc: candidate.from.utc().toISOString(),
+		fromLocal: candidate.from.format("YYYY-MM-DD HH:mm:ss"),
+		toUtc: candidate.to.utc().toISOString(),
+		toLocal: candidate.to.format("YYYY-MM-DD HH:mm:ss"),
+		minutes: candidate.minutes,
+
+		breakKey: classification.breakKey,
+		breakLabel: classification.breakLabel,
+		breakKind: classification.breakKind,
+		classification: classification.classification,
+
+		policyCountedMinutes: classification.policyCountedMinutes,
+		exceededPolicyMinutes: classification.exceededPolicyMinutes,
+		countsTowardInsideEstimate: classification.countsTowardInsideEstimate,
+
+		source: candidate.source,
+		reason: classification.reason,
+		selectionRule:
+			candidate.source === "directionalPunchState"
+				? "out punchState followed by in punchState"
+				: "exit-like cluster followed by entry-like cluster and classified by shift breakPolicy",
+	};
+}
+
+function buildInputHash({ item, shiftId, punches, breakPolicy, mode }) {
 	const payload = {
 		algorithmVersion: ALGORITHM_VERSION,
 		timezone: TIMEZONE,
+		mode,
 		boundaryClusterWindowMinutes:
 			PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
 		breakClusterWindowMinutes:
@@ -775,9 +885,12 @@ function buildInputHash({ item, shiftId, logs, breakPolicy }) {
 		employeeId: item.employeeId,
 		dayKey: item.dayKey,
 		shiftId,
-		logs: logs.map((log) => ({
-			atUtc: log.timestamp.utc().toISOString(),
-			identifier: log.identifier,
+		punches: punches.map((punch) => ({
+			atUtc: punch.timestamp.utc().toISOString(),
+			identifiers: punch.identifiers,
+			punchState: punch.punchState,
+			punchStates: punch.punchStates,
+			rawRowCount: punch.rawRowCount,
 		})),
 	};
 
@@ -786,13 +899,13 @@ function buildInputHash({ item, shiftId, logs, breakPolicy }) {
 		.digest("hex");
 }
 
-function resolveWindowedLogs({
+function resolveWindowedPunches({
 	item,
 	employeeShiftMap,
 	shiftDataMap,
-	employeeLogMap,
+	employeeLogicalPunchMap,
 }) {
-	const allEmployeeLogs = employeeLogMap.get(item.employeeId) || [];
+	const allEmployeePunches = employeeLogicalPunchMap.get(item.employeeId) || [];
 	const shiftId = employeeShiftMap.get(item.employeeId);
 	const shift = shiftId ? shiftDataMap.get(shiftId) : null;
 
@@ -809,8 +922,8 @@ function resolveWindowedLogs({
 				...DEFAULT_BREAK_POLICY,
 				source: "fallback",
 			},
-			logs: allEmployeeLogs.filter((log) =>
-				log.timestamp.isBetween(dayStart, dayEnd, null, "[]")
+			punches: allEmployeePunches.filter((punch) =>
+				punch.timestamp.isBetween(dayStart, dayEnd, null, "[]")
 			),
 		};
 	}
@@ -859,56 +972,29 @@ function resolveWindowedLogs({
 		regularShiftEnd,
 		overtimeMaxMinutes: shift.overtimeMax || 0,
 		breakPolicy: shift.breakPolicy,
-		logs: allEmployeeLogs.filter((log) =>
-			log.timestamp.isBetween(windowStart, windowEnd, null, "[]")
+		punches: allEmployeePunches.filter((punch) =>
+			punch.timestamp.isBetween(windowStart, windowEnd, null, "[]")
 		),
 	};
 }
 
-function getEstimateConfidence({ flags, middleClusters, usedShiftWindow }) {
-	if (flags.includes("noPunches")) return "unknown";
-	if (flags.includes("invalidEstimatedWindow")) return "low";
-	if (flags.includes("singlePunchOnly")) return "low";
-	if (flags.includes("singleBoundaryClusterOnly")) return "low";
-	if (flags.includes("unpairedExitLikeMiddleCluster")) return "low";
-	if (!usedShiftWindow) return "low";
-
-	const hasAdjustedBoundary =
-		flags.includes("arrivalBoundaryAdjusted") ||
-		flags.includes("exitBoundaryAdjusted");
-
-	const hasAmbiguousMiddle =
-		flags.includes("ambiguousMiddleClusterIgnored") ||
-		flags.includes("unclassifiedBreakCandidateIgnored") ||
-		flags.includes("entryLikeClusterWithoutPriorExitIgnored");
-
-	const hasOutsideDeduction = flags.includes("classifiedOutsideIntervalDeducted");
-
-	if (
-		middleClusters.length === 0 &&
-		!hasAdjustedBoundary &&
-		!hasAmbiguousMiddle &&
-		!hasOutsideDeduction
-	) {
-		return "high";
-	}
-
-	if (hasAmbiguousMiddle) return "medium";
-
-	return "medium";
-}
-
-function buildEmptyClustersPayload({
+function buildClustersPayload({
+	mode,
+	directionCoverage,
 	breakPolicy,
 	arrival = null,
 	exit = null,
 	middle = [],
+	insideSessions = [],
 	candidateBreaks = [],
 	outsideIntervals = [],
 	ignoredPostShiftMiddlePunches = [],
 	notes = [],
 }) {
 	return {
+		mode,
+		directionCoverage,
+
 		boundaryClusterWindowMinutes:
 			PRESENCE_ESTIMATE_BOUNDARY_CLUSTER_WINDOW_MINUTES,
 		breakClusterWindowMinutes: PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES,
@@ -924,6 +1010,7 @@ function buildEmptyClustersPayload({
 		arrival,
 		exit,
 		middle,
+		insideSessions,
 		candidateBreaks,
 		outsideIntervals,
 		ignoredPostShiftMiddlePunches,
@@ -931,103 +1018,417 @@ function buildEmptyClustersPayload({
 	};
 }
 
-function computePresenceEstimateRecord({
-	item,
-	employeeShiftMap,
-	shiftDataMap,
-	employeeLogMap,
-}) {
-	const flags = [];
+function getEstimateConfidence({ mode, flags }) {
+	if (flags.includes("noPunches")) return "unknown";
+	if (flags.includes("invalidEstimatedWindow")) return "low";
+	if (flags.includes("singlePunchOnly")) return "low";
 
-	const {
-		shiftId,
-		usedShiftWindow,
-		regularShiftEnd,
-		overtimeMaxMinutes,
-		breakPolicy,
-		logs,
-	} = resolveWindowedLogs({
-		item,
-		employeeShiftMap,
-		shiftDataMap,
-		employeeLogMap,
-	});
+	if (mode === "directional") {
+		if (
+			flags.includes("missingInitialInEstimated") ||
+			flags.includes("missingFinalOutEstimated") ||
+			flags.includes("directionalSequenceAnomaly")
+		) {
+			return "medium";
+		}
 
-	if (!usedShiftWindow) {
-		flags.push("noAssignedShift", "calendarDayWindowUsed");
+		return "high";
 	}
 
+	if (mode === "hybrid") return "medium";
+
+	return "low";
+}
+
+function buildDirectionalEstimate({
+	item,
+	punches,
+	regularShiftEnd,
+	overtimeMaxMinutes,
+	breakPolicy,
+	flags,
+	mode,
+	directionCoverage,
+	shiftId,
+}) {
+	const directionalPunches = punches.filter(
+		(punch) => punch.punchState === "in" || punch.punchState === "out"
+	);
+
+	const ruleState = {
+		occurrences: new Map(),
+		minutes: new Map(),
+	};
+
+	const insideSessions = [];
+	const candidateBreaks = [];
+	const outsideIntervals = [];
+
+	let firstInPunch = directionalPunches.find((punch) => punch.punchState === "in");
+	let lastOutPunch = null;
+
+	for (let i = directionalPunches.length - 1; i >= 0; i -= 1) {
+		if (directionalPunches[i].punchState === "out") {
+			lastOutPunch = directionalPunches[i];
+			break;
+		}
+	}
+
+	let currentInsideStart = null;
+	let pendingOutsideStartPunch = null;
+
+	for (const punch of directionalPunches) {
+		if (punch.punchState === "in") {
+			if (pendingOutsideStartPunch) {
+				const outsideStart = pendingOutsideStartPunch.timestamp;
+				const outsideEnd = punch.timestamp;
+				const outsideMinutes = outsideEnd.diff(outsideStart, "minute");
+
+				const candidate = {
+					from: outsideStart,
+					to: outsideEnd,
+					minutes: outsideMinutes,
+					source: "directionalPunchState",
+					exitPunch: pendingOutsideStartPunch,
+					entryPunch: punch,
+				};
+
+				pendingOutsideStartPunch = null;
+
+				if (outsideMinutes > 0) {
+					const classification = classifyBreakCandidate({
+						candidate,
+						breakPolicy,
+						day: item.day,
+						ruleState,
+						directionIsFact: true,
+					});
+
+					candidateBreaks.push({
+						...serializeBreakCandidate(candidate),
+						...classification,
+					});
+
+					outsideIntervals.push(buildOutsideInterval(candidate, classification));
+
+					if (classification.classification === "classified") {
+						flags.push("directionalBreakClassified");
+					} else {
+						flags.push("directionalOutsideIntervalUnclassified");
+					}
+
+					if (classification.exceededPolicyMinutes > 0) {
+						flags.push("breakPolicyAllowanceExceeded");
+					}
+				}
+
+				if (!currentInsideStart) {
+					currentInsideStart = punch;
+				}
+
+				continue;
+			}
+
+			if (currentInsideStart) {
+				flags.push("consecutiveInPunchIgnored");
+				continue;
+			}
+
+			currentInsideStart = punch;
+			continue;
+		}
+
+		if (punch.punchState === "out") {
+			if (!currentInsideStart) {
+				flags.push("outPunchWithoutPriorIn");
+				flags.push("directionalSequenceAnomaly");
+				pendingOutsideStartPunch = punch;
+				continue;
+			}
+
+			if (punch.timestamp.isAfter(currentInsideStart.timestamp)) {
+				insideSessions.push({
+					fromUtc: currentInsideStart.timestamp.utc().toISOString(),
+					fromLocal: currentInsideStart.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+					toUtc: punch.timestamp.utc().toISOString(),
+					toLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+					minutes: punch.timestamp.diff(currentInsideStart.timestamp, "minute"),
+					source: "directionalPunchState",
+				});
+			}
+
+			currentInsideStart = null;
+			pendingOutsideStartPunch = punch;
+		}
+	}
+
+	if (currentInsideStart) {
+		flags.push("openInsideSessionAtEnd");
+	}
+
+	if (pendingOutsideStartPunch && pendingOutsideStartPunch === lastOutPunch) {
+		flags.push("finalOutHasNoReentry");
+	}
+
+	let estimatedInsideStart = firstInPunch?.timestamp || null;
+	let estimatedInsideEnd = lastOutPunch?.timestamp || null;
+
+	if (!estimatedInsideStart) {
+		flags.push("missingInitialInEstimated");
+		estimatedInsideStart = punches[0]?.timestamp || null;
+	}
+
+	if (!estimatedInsideEnd) {
+		flags.push("missingFinalOutEstimated");
+
+		if (regularShiftEnd) {
+			estimatedInsideEnd = regularShiftEnd;
+		} else {
+			estimatedInsideEnd = punches.at(-1)?.timestamp || null;
+		}
+	}
+
+	if (
+		estimatedInsideEnd &&
+		regularShiftEnd &&
+		overtimeMaxMinutes > 0 &&
+		estimatedInsideEnd.isAfter(regularShiftEnd)
+	) {
+		const overtimeLimitEnd = regularShiftEnd.add(overtimeMaxMinutes, "minute");
+
+		if (estimatedInsideEnd.valueOf() <= overtimeLimitEnd.valueOf()) {
+			flags.push("estimatedEndExtendedByValidOvertimePunch");
+		} else {
+			flags.push("postShiftPunchBeyondOvertimeLimit");
+		}
+	}
+
+	if (!estimatedInsideStart || !estimatedInsideEnd) {
+		flags.push("invalidEstimatedWindow");
+	}
+
+	const grossInsideMinutes =
+		estimatedInsideStart && estimatedInsideEnd
+			? estimatedInsideEnd.diff(estimatedInsideStart, "minute")
+			: 0;
+
+	if (grossInsideMinutes <= 0) {
+		flags.push("invalidEstimatedWindow");
+	}
+
+	const estimatedOutsideMinutes = outsideIntervals.reduce(
+		(total, interval) =>
+			interval.countsTowardInsideEstimate ? total + interval.minutes : total,
+		0
+	);
+
+	const estimatedInsideMinutes =
+		grossInsideMinutes > 0
+			? Math.max(0, grossInsideMinutes - estimatedOutsideMinutes)
+			: null;
+
+	const uniqueFlags = Array.from(new Set(flags));
+
+	return {
+		employeeId: item.employeeId,
+		attendanceDate: toAttendanceDate(item.day),
+
+		firstRawPunch: punches[0]?.timestamp.utc().toDate() || null,
+		lastRawPunch: punches.at(-1)?.timestamp.utc().toDate() || null,
+
+		estimatedInsideStart: estimatedInsideStart
+			? estimatedInsideStart.utc().toDate()
+			: null,
+		estimatedInsideEnd: estimatedInsideEnd ? estimatedInsideEnd.utc().toDate() : null,
+		estimatedInsideMinutes,
+
+		confidence: getEstimateConfidence({
+			mode,
+			flags: uniqueFlags,
+		}),
+		flags: uniqueFlags,
+		clusters: buildClustersPayload({
+			mode,
+			directionCoverage,
+			breakPolicy,
+			insideSessions,
+			candidateBreaks,
+			outsideIntervals,
+			notes: [
+				"directional mode uses BiometricLog.punchState as the primary source of truth",
+				"out punch followed by in punch creates a high-confidence outside interval",
+				"breakPolicy classifies outside intervals but does not invent direction",
+				"boundary estimation is used only when required punchState boundaries are missing",
+			],
+		}),
+
+		algorithmVersion: ALGORITHM_VERSION,
+		inputHash: buildInputHash({
+			item,
+			shiftId,
+			punches,
+			breakPolicy,
+			mode,
+		}),
+		computedAt: new Date(),
+	};
+}
+
+function pairAndClassifyUndirectedMiddleBreaks({
+	middleClusters,
+	breakPolicy,
+	day,
+	flags,
+}) {
+	const pairedCandidates = [];
+	const outsideIntervals = [];
+
+	const ruleState = {
+		occurrences: new Map(),
+		minutes: new Map(),
+	};
+
+	let openExitCluster = null;
+
+	for (const cluster of middleClusters) {
+		const sideHint = getClusterSideHint(cluster, breakPolicy);
+		cluster.sideHint = sideHint;
+
+		if (sideHint === "ignored") {
+			flags.push("ignoredMiddleClusterWithoutSideEvidence");
+			continue;
+		}
+
+		if (sideHint === "mixed" || sideHint === "ambiguous") {
+			flags.push("ambiguousMiddleClusterIgnored");
+			continue;
+		}
+
+		if (sideHint === "exitLike") {
+			if (openExitCluster) {
+				flags.push("consecutiveExitLikeClusterReplaced");
+			}
+
+			openExitCluster = cluster;
+			continue;
+		}
+
+		if (sideHint === "entryLike") {
+			if (!openExitCluster) {
+				flags.push("entryLikeClusterWithoutPriorExitIgnored");
+				continue;
+			}
+
+			const possibleOutsideStart = openExitCluster.last.timestamp;
+			const possibleOutsideEnd = cluster.last.timestamp;
+			const possibleOutsideMinutes = possibleOutsideEnd.diff(
+				possibleOutsideStart,
+				"minute"
+			);
+
+			const candidate = {
+				from: possibleOutsideStart,
+				to: possibleOutsideEnd,
+				minutes: possibleOutsideMinutes,
+				source: "identifierSideHint",
+				exitCluster: openExitCluster,
+				entryCluster: cluster,
+				exitSideHint: openExitCluster.sideHint,
+				entrySideHint: cluster.sideHint,
+			};
+
+			openExitCluster = null;
+
+			if (possibleOutsideMinutes <= 0) {
+				flags.push("invalidBreakCandidateIgnored");
+				continue;
+			}
+
+			const classification = classifyBreakCandidate({
+				candidate,
+				breakPolicy,
+				day,
+				ruleState,
+				directionIsFact: false,
+			});
+
+			pairedCandidates.push({
+				...serializeBreakCandidate(candidate),
+				...classification,
+			});
+
+			if (!classification.countsTowardInsideEstimate) {
+				flags.push(
+					classification.classification === "classified"
+						? "classifiedBreakNotDeducted"
+						: "unclassifiedBreakCandidateIgnored"
+				);
+				continue;
+			}
+
+			outsideIntervals.push(buildOutsideInterval(candidate, classification));
+			flags.push("estimatedOutsideIntervalDeducted");
+		}
+	}
+
+	if (openExitCluster) {
+		flags.push("unpairedExitLikeMiddleCluster");
+	}
+
+	return {
+		pairedCandidates,
+		outsideIntervals,
+		middleClusters,
+	};
+}
+
+function buildUndirectedEstimate({
+	item,
+	punches,
+	regularShiftEnd,
+	overtimeMaxMinutes,
+	breakPolicy,
+	flags,
+	mode,
+	directionCoverage,
+	shiftId,
+}) {
 	if (breakPolicy.source === "shiftBreakPolicy") {
 		flags.push("breakPolicyApplied");
 	} else {
 		flags.push("fallbackBreakPolicyUsed");
 	}
 
-	const attendanceDate = toAttendanceDate(item.day);
-
-	if (!logs.length) {
-		flags.push("noPunches");
-
-		return {
-			employeeId: item.employeeId,
-			attendanceDate,
-
-			firstRawPunch: null,
-			lastRawPunch: null,
-
-			estimatedInsideStart: null,
-			estimatedInsideEnd: null,
-			estimatedInsideMinutes: null,
-
-			confidence: "unknown",
-			flags: Array.from(new Set(flags)),
-			clusters: buildEmptyClustersPayload({
-				breakPolicy,
-				notes: ["no raw punches found inside the estimate window"],
-			}),
-
-			algorithmVersion: ALGORITHM_VERSION,
-			inputHash: buildInputHash({
-				item,
-				shiftId,
-				logs,
-				breakPolicy,
-			}),
-			computedAt: new Date(),
-		};
-	}
-
-	const firstRawPunch = logs[0].timestamp.utc().toDate();
-	const lastRawPunch = logs.at(-1).timestamp.utc().toDate();
-
-	if (logs.length === 1) {
+	if (punches.length === 1) {
 		flags.push("singlePunchOnly");
 
 		const singleCluster = {
 			index: 0,
-			first: logs[0],
-			last: logs[0],
-			logs,
+			first: punches[0],
+			last: punches[0],
+			punches,
 		};
 
 		return {
 			employeeId: item.employeeId,
-			attendanceDate,
+			attendanceDate: toAttendanceDate(item.day),
 
-			firstRawPunch,
-			lastRawPunch,
+			firstRawPunch: punches[0].timestamp.utc().toDate(),
+			lastRawPunch: punches[0].timestamp.utc().toDate(),
 
-			estimatedInsideStart: firstRawPunch,
+			estimatedInsideStart: punches[0].timestamp.utc().toDate(),
 			estimatedInsideEnd: null,
 			estimatedInsideMinutes: null,
 
 			confidence: "low",
 			flags: Array.from(new Set(flags)),
-			clusters: buildEmptyClustersPayload({
+			clusters: buildClustersPayload({
+				mode,
+				directionCoverage,
 				breakPolicy,
 				arrival: serializeCluster(singleCluster, {
 					role: "singlePunch",
-					chosenBoundary: logs[0].timestamp,
+					chosenBoundary: punches[0].timestamp,
 					selectionRule: "single punch only; cannot infer exit",
 					sideHint: getClusterSideHint(singleCluster, breakPolicy),
 				}),
@@ -1038,32 +1439,29 @@ function computePresenceEstimateRecord({
 			inputHash: buildInputHash({
 				item,
 				shiftId,
-				logs,
+				punches,
 				breakPolicy,
+				mode,
 			}),
 			computedAt: new Date(),
 		};
 	}
 
-	const arrivalCluster = buildArrivalBoundaryCluster(logs);
+	const arrivalCluster = buildArrivalBoundaryCluster(punches);
 
-	if (arrivalCluster.logs.length > 1) {
+	if (arrivalCluster.punches.length > 1) {
 		flags.push("multipleArrivalPunches", "arrivalBoundaryAdjusted");
 	}
 
-	if (arrivalCluster.endIndex >= logs.length - 1) {
+	if (arrivalCluster.endIndex >= punches.length - 1) {
 		flags.push("singleBoundaryClusterOnly");
-
-		if (arrivalCluster.logs.length > 1) {
-			flags.push("multiplePunchesInSingleBoundaryCluster");
-		}
 
 		return {
 			employeeId: item.employeeId,
-			attendanceDate,
+			attendanceDate: toAttendanceDate(item.day),
 
-			firstRawPunch,
-			lastRawPunch,
+			firstRawPunch: punches[0].timestamp.utc().toDate(),
+			lastRawPunch: punches.at(-1).timestamp.utc().toDate(),
 
 			estimatedInsideStart: arrivalCluster.last.timestamp.utc().toDate(),
 			estimatedInsideEnd: null,
@@ -1071,7 +1469,9 @@ function computePresenceEstimateRecord({
 
 			confidence: "low",
 			flags: Array.from(new Set(flags)),
-			clusters: buildEmptyClustersPayload({
+			clusters: buildClustersPayload({
+				mode,
+				directionCoverage,
 				breakPolicy,
 				arrival: serializeCluster(arrivalCluster, {
 					role: "arrivalBoundary",
@@ -1090,23 +1490,24 @@ function computePresenceEstimateRecord({
 			inputHash: buildInputHash({
 				item,
 				shiftId,
-				logs,
+				punches,
 				breakPolicy,
+				mode,
 			}),
 			computedAt: new Date(),
 		};
 	}
 
 	const exitCluster = buildExitBoundaryCluster(
-		logs,
+		punches,
 		arrivalCluster.endIndex + 1
 	);
 
-	if (exitCluster.logs.length > 1) {
+	if (exitCluster.punches.length > 1) {
 		flags.push("multipleExitPunches", "exitBoundaryAdjusted");
 	}
 
-	const rawMiddleLogs = logs.slice(
+	const rawMiddlePunches = punches.slice(
 		arrivalCluster.endIndex + 1,
 		exitCluster.startIndex
 	);
@@ -1148,22 +1549,22 @@ function computePresenceEstimateRecord({
 		flags.push("postShiftPunchIgnoredBeyondOvertimeLimit");
 	}
 
-	const middleLogs =
-		regularShiftEnd
-			? rawMiddleLogs.filter((log) => log.timestamp.isBefore(regularShiftEnd))
-			: rawMiddleLogs;
+	const middlePunches = regularShiftEnd
+		? rawMiddlePunches.filter((punch) => punch.timestamp.isBefore(regularShiftEnd))
+		: rawMiddlePunches;
 
-	const ignoredPostShiftMiddleLogs =
-		regularShiftEnd
-			? rawMiddleLogs.filter((log) => !log.timestamp.isBefore(regularShiftEnd))
-			: [];
+	const ignoredPostShiftMiddlePunches = regularShiftEnd
+		? rawMiddlePunches.filter(
+				(punch) => !punch.timestamp.isBefore(regularShiftEnd)
+			)
+		: [];
 
-	if (ignoredPostShiftMiddleLogs.length) {
+	if (ignoredPostShiftMiddlePunches.length) {
 		flags.push("postShiftMiddlePunchesIgnoredForBreakInference");
 	}
 
 	const middleClusters = buildConsecutiveClusters(
-		middleLogs,
+		middlePunches,
 		PRESENCE_ESTIMATE_BREAK_CLUSTER_WINDOW_MINUTES
 	);
 
@@ -1171,105 +1572,54 @@ function computePresenceEstimateRecord({
 		pairedCandidates,
 		outsideIntervals,
 		middleClusters: classifiedMiddleClusters,
-	} = pairAndClassifyMiddleBreaks({
+	} = pairAndClassifyUndirectedMiddleBreaks({
 		middleClusters,
 		breakPolicy,
 		day: item.day,
 		flags,
 	});
 
-	let grossInsideMinutes = estimatedInsideEnd.diff(
+	const grossInsideMinutes = estimatedInsideEnd.diff(
 		estimatedInsideStart,
 		"minute"
 	);
 
 	if (grossInsideMinutes <= 0) {
 		flags.push("invalidEstimatedWindow");
-
-		return {
-			employeeId: item.employeeId,
-			attendanceDate,
-
-			firstRawPunch,
-			lastRawPunch,
-
-			estimatedInsideStart: estimatedInsideStart.utc().toDate(),
-			estimatedInsideEnd: estimatedInsideEnd.utc().toDate(),
-			estimatedInsideMinutes: null,
-
-			confidence: "low",
-			flags: Array.from(new Set(flags)),
-			clusters: buildEmptyClustersPayload({
-				breakPolicy,
-				arrival: serializeCluster(arrivalCluster, {
-					role: "arrivalBoundary",
-					chosenBoundary: arrivalCluster.last.timestamp,
-					selectionRule:
-						"latest punch in arrival boundary cluster is estimated inside start",
-					sideHint: getClusterSideHint(arrivalCluster, breakPolicy),
-				}),
-				exit: serializeCluster(exitCluster, {
-					role: "exitBoundary",
-					chosenBoundary: estimatedInsideEnd,
-					selectionRule:
-						"scheduled end is used by default; valid overtime final punch extends estimated inside end",
-					sideHint: getClusterSideHint(exitCluster, breakPolicy),
-				}),
-				middle: classifiedMiddleClusters.map((cluster, index) =>
-					serializeCluster(cluster, {
-						role: "middle",
-						sideHint: cluster.sideHint || getClusterSideHint(cluster, breakPolicy),
-						selectionRule: `middle cluster ${index + 1}`,
-					})
-				),
-				candidateBreaks: pairedCandidates,
-				outsideIntervals,
-				ignoredPostShiftMiddlePunches:
-					ignoredPostShiftMiddleLogs.map(serializePunch),
-				notes: ["estimated inside end is not after estimated inside start"],
-			}),
-
-			algorithmVersion: ALGORITHM_VERSION,
-			inputHash: buildInputHash({
-				item,
-				shiftId,
-				logs,
-				breakPolicy,
-			}),
-			computedAt: new Date(),
-		};
 	}
 
 	const deductedOutsideMinutes = outsideIntervals.reduce(
-		(total, interval) => total + interval.minutes,
+		(total, interval) =>
+			interval.countsTowardInsideEstimate ? total + interval.minutes : total,
 		0
 	);
 
-	const estimatedInsideMinutes = Math.max(
-		0,
-		grossInsideMinutes - deductedOutsideMinutes
-	);
+	const estimatedInsideMinutes =
+		grossInsideMinutes > 0
+			? Math.max(0, grossInsideMinutes - deductedOutsideMinutes)
+			: null;
 
 	const uniqueFlags = Array.from(new Set(flags));
 
 	return {
 		employeeId: item.employeeId,
-		attendanceDate,
+		attendanceDate: toAttendanceDate(item.day),
 
-		firstRawPunch,
-		lastRawPunch,
+		firstRawPunch: punches[0].timestamp.utc().toDate(),
+		lastRawPunch: punches.at(-1).timestamp.utc().toDate(),
 
 		estimatedInsideStart: estimatedInsideStart.utc().toDate(),
 		estimatedInsideEnd: estimatedInsideEnd.utc().toDate(),
 		estimatedInsideMinutes,
 
 		confidence: getEstimateConfidence({
+			mode,
 			flags: uniqueFlags,
-			middleClusters: classifiedMiddleClusters,
-			usedShiftWindow,
 		}),
 		flags: uniqueFlags,
-		clusters: buildEmptyClustersPayload({
+		clusters: buildClustersPayload({
+			mode,
+			directionCoverage,
 			breakPolicy,
 			arrival: serializeCluster(arrivalCluster, {
 				role: "arrivalBoundary",
@@ -1288,24 +1638,20 @@ function computePresenceEstimateRecord({
 			middle: classifiedMiddleClusters.map((cluster, index) =>
 				serializeCluster(cluster, {
 					role: "middle",
-					sideHint: cluster.sideHint || getClusterSideHint(cluster, breakPolicy),
+					sideHint:
+						cluster.sideHint || getClusterSideHint(cluster, breakPolicy),
 					selectionRule: `middle cluster ${index + 1}`,
 				})
 			),
 			candidateBreaks: pairedCandidates,
 			outsideIntervals,
 			ignoredPostShiftMiddlePunches:
-				ignoredPostShiftMiddleLogs.map(serializePunch),
+				ignoredPostShiftMiddlePunches.map(serializePunch),
 			notes: [
-				"this is an estimate, not a hard direction fact",
-				"arrival boundary uses the boundary ambiguity window",
-				"normal estimated end is scheduled shift end when a shift is known",
-				"valid final overtime punch extends estimated inside end",
-				"middle break clusters use the smaller break/noise window",
-				"middle break inference uses shift.breakPolicy before env fallback",
-				"middle clusters are paired only when an exit-like signal is followed by an entry-like signal",
+				"undirected mode has no usable punchState direction facts",
+				"arrival/final boundary estimation is used only in undirected fallback",
+				"middle clusters are paired only by identifier side hints",
 				"candidate breaks are deducted only when classified by breakPolicy or explicit unclassified fallback",
-				"post-shift middle punches are ignored for break inference",
 			],
 		}),
 
@@ -1313,11 +1659,138 @@ function computePresenceEstimateRecord({
 		inputHash: buildInputHash({
 			item,
 			shiftId,
-			logs,
+			punches,
 			breakPolicy,
+			mode,
 		}),
 		computedAt: new Date(),
 	};
+}
+
+function computePresenceEstimateRecord({
+	item,
+	employeeShiftMap,
+	shiftDataMap,
+	employeeLogicalPunchMap,
+}) {
+	const flags = [];
+
+	const {
+		shiftId,
+		usedShiftWindow,
+		regularShiftEnd,
+		overtimeMaxMinutes,
+		breakPolicy,
+		punches,
+	} = resolveWindowedPunches({
+		item,
+		employeeShiftMap,
+		shiftDataMap,
+		employeeLogicalPunchMap,
+	});
+
+	if (!usedShiftWindow) {
+		flags.push("noAssignedShift", "calendarDayWindowUsed");
+	}
+
+	if (!punches.length) {
+		const directionCoverage = {
+			mode: "none",
+			directionalCount: 0,
+			unknownCount: 0,
+			conflictCount: 0,
+		};
+
+		flags.push("noPunches");
+
+		return {
+			employeeId: item.employeeId,
+			attendanceDate: toAttendanceDate(item.day),
+
+			firstRawPunch: null,
+			lastRawPunch: null,
+
+			estimatedInsideStart: null,
+			estimatedInsideEnd: null,
+			estimatedInsideMinutes: null,
+
+			confidence: "unknown",
+			flags: Array.from(new Set(flags)),
+			clusters: buildClustersPayload({
+				mode: "none",
+				directionCoverage,
+				breakPolicy,
+				notes: ["no raw punches found inside the estimate window"],
+			}),
+
+			algorithmVersion: ALGORITHM_VERSION,
+			inputHash: buildInputHash({
+				item,
+				shiftId,
+				punches,
+				breakPolicy,
+				mode: "none",
+			}),
+			computedAt: new Date(),
+		};
+	}
+
+	const directionCoverage = classifyPunchStateCoverage(punches);
+	const mode = directionCoverage.mode;
+
+	if (mode === "directional") {
+		flags.push("directionalPunchStateMode");
+
+		return buildDirectionalEstimate({
+			item,
+			punches,
+			regularShiftEnd,
+			overtimeMaxMinutes,
+			breakPolicy,
+			flags,
+			mode,
+			directionCoverage,
+			shiftId,
+		});
+	}
+
+	if (mode === "hybrid") {
+		flags.push("hybridPunchStateMode");
+
+		if (directionCoverage.unknownCount) {
+			flags.push("somePunchStatesMissing");
+		}
+
+		if (directionCoverage.conflictCount) {
+			flags.push("conflictingPunchStatesCollapsed");
+		}
+
+		return buildDirectionalEstimate({
+			item,
+			punches,
+			regularShiftEnd,
+			overtimeMaxMinutes,
+			breakPolicy,
+			flags,
+			mode,
+			directionCoverage,
+			shiftId,
+		});
+	}
+
+	flags.push("undirectedFallbackMode");
+
+	return buildUndirectedEstimate({
+		item,
+		punches,
+		regularShiftEnd,
+		overtimeMaxMinutes,
+		breakPolicy,
+		flags,
+		mode,
+		directionCoverage,
+		shiftId,
+	});
 }
 
 /**
@@ -1391,6 +1864,7 @@ export async function makeAttendancePresenceEstimateBatch({
 				employeeId: true,
 				timestamp: true,
 				identifier: true,
+				punchState: true,
 			},
 			orderBy: {
 				timestamp: "asc",
@@ -1408,7 +1882,7 @@ export async function makeAttendancePresenceEstimateBatch({
 			: [],
 	]);
 
-	const employeeLogMap = buildEmployeeLogMap(rawLogs);
+	const employeeLogicalPunchMap = buildEmployeeLogicalPunchMap(rawLogs);
 	const shiftDataMap = buildShiftDataMap(shiftDetails);
 
 	const records = normalizedEmployeeDays.map((item) =>
@@ -1416,7 +1890,7 @@ export async function makeAttendancePresenceEstimateBatch({
 			item,
 			employeeShiftMap,
 			shiftDataMap,
-			employeeLogMap,
+			employeeLogicalPunchMap,
 		})
 	);
 
