@@ -3,6 +3,11 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
+import {
+	buildPresenceEstimateMap,
+	presenceEstimateDateKey,
+	serializeAttendancePresenceEstimate,
+} from "#src/attendance-presence-estimates/methods/serializeAttendancePresenceEstimate.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -77,6 +82,18 @@ export async function hrGetEmployeeAttendance({
 	 * -------------------------------------------------- */
 	let logs;
 	try {
+		const estimates = logs.length
+			? await prisma.attendancePresenceEstimate.findMany({
+					where: {
+						employeeId,
+						attendanceDate: {
+							in: logs.map((log) => log.attendanceDate),
+						},
+					},
+				})
+			: [];
+
+		const estimateMap = buildPresenceEstimateMap(estimates);
 		logs = await prisma.attendanceLog.findMany({
 			where: {
 				employeeId,
@@ -99,20 +116,27 @@ export async function hrGetEmployeeAttendance({
 	/* -------------------------------------------------- *
 	 * 4️⃣  Format + return
 	 * -------------------------------------------------- */
-	return logs.map((log) => ({
-		id: log.id,
-		employeeId: log.employeeId,
-		day: log.attendanceDay,
-		date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
-		punchIn: log.punchIn
-			? dayjs.utc(log.punchIn).tz(TIMEZONE).format("hh:mm:ss a")
-			: null,
-		punchOut: log.punchOut
-			? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
-			: null,
-		durationInOfficeMinutes: log.durationInOfficeMinutes,
-		status: log.status,
-		flags: log.flags,
-		comments: log.comments,
-	}));
+	return logs.map((log) => {
+		const estimate = estimateMap.get(
+			presenceEstimateDateKey(log.attendanceDate)
+		);
+
+		return {
+			id: log.id,
+			employeeId: log.employeeId,
+			day: log.attendanceDay,
+			date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
+			punchIn: log.punchIn
+				? dayjs.utc(log.punchIn).tz(TIMEZONE).format("hh:mm:ss a")
+				: null,
+			punchOut: log.punchOut
+				? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
+				: null,
+			durationInOfficeMinutes: log.durationInOfficeMinutes,
+			status: log.status,
+			flags: log.flags,
+			comments: log.comments,
+			presenceEstimate: serializeAttendancePresenceEstimate(estimate),
+		};
+	});
 }

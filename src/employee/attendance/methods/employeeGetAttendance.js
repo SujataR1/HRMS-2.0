@@ -3,6 +3,11 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { verifyEmployeeJWT } from "../../employee-session-management/methods/employeeSessionManagementMethods.js";
+import {
+	buildPresenceEstimateMap,
+	presenceEstimateDateKey,
+	serializeAttendancePresenceEstimate,
+} from "#src/attendance-presence-estimates/methods/serializeAttendancePresenceEstimate.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -73,6 +78,18 @@ export async function employeeGetAttendance({
 	// 3️⃣ Query DB
 	let logs;
 	try {
+		const estimates = logs.length
+			? await prisma.attendancePresenceEstimate.findMany({
+					where: {
+						employeeId,
+						attendanceDate: {
+							in: logs.map((log) => log.attendanceDate),
+						},
+					},
+				})
+			: [];
+
+		const estimateMap = buildPresenceEstimateMap(estimates);
 		logs = await prisma.attendanceLog.findMany({
 			where: {
 				employeeId,
@@ -93,19 +110,26 @@ export async function employeeGetAttendance({
 	}
 
 	// 4️⃣ Format result
-	return logs.map((log) => ({
-		id: log.id,
-		date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
-		day: log.attendanceDay,
-		punchIn: log.punchIn
-			? dayjs.utc(log.punchIn).tz(TIMEZONE).format("hh:mm:ss a")
-			: null,
-		punchOut: log.punchOut
-			? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
-			: null,
-		durationInOfficeMinutes: log.durationInOfficeMinutes,
-		status: log.status,
-		flags: log.flags,
-		comments: log.comments,
-	}));
+		return logs.map((log) => {
+		const estimate = estimateMap.get(
+			presenceEstimateDateKey(log.attendanceDate)
+		);
+
+		return {
+			id: log.id,
+			date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
+			day: log.attendanceDay,
+			punchIn: log.punchIn
+				? dayjs.utc(log.punchIn).tz(TIMEZONE).format("hh:mm:ss a")
+				: null,
+			punchOut: log.punchOut
+				? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
+				: null,
+			durationInOfficeMinutes: log.durationInOfficeMinutes,
+			status: log.status,
+			flags: log.flags,
+			comments: log.comments,
+			presenceEstimate: serializeAttendancePresenceEstimate(estimate),
+		};
+	});
 }

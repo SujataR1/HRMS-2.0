@@ -3,6 +3,7 @@ import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
 import { makeEmployeeAttendanceBatch } from "./makeEmployeeAttendanceBatch.js";
+import { makeAttendancePresenceEstimateBatch } from "#src/attendance-presence-estimates/methods/makeAttendancePresenceEstimateBatch.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -48,9 +49,15 @@ export async function insertBiometricLogs(logs = []) {
 			}
 		}
 
+		const affectedEmployeeDayList = Array.from(affectedEmployeeDays.values());
+
 		await makeEmployeeAttendanceBatch({
-	employeeDays: Array.from(affectedEmployeeDays.values()),
-});
+			employeeDays: affectedEmployeeDayList,
+		});
+
+		await makeAttendancePresenceEstimateBatch({
+			employeeDays: affectedEmployeeDayList,
+		});
 	} catch (err) {
 		console.error("🔥 insertBiometricLogs failed:", err);
 		throw err;
