@@ -343,6 +343,7 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || "0.0.0.0"
 
 let isShuttingDown = false;
+let notificationSocketHeartbeat = null;
 
 async function shutdown(signal) {
 	if (isShuttingDown) return;
@@ -352,7 +353,10 @@ async function shutdown(signal) {
 
 	stopExpiredSessionCleanupJob();
 
+	if (notificationSocketHeartbeat) {
 	clearInterval(notificationSocketHeartbeat);
+	notificationSocketHeartbeat = null;
+}
 
 	console.log("🧹 Flushing audit log queue...");
 	await gracefulAuditShutdown();
@@ -378,7 +382,7 @@ try {
 		logger: app.log,
 	});
 
-	const notificationSocketHeartbeat = startNotificationSocketHeartbeat({
+	notificationSocketHeartbeat = startNotificationSocketHeartbeat({
 		intervalMs: 30000,
 		logger: app.log,
 	});
