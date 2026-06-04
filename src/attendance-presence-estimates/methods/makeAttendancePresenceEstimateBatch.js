@@ -1,356 +1,896 @@
+import { createHash } from "crypto";
+import { prisma } from "#src/db/prisma.js";
 import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween.js";
 import timezone from "dayjs/plugin/timezone.js";
 import utc from "dayjs/plugin/utc.js";
+import pMap from "p-map";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-function formatTime(value) {
-	if (!value) return null;
+const ALGORITHM_VERSION = 8;
+const PRESENCE_RECORD_WRITE_CONCURRENCY = 4;
 
-	return dayjs.utc(value).tz(TIMEZONE).format("hh:mm:ss a");
+function toAttendanceDate(istDay) {
+	return new Date(istDay.format("YYYY-MM-DD"));
 }
 
-function formatDateTime(value) {
-	if (!value) return null;
+function normalizeEmployeeDays(employeeDays) {
+	const unique = new Map();
 
-	return dayjs.utc(value).tz(TIMEZONE).format("YYYY-MM-DD hh:mm:ss a");
-}
+	for (const item of employeeDays || []) {
+		const employeeId = String(item?.employeeId || "").trim();
+		const date = item?.date;
 
-function formatLocalDateTimeToTime(value) {
-	if (!value) return null;
+		if (!employeeId || !date) continue;
 
-	const parsed = dayjs.tz(value, "YYYY-MM-DD HH:mm:ss", TIMEZONE);
+		const day = dayjs.tz(date, TIMEZONE).startOf("day");
+		if (!day.isValid()) continue;
 
-	if (parsed.isValid()) {
-		return parsed.format("hh:mm:ss a");
+		const dayKey = day.format("YYYY-MM-DD");
+		const key = `${employeeId}_${dayKey}`;
+
+		if (!unique.has(key)) {
+			unique.set(key, {
+				employeeId,
+				day,
+				dayKey,
+			});
+		}
 	}
 
-	const fallback = dayjs(value);
+	return Array.from(unique.values()).sort((a, b) => {
+		const byDay = a.day.valueOf() - b.day.valueOf();
+		if (byDay !== 0) return byDay;
 
-	return fallback.isValid() ? fallback.tz(TIMEZONE).format("hh:mm:ss a") : null;
+		return a.employeeId.localeCompare(b.employeeId);
+	});
 }
 
-function parseEventSortTime(item) {
-	return (
-		Date.parse(item.fromUtc || item.atUtc || item.fromLocal || item.atLocal || "") ||
-		Number.MAX_SAFE_INTEGER
+function normalizePunchState(value) {
+	if (value === "in") return "in";
+	if (value === "out") return "out";
+
+	return null;
+}
+
+function buildShiftDataMap(shiftDetails) {
+	const shiftDataMap = new Map();
+
+	for (const shift of shiftDetails) {
+		let fullStart = dayjs.utc(shift.fullShiftStartingTime).tz(TIMEZONE);
+		let fullEnd = dayjs.utc(shift.fullShiftEndingTime).tz(TIMEZONE);
+
+		if (fullEnd.isBefore(fullStart)) {
+			fullEnd = fullEnd.add(1, "day");
+		}
+
+		let halfStart = shift.halfShiftStartingTime
+			? dayjs.utc(shift.halfShiftStartingTime).tz(TIMEZONE)
+			: null;
+
+		let halfEnd = shift.halfShiftEndingTime
+			? dayjs.utc(shift.halfShiftEndingTime).tz(TIMEZONE)
+			: null;
+
+		if (halfEnd && halfStart && halfEnd.isBefore(halfStart)) {
+			halfEnd = halfEnd.add(1, "day");
+		}
+
+		shiftDataMap.set(shift.id, {
+			id: shift.id,
+
+			fullStart,
+			fullEnd,
+
+			halfStart,
+			halfEnd,
+
+			earlyFull: shift.fullShiftEarlyPunchConsiderTimeInMinutes ?? 0,
+			earlyHalf: shift.halfShiftEarlyPunchConsiderTimeInMinutes ?? 0,
+
+			postTol:
+				shift.maximumValidShiftLengthPostRegularEndingTimeInMinutes ?? 0,
+
+			overtimeMax: shift.overtimeMaximumAllowableLimitInMinutes ?? 0,
+
+			weeklyHalfSet: new Set(
+				(shift.weeklyHalfDays || []).map((day) => day.toLowerCase())
+			),
+		});
+	}
+
+	return shiftDataMap;
+}
+
+/**
+ * Collapse only exact same-timestamp raw duplicates.
+ *
+ * This is not clustering.
+ * Different seconds remain different punches.
+ *
+ * Same exact timestamp:
+ *   in + null     => in
+ *   out + null    => out
+ *   null + null   => null
+ *   in + out      => conflict
+ */
+function buildEmployeeLogicalPunchMap(rawLogs) {
+	const employeePunchBucketMap = new Map();
+
+	for (const rawLog of rawLogs) {
+		const employeeId = rawLog.employeeId;
+
+		if (!employeePunchBucketMap.has(employeeId)) {
+			employeePunchBucketMap.set(employeeId, new Map());
+		}
+
+		const timestamp = dayjs
+			.utc(rawLog.timestamp)
+			.tz(TIMEZONE)
+			.millisecond(0);
+
+		const punchKey = timestamp.utc().toISOString();
+		const employeeBuckets = employeePunchBucketMap.get(employeeId);
+
+		if (!employeeBuckets.has(punchKey)) {
+			employeeBuckets.set(punchKey, {
+				employeeId,
+				timestamp,
+				identifiers: new Set(),
+				punchStates: new Set(),
+				rawRowCount: 0,
+			});
+		}
+
+		const bucket = employeeBuckets.get(punchKey);
+
+		bucket.identifiers.add(rawLog.identifier || "unknown");
+
+		const punchState = normalizePunchState(rawLog.punchState);
+
+		if (punchState) {
+			bucket.punchStates.add(punchState);
+		}
+
+		bucket.rawRowCount += 1;
+	}
+
+	const employeeLogicalPunchMap = new Map();
+
+	for (const [employeeId, bucketMap] of employeePunchBucketMap.entries()) {
+		const logicalPunches = Array.from(bucketMap.values())
+			.map((bucket) => {
+				const punchStates = Array.from(bucket.punchStates);
+				let punchState = null;
+
+				if (punchStates.length === 1) {
+					punchState = punchStates[0];
+				} else if (punchStates.length > 1) {
+					punchState = "conflict";
+				}
+
+				return {
+					employeeId,
+					timestamp: bucket.timestamp,
+					identifiers: Array.from(bucket.identifiers).sort(),
+					punchStates,
+					punchState,
+					rawRowCount: bucket.rawRowCount,
+				};
+			})
+			.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf());
+
+		employeeLogicalPunchMap.set(employeeId, logicalPunches);
+	}
+
+	return employeeLogicalPunchMap;
+}
+
+function classifyPunchStateCoverage(punches) {
+	let directionalCount = 0;
+	let unknownCount = 0;
+	let conflictCount = 0;
+
+	for (const punch of punches) {
+		if (punch.punchState === "in" || punch.punchState === "out") {
+			directionalCount += 1;
+			continue;
+		}
+
+		if (punch.punchState === "conflict") {
+			conflictCount += 1;
+			continue;
+		}
+
+		unknownCount += 1;
+	}
+
+	if (directionalCount === 0) {
+		return {
+			mode: "undirected",
+			directionalCount,
+			unknownCount,
+			conflictCount,
+		};
+	}
+
+	if (unknownCount || conflictCount) {
+		return {
+			mode: "hybrid",
+			directionalCount,
+			unknownCount,
+			conflictCount,
+		};
+	}
+
+	return {
+		mode: "directional",
+		directionalCount,
+		unknownCount,
+		conflictCount,
+	};
+}
+
+function hasOnlyDirectionalPunches(punches) {
+	if (!punches.length) return false;
+
+	const directionCoverage = classifyPunchStateCoverage(punches);
+
+	return directionCoverage.mode === "directional";
+}
+
+function serializePunch(punch) {
+	return {
+		atUtc: punch.timestamp.utc().toISOString(),
+		atLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		identifiers: punch.identifiers,
+		punchState: punch.punchState,
+		punchStates: punch.punchStates,
+		rawRowCount: punch.rawRowCount,
+	};
+}
+
+function buildInsideSession({ fromPunch, toPunch }) {
+	return {
+		fromUtc: fromPunch.timestamp.utc().toISOString(),
+		fromLocal: fromPunch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		toUtc: toPunch.timestamp.utc().toISOString(),
+		toLocal: toPunch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		minutes: toPunch.timestamp.diff(fromPunch.timestamp, "minute"),
+		source: "directionalPunchState",
+		selectionRule: "in punchState followed by out punchState",
+	};
+}
+
+function buildOutsideInterval({ fromPunch, toPunch }) {
+	return {
+		fromUtc: fromPunch.timestamp.utc().toISOString(),
+		fromLocal: fromPunch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		toUtc: toPunch.timestamp.utc().toISOString(),
+		toLocal: toPunch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		minutes: toPunch.timestamp.diff(fromPunch.timestamp, "minute"),
+		source: "directionalPunchState",
+		selectionRule: "out punchState followed by in punchState",
+	};
+}
+
+function buildOpenInsideSession(punch) {
+	return {
+		fromUtc: punch.timestamp.utc().toISOString(),
+		fromLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		toUtc: null,
+		toLocal: null,
+		minutes: null,
+		status: "open",
+		source: "directionalPunchState",
+		selectionRule: "latest state is inside",
+	};
+}
+
+function buildOpenOutsideInterval(punch) {
+	return {
+		fromUtc: punch.timestamp.utc().toISOString(),
+		fromLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		toUtc: null,
+		toLocal: null,
+		minutes: null,
+		status: "open",
+		source: "directionalPunchState",
+		selectionRule: "latest state is outside",
+	};
+}
+
+function buildAnomaly({
+	code,
+	atPunch,
+	message,
+	previousState = null,
+	currentState = null,
+}) {
+	return {
+		type: "anomaly",
+		code,
+		atUtc: atPunch.timestamp.utc().toISOString(),
+		atLocal: atPunch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
+		punch: serializePunch(atPunch),
+		previousState,
+		currentState,
+		message,
+	};
+}
+
+function buildDirectionalStateHistory(punches) {
+	const insideSessions = [];
+	const outsideIntervals = [];
+	const anomalies = [];
+
+	let currentState = null;
+	let openInsidePunch = null;
+	let openOutsidePunch = null;
+
+	for (const punch of punches) {
+		if (punch.punchState === "in") {
+			if (currentState === null) {
+				currentState = "inside";
+				openInsidePunch = punch;
+				openOutsidePunch = null;
+				continue;
+			}
+
+			if (currentState === "inside") {
+				anomalies.push(
+					buildAnomaly({
+						code: "repeatedInWithoutOut",
+						atPunch: punch,
+						previousState: "inside",
+						currentState: "inside",
+						message:
+							"In punch occurred while already inside. Possible missed out/in or accidental repeated punch.",
+					})
+				);
+
+				openInsidePunch = punch;
+				openOutsidePunch = null;
+				continue;
+			}
+
+			if (currentState === "outside") {
+				const outsideInterval = buildOutsideInterval({
+					fromPunch: openOutsidePunch,
+					toPunch: punch,
+				});
+
+				if (outsideInterval.minutes <= 0) {
+					return null;
+				}
+
+				outsideIntervals.push(outsideInterval);
+
+				currentState = "inside";
+				openInsidePunch = punch;
+				openOutsidePunch = null;
+			}
+
+			continue;
+		}
+
+		if (punch.punchState === "out") {
+			if (currentState === null) {
+				anomalies.push(
+					buildAnomaly({
+						code: "initialOutWithoutIn",
+						atPunch: punch,
+						previousState: null,
+						currentState: "outside",
+						message:
+							"First directional punch is out. Initial in punch is missing.",
+					})
+				);
+
+				currentState = "outside";
+				openOutsidePunch = punch;
+				openInsidePunch = null;
+				continue;
+			}
+
+			if (currentState === "outside") {
+				anomalies.push(
+					buildAnomaly({
+						code: "repeatedOutWithoutIn",
+						atPunch: punch,
+						previousState: "outside",
+						currentState: "outside",
+						message:
+							"Out punch occurred while already outside. Possible missed in/out or accidental repeated punch.",
+					})
+				);
+
+				openOutsidePunch = punch;
+				openInsidePunch = null;
+				continue;
+			}
+
+			if (currentState === "inside") {
+				const insideSession = buildInsideSession({
+					fromPunch: openInsidePunch,
+					toPunch: punch,
+				});
+
+				if (insideSession.minutes <= 0) {
+					return null;
+				}
+
+				insideSessions.push(insideSession);
+
+				currentState = "outside";
+				openOutsidePunch = punch;
+				openInsidePunch = null;
+			}
+		}
+	}
+
+	const openInsideSession =
+		currentState === "inside" && openInsidePunch
+			? buildOpenInsideSession(openInsidePunch)
+			: null;
+
+	const openOutsideInterval =
+		currentState === "outside" && openOutsidePunch
+			? buildOpenOutsideInterval(openOutsidePunch)
+			: null;
+
+	return {
+		currentState: currentState || "unknown",
+		openInsideSession,
+		openOutsideInterval,
+		insideSessions,
+		outsideIntervals,
+		anomalies,
+	};
+}
+
+function buildInputHash({ item, shiftId, punches }) {
+	const payload = {
+		algorithmVersion: ALGORITHM_VERSION,
+		timezone: TIMEZONE,
+		mode: "directionalState",
+		employeeId: item.employeeId,
+		dayKey: item.dayKey,
+		shiftId,
+		punches: punches.map((punch) => ({
+			atUtc: punch.timestamp.utc().toISOString(),
+			identifiers: punch.identifiers,
+			punchState: punch.punchState,
+			punchStates: punch.punchStates,
+			rawRowCount: punch.rawRowCount,
+		})),
+	};
+
+	return createHash("sha256")
+		.update(JSON.stringify(payload))
+		.digest("hex");
+}
+
+function resolveWindowedPunches({
+	item,
+	employeeShiftMap,
+	shiftDataMap,
+	employeeLogicalPunchMap,
+}) {
+	const allEmployeePunches = employeeLogicalPunchMap.get(item.employeeId) || [];
+	const shiftId = employeeShiftMap.get(item.employeeId);
+	const shift = shiftId ? shiftDataMap.get(shiftId) : null;
+
+	if (!shift) {
+		return {
+			shiftId: shiftId || null,
+			usedShiftWindow: false,
+			punches: [],
+		};
+	}
+
+	const dayNameLower = item.day.format("dddd").toLowerCase();
+	const isHalf = shift.weeklyHalfSet.has(dayNameLower);
+
+	const baseStart =
+		isHalf && shift.halfStart ? shift.halfStart : shift.fullStart;
+
+	const baseEnd = isHalf && shift.halfEnd ? shift.halfEnd : shift.fullEnd;
+
+	let windowStart = item.day
+		.hour(baseStart.hour())
+		.minute(baseStart.minute())
+		.second(baseStart.second())
+		.millisecond(0);
+
+	let windowEnd = item.day
+		.hour(baseEnd.hour())
+		.minute(baseEnd.minute())
+		.second(baseEnd.second())
+		.millisecond(0);
+
+	if (windowEnd.isBefore(windowStart)) {
+		windowEnd = windowEnd.add(1, "day");
+	}
+
+	windowStart = windowStart.subtract(
+		isHalf ? shift.earlyHalf : shift.earlyFull,
+		"minute"
 	);
-}
 
-function presenceEstimateDateKey(date) {
-	return dayjs.utc(date).tz(TIMEZONE).format("YYYY-MM-DD");
-}
+	const postShiftLookaheadMinutes = Math.max(
+		shift.postTol || 0,
+		shift.overtimeMax || 0
+	);
 
-function buildPresenceEstimateMap(estimates = []) {
-	const map = new Map();
+	windowEnd = windowEnd.add(postShiftLookaheadMinutes, "minute");
 
-	for (const estimate of estimates) {
-		map.set(presenceEstimateDateKey(estimate.attendanceDate), estimate);
-	}
-
-	return map;
-}
-
-function minuteValue(value) {
-	const minutes = Number(value);
-
-	return Number.isFinite(minutes) ? minutes : null;
+	return {
+		shiftId,
+		usedShiftWindow: true,
+		punches: allEmployeePunches.filter((punch) =>
+			punch.timestamp.isBetween(windowStart, windowEnd, null, "[]")
+		),
+	};
 }
 
 function sumClosedMinutes(items) {
 	return items.reduce((total, item) => {
-		const minutes = minuteValue(item.minutes);
+		const minutes = Number(item.minutes);
 
-		return minutes == null ? total : total + minutes;
+		return Number.isFinite(minutes) ? total + minutes : total;
 	}, 0);
 }
 
-function normalizeInsideSession(session) {
-	return {
-		type: "inside",
-		status: "closed",
+function firstUsableInsideStart({ insideSessions, openInsideSession }) {
+	if (insideSessions.length) {
+		return dayjs.utc(insideSessions[0].fromUtc).toDate();
+	}
 
-		from: formatLocalDateTimeToTime(session.fromLocal),
-		to: formatLocalDateTimeToTime(session.toLocal),
+	if (openInsideSession?.fromUtc) {
+		return dayjs.utc(openInsideSession.fromUtc).toDate();
+	}
 
-		fromLocal: session.fromLocal ?? null,
-		toLocal: session.toLocal ?? null,
-
-		fromUtc: session.fromUtc ?? null,
-		toUtc: session.toUtc ?? null,
-
-		minutes: minuteValue(session.minutes),
-
-		source: session.source ?? "directionalPunchState",
-	};
+	return null;
 }
 
-function normalizeBreakInterval(interval) {
-	return {
-		type: "break",
-		status: interval.status ?? "closed",
+function currentInsideEnd({ currentState, insideSessions, openOutsideInterval }) {
+	if (currentState === "inside") return null;
 
-		from: formatLocalDateTimeToTime(interval.fromLocal),
-		to: formatLocalDateTimeToTime(interval.toLocal),
+	if (insideSessions.length) {
+		return dayjs.utc(insideSessions.at(-1).toUtc).toDate();
+	}
 
-		fromLocal: interval.fromLocal ?? null,
-		toLocal: interval.toLocal ?? null,
+	if (openOutsideInterval?.fromUtc) {
+		return dayjs.utc(openOutsideInterval.fromUtc).toDate();
+	}
 
-		fromUtc: interval.fromUtc ?? null,
-		toUtc: interval.toUtc ?? null,
-
-		minutes: minuteValue(interval.minutes),
-
-		source: interval.source ?? "directionalPunchState",
-	};
+	return null;
 }
 
-function normalizeOpenInsideSession(openInsideSession) {
-	if (!openInsideSession) return null;
-
-	return {
-		type: "inside",
-		status: "open",
-
-		from: formatLocalDateTimeToTime(openInsideSession.fromLocal),
-		to: null,
-
-		fromLocal: openInsideSession.fromLocal ?? null,
-		toLocal: null,
-
-		fromUtc: openInsideSession.fromUtc ?? null,
-		toUtc: null,
-
-		minutes: null,
-
-		source: openInsideSession.source ?? "directionalPunchState",
-	};
-}
-
-function normalizeOpenOutsideInterval(openOutsideInterval) {
-	if (!openOutsideInterval) return null;
-
-	return {
-		type: "break",
-		status: "open",
-
-		from: formatLocalDateTimeToTime(openOutsideInterval.fromLocal),
-		to: null,
-
-		fromLocal: openOutsideInterval.fromLocal ?? null,
-		toLocal: null,
-
-		fromUtc: openOutsideInterval.fromUtc ?? null,
-		toUtc: null,
-
-		minutes: null,
-
-		source: openOutsideInterval.source ?? "directionalPunchState",
-	};
-}
-
-function normalizeAnomaly(anomaly) {
-	return {
-		type: "anomaly",
-		status: "open",
-
-		code: anomaly.code ?? "unknownPresenceAnomaly",
-		message: anomaly.message ?? null,
-
-		at: formatLocalDateTimeToTime(anomaly.atLocal),
-		atLocal: anomaly.atLocal ?? null,
-		atUtc: anomaly.atUtc ?? null,
-
-		previousState: anomaly.previousState ?? null,
-		currentState: anomaly.currentState ?? null,
-
-		punch: anomaly.punch ?? null,
-	};
-}
-
-function buildHistory({
-	insideSessions,
-	breaks,
+function buildClustersPayload({
+	directionCoverage,
+	rawLogicalPunches,
+	currentState,
 	openInsideSession,
-	openBreak,
+	openOutsideInterval,
+	insideSessions,
+	outsideIntervals,
 	anomalies,
+	notes = [],
 }) {
-	return [
-		...insideSessions,
-		...breaks,
-		...(openInsideSession ? [openInsideSession] : []),
-		...(openBreak ? [openBreak] : []),
-		...anomalies,
-	].sort((left, right) => parseEventSortTime(left) - parseEventSortTime(right));
-}
-
-function buildState({ currentState, openInsideSession, openBreak, history }) {
-	if (currentState === "inside") {
-		return {
-			current: "inside",
-			since: openInsideSession?.from ?? null,
-			sinceLocal: openInsideSession?.fromLocal ?? null,
-			sinceUtc: openInsideSession?.fromUtc ?? null,
-			open: openInsideSession,
-		};
-	}
-
-	if (currentState === "outside") {
-		const latestBreak =
-			openBreak ||
-			[...history].reverse().find((item) => item.type === "break") ||
-			null;
-
-		return {
-			current: "outside",
-			since: latestBreak?.from ?? null,
-			sinceLocal: latestBreak?.fromLocal ?? null,
-			sinceUtc: latestBreak?.fromUtc ?? null,
-			open: openBreak,
-		};
-	}
-
 	return {
-		current: "unknown",
-		since: null,
-		sinceLocal: null,
-		sinceUtc: null,
-		open: null,
+		mode: "directionalState",
+		currentState,
+		directionCoverage,
+
+		rawLogicalPunches: rawLogicalPunches.map(serializePunch),
+
+		openInsideSession,
+		openOutsideInterval,
+
+		insideSessions,
+		outsideIntervals,
+		anomalies,
+
+		notes,
 	};
 }
 
-function buildRawPunchAudit(clusters) {
-	const punches = clusters?.rawLogicalPunches;
+function computePresenceConfidence({ anomalies }) {
+	return anomalies.length ? "medium" : "high";
+}
 
-	if (!Array.isArray(punches)) return [];
+function buildDirectionalPresenceRecord({
+	item,
+	shiftId,
+	usedShiftWindow,
+	rawLogicalPunches,
+	directionCoverage,
+}) {
+	if (!hasOnlyDirectionalPunches(rawLogicalPunches)) {
+		return null;
+	}
 
-	return punches.map((punch) => ({
-		at: formatLocalDateTimeToTime(punch.atLocal),
-		atLocal: punch.atLocal ?? null,
-		atUtc: punch.atUtc ?? null,
+	const stateHistory = buildDirectionalStateHistory(rawLogicalPunches);
 
-		punchState: punch.punchState ?? null,
-		punchStates: punch.punchStates ?? [],
+	if (!stateHistory) {
+		return null;
+	}
 
-		identifiers: punch.identifiers ?? [],
-		rawRowCount: punch.rawRowCount ?? null,
-	}));
+	const {
+		currentState,
+		openInsideSession,
+		openOutsideInterval,
+		insideSessions,
+		outsideIntervals,
+		anomalies,
+	} = stateHistory;
+
+	const completedInsideMinutes = sumClosedMinutes(insideSessions);
+
+	const estimatedInsideMinutes =
+		currentState === "inside" ? null : completedInsideMinutes;
+
+	const estimatedInsideStart = firstUsableInsideStart({
+		insideSessions,
+		openInsideSession,
+	});
+
+	const estimatedInsideEnd = currentInsideEnd({
+		currentState,
+		insideSessions,
+		openOutsideInterval,
+	});
+
+	const flags = Array.from(
+		new Set([
+			"directionalPunchStateMode",
+			"directionalStatePresenceRecord",
+			"breaksDisplayedFromDirectionalOutInPairs",
+			currentState === "inside"
+				? "openInsideSession"
+				: currentState === "outside"
+					? "openOutsideState"
+					: "unknownState",
+			...(usedShiftWindow ? [] : ["missingAssignedShiftSkipped"]),
+			...anomalies.map((anomaly) => anomaly.code),
+		])
+	);
+
+	return {
+		employeeId: item.employeeId,
+		attendanceDate: toAttendanceDate(item.day),
+
+		firstRawPunch: rawLogicalPunches[0]?.timestamp.utc().toDate() ?? null,
+		lastRawPunch: rawLogicalPunches.at(-1)?.timestamp.utc().toDate() ?? null,
+
+		estimatedInsideStart,
+		estimatedInsideEnd,
+		estimatedInsideMinutes,
+
+		confidence: computePresenceConfidence({
+			anomalies,
+		}),
+		flags,
+
+		clusters: buildClustersPayload({
+			directionCoverage,
+			rawLogicalPunches,
+			currentState,
+			openInsideSession,
+			openOutsideInterval,
+			insideSessions,
+			outsideIntervals,
+			anomalies,
+			notes: [
+				"presence record uses directional punchState only",
+				"no env estimator knobs are used",
+				"no breakPolicy is used",
+				"no boundary clustering is used",
+				"no identifier side-hints are used",
+				"shift timing only selects which punches belong to this employee-day",
+				"inside sessions are direct in→out transitions",
+				"breaks are direct out→in transitions",
+				"repeated same-direction punches create anomalies and reset current state instead of inventing missing time",
+				"null/conflict punchState employee-days are skipped without DB mutation",
+			],
+		}),
+
+		algorithmVersion: ALGORITHM_VERSION,
+		inputHash: buildInputHash({
+			item,
+			shiftId,
+			punches: rawLogicalPunches,
+		}),
+		computedAt: new Date(),
+	};
+}
+
+function computePresenceEstimateRecord({
+	item,
+	employeeShiftMap,
+	shiftDataMap,
+	employeeLogicalPunchMap,
+}) {
+	const { shiftId, usedShiftWindow, punches } = resolveWindowedPunches({
+		item,
+		employeeShiftMap,
+		shiftDataMap,
+		employeeLogicalPunchMap,
+	});
+
+	if (!usedShiftWindow) {
+		return null;
+	}
+
+	if (!punches.length) {
+		return null;
+	}
+
+	const directionCoverage = classifyPunchStateCoverage(punches);
+
+	if (directionCoverage.mode !== "directional") {
+		return null;
+	}
+
+	return buildDirectionalPresenceRecord({
+		item,
+		shiftId,
+		usedShiftWindow,
+		rawLogicalPunches: punches,
+		directionCoverage,
+	});
 }
 
 /**
- * Serialize stored AttendancePresenceEstimate as the public API "presence".
+ * Recompute stored directional presence records for explicit employee-day pairs.
  *
- * DB/model name may still say "PresenceEstimate" during development.
- * API shape should say "presence" because the data is directional state/history.
+ * Raw biometric logs are facts.
+ * Directional presence records are derived facts.
+ *
+ * This function:
+ * - uses no env estimator knobs
+ * - uses no break policy
+ * - uses no boundary clustering
+ * - uses no identifier side-hints
+ * - uses only assigned shift timing to select relevant punches
+ * - collapses only exact same-timestamp duplicate raw rows
+ * - skips employee-days with null/conflict/non-directional punchState
+ * - upserts directional state/history when directionality is usable
+ *
+ * It does not delete stale rows.
+ *
+ * @param {{
+ *   employeeDays: Array<{ employeeId: string, date: string | Date }>
+ * }} input
  */
-export function serializeAttendancePresenceEstimate(estimate) {
-	if (!estimate) return null;
+export async function makeAttendancePresenceEstimateBatch({
+	employeeDays = [],
+} = {}) {
+	const normalizedEmployeeDays = normalizeEmployeeDays(employeeDays);
 
-	const clusters = estimate.clusters || {};
+	if (!normalizedEmployeeDays.length) {
+		return {
+			processed: 0,
+			upserted: 0,
+		};
+	}
 
-	const insideSessions = Array.isArray(clusters.insideSessions)
-		? clusters.insideSessions.map(normalizeInsideSession)
-		: [];
-
-	const breaks = Array.isArray(clusters.outsideIntervals)
-		? clusters.outsideIntervals.map(normalizeBreakInterval)
-		: [];
-
-	const openInsideSession = normalizeOpenInsideSession(
-		clusters.openInsideSession
+	const employeeIds = Array.from(
+		new Set(normalizedEmployeeDays.map((item) => item.employeeId))
 	);
 
-	const openBreak = normalizeOpenOutsideInterval(clusters.openOutsideInterval);
+	const firstDay = normalizedEmployeeDays[0].day.startOf("day");
+	const lastDay = normalizedEmployeeDays.at(-1).day.endOf("day");
 
-	const anomalies = Array.isArray(clusters.anomalies)
-		? clusters.anomalies.map(normalizeAnomaly)
-		: [];
-
-	const history = buildHistory({
-		insideSessions,
-		breaks,
-		openInsideSession,
-		openBreak,
-		anomalies,
+	const assignments = await prisma.employeeDetails.findMany({
+		where: {
+			employeeId: {
+				in: employeeIds,
+			},
+		},
+		select: {
+			employeeId: true,
+			assignedShiftId: true,
+		},
 	});
 
-	const currentState =
-		clusters.currentState ||
-		(openInsideSession ? "inside" : openBreak ? "outside" : "unknown");
+	const employeeShiftMap = new Map(
+		assignments
+			.filter((assignment) => assignment.assignedShiftId)
+			.map((assignment) => [
+				assignment.employeeId,
+				assignment.assignedShiftId,
+			])
+	);
 
-	const completedInsideMinutes = sumClosedMinutes(insideSessions);
-	const completedBreakMinutes = sumClosedMinutes(breaks);
+	const relevantShiftIds = Array.from(new Set(employeeShiftMap.values()));
 
-	return {
-		id: estimate.id,
-
-		available: true,
-		confidence: estimate.confidence,
-
-		state: buildState({
-			currentState,
-			openInsideSession,
-			openBreak,
-			history,
+	const [rawLogs, shiftDetails] = await Promise.all([
+		prisma.biometricLog.findMany({
+			where: {
+				employeeId: {
+					in: employeeIds,
+				},
+				timestamp: {
+					gte: firstDay.subtract(1, "day").utc().toDate(),
+					lte: lastDay.add(1, "day").utc().toDate(),
+				},
+			},
+			select: {
+				employeeId: true,
+				timestamp: true,
+				identifier: true,
+				punchState: true,
+			},
+			orderBy: {
+				timestamp: "asc",
+			},
 		}),
 
-		totals: {
-			completedInsideMinutes,
-			completedBreakMinutes,
+		relevantShiftIds.length
+			? prisma.shift.findMany({
+					where: {
+						id: {
+							in: relevantShiftIds,
+						},
+					},
+				})
+			: [],
+	]);
 
-			insideSessionCount: insideSessions.length,
-			breakCount: breaks.length,
-			anomalyCount: anomalies.length,
+	const employeeLogicalPunchMap = buildEmployeeLogicalPunchMap(rawLogs);
+	const shiftDataMap = buildShiftDataMap(shiftDetails);
 
-			/**
-			 * Null means the employee is currently inside or the current session is open.
-			 * Do not store running live minutes in DB because it becomes stale.
-			 */
-			insideMinutes: estimate.estimatedInsideMinutes,
+	const records = normalizedEmployeeDays
+		.map((item) =>
+			computePresenceEstimateRecord({
+				item,
+				employeeShiftMap,
+				shiftDataMap,
+				employeeLogicalPunchMap,
+			})
+		)
+		.filter(Boolean);
 
-			/**
-			 * This is the sum of completed out→in break intervals only.
-			 * If the employee is currently outside, the open break is shown in state.open/history
-			 * but not counted as completed minutes yet.
-			 */
-			breakMinutes: completedBreakMinutes,
+	if (!records.length) {
+		return {
+			processed: normalizedEmployeeDays.length,
+			upserted: 0,
+		};
+	}
+
+	let upserted = 0;
+
+	await pMap(
+		records,
+		async (record) => {
+			await prisma.attendancePresenceEstimate.upsert({
+				where: {
+					employeeId_attendanceDate: {
+						employeeId: record.employeeId,
+						attendanceDate: record.attendanceDate,
+					},
+				},
+				create: record,
+				update: record,
+			});
+
+			upserted += 1;
 		},
+		{
+			concurrency: PRESENCE_RECORD_WRITE_CONCURRENCY,
+		}
+	);
 
-		bounds: {
-			firstPunch: formatTime(estimate.firstRawPunch),
-			lastPunch: formatTime(estimate.lastRawPunch),
-
-			insideStart: formatTime(estimate.estimatedInsideStart),
-			insideEnd: formatTime(estimate.estimatedInsideEnd),
-		},
-
-		history,
-
-		insideSessions,
-		breaks,
-		anomalies,
-
-		audit: {
-			mode: clusters.mode ?? "directionalState",
-			directionCoverage: clusters.directionCoverage ?? null,
-			rawPunches: buildRawPunchAudit(clusters),
-
-			flags: estimate.flags ?? [],
-			notes: clusters.notes ?? [],
-
-			algorithmVersion: estimate.algorithmVersion,
-			inputHash: estimate.inputHash,
-
-			computedAt: formatDateTime(estimate.computedAt),
-			updatedAt: formatDateTime(estimate.updatedAt),
-		},
+	return {
+		processed: normalizedEmployeeDays.length,
+		upserted,
 	};
 }
-
-export {
-	buildPresenceEstimateMap,
-	presenceEstimateDateKey,
-};
