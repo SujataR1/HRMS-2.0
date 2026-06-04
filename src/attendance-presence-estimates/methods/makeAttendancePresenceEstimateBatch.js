@@ -19,7 +19,7 @@ function formatDateTime(value) {
 	return dayjs.utc(value).tz(TIMEZONE).format("YYYY-MM-DD hh:mm:ss a");
 }
 
-function formatClusterLocalTime(value) {
+function formatLocalDateTimeToTime(value) {
 	if (!value) return null;
 
 	const parsed = dayjs.tz(value, "YYYY-MM-DD HH:mm:ss", TIMEZONE);
@@ -31,6 +31,13 @@ function formatClusterLocalTime(value) {
 	const fallback = dayjs(value);
 
 	return fallback.isValid() ? fallback.tz(TIMEZONE).format("hh:mm:ss a") : null;
+}
+
+function parseEventSortTime(item) {
+	return (
+		Date.parse(item.fromUtc || item.atUtc || item.fromLocal || item.atLocal || "") ||
+		Number.MAX_SAFE_INTEGER
+	);
 }
 
 function presenceEstimateDateKey(date) {
@@ -47,19 +54,36 @@ function buildPresenceEstimateMap(estimates = []) {
 	return map;
 }
 
-function normalizeCompletedInsideSession(session) {
+function minuteValue(value) {
+	const minutes = Number(value);
+
+	return Number.isFinite(minutes) ? minutes : null;
+}
+
+function sumClosedMinutes(items) {
+	return items.reduce((total, item) => {
+		const minutes = minuteValue(item.minutes);
+
+		return minutes == null ? total : total + minutes;
+	}, 0);
+}
+
+function normalizeInsideSession(session) {
 	return {
 		type: "inside",
-		from: formatClusterLocalTime(session.fromLocal),
-		to: formatClusterLocalTime(session.toLocal),
+		status: "closed",
+
+		from: formatLocalDateTimeToTime(session.fromLocal),
+		to: formatLocalDateTimeToTime(session.toLocal),
+
 		fromLocal: session.fromLocal ?? null,
 		toLocal: session.toLocal ?? null,
+
 		fromUtc: session.fromUtc ?? null,
 		toUtc: session.toUtc ?? null,
-		minutes: Number.isFinite(Number(session.minutes))
-			? Number(session.minutes)
-			: null,
-		status: "closed",
+
+		minutes: minuteValue(session.minutes),
+
 		source: session.source ?? "directionalPunchState",
 	};
 }
@@ -67,16 +91,19 @@ function normalizeCompletedInsideSession(session) {
 function normalizeBreakInterval(interval) {
 	return {
 		type: "break",
-		from: formatClusterLocalTime(interval.fromLocal),
-		to: formatClusterLocalTime(interval.toLocal),
+		status: interval.status ?? "closed",
+
+		from: formatLocalDateTimeToTime(interval.fromLocal),
+		to: formatLocalDateTimeToTime(interval.toLocal),
+
 		fromLocal: interval.fromLocal ?? null,
 		toLocal: interval.toLocal ?? null,
+
 		fromUtc: interval.fromUtc ?? null,
 		toUtc: interval.toUtc ?? null,
-		minutes: Number.isFinite(Number(interval.minutes))
-			? Number(interval.minutes)
-			: null,
-		status: "closed",
+
+		minutes: minuteValue(interval.minutes),
+
 		source: interval.source ?? "directionalPunchState",
 	};
 }
@@ -86,61 +113,103 @@ function normalizeOpenInsideSession(openInsideSession) {
 
 	return {
 		type: "inside",
-		from: formatClusterLocalTime(openInsideSession.fromLocal),
+		status: "open",
+
+		from: formatLocalDateTimeToTime(openInsideSession.fromLocal),
 		to: null,
+
 		fromLocal: openInsideSession.fromLocal ?? null,
 		toLocal: null,
+
 		fromUtc: openInsideSession.fromUtc ?? null,
 		toUtc: null,
+
 		minutes: null,
-		status: "open",
+
 		source: openInsideSession.source ?? "directionalPunchState",
 	};
 }
 
-function sortHistory(history) {
-	return history.sort((left, right) => {
-		const leftValue =
-			Date.parse(left.fromUtc || left.fromLocal || "") || Number.MAX_SAFE_INTEGER;
+function normalizeOpenOutsideInterval(openOutsideInterval) {
+	if (!openOutsideInterval) return null;
 
-		const rightValue =
-			Date.parse(right.fromUtc || right.fromLocal || "") ||
-			Number.MAX_SAFE_INTEGER;
+	return {
+		type: "break",
+		status: "open",
 
-		return leftValue - rightValue;
-	});
+		from: formatLocalDateTimeToTime(openOutsideInterval.fromLocal),
+		to: null,
+
+		fromLocal: openOutsideInterval.fromLocal ?? null,
+		toLocal: null,
+
+		fromUtc: openOutsideInterval.fromUtc ?? null,
+		toUtc: null,
+
+		minutes: null,
+
+		source: openOutsideInterval.source ?? "directionalPunchState",
+	};
 }
 
-function sumMinutes(items) {
-	return items.reduce((total, item) => {
-		const minutes = Number(item.minutes);
+function normalizeAnomaly(anomaly) {
+	return {
+		type: "anomaly",
+		status: "open",
 
-		return Number.isFinite(minutes) ? total + minutes : total;
-	}, 0);
+		code: anomaly.code ?? "unknownPresenceAnomaly",
+		message: anomaly.message ?? null,
+
+		at: formatLocalDateTimeToTime(anomaly.atLocal),
+		atLocal: anomaly.atLocal ?? null,
+		atUtc: anomaly.atUtc ?? null,
+
+		previousState: anomaly.previousState ?? null,
+		currentState: anomaly.currentState ?? null,
+
+		punch: anomaly.punch ?? null,
+	};
 }
 
-function buildState({ currentState, openInsideSession, history }) {
+function buildHistory({
+	insideSessions,
+	breaks,
+	openInsideSession,
+	openBreak,
+	anomalies,
+}) {
+	return [
+		...insideSessions,
+		...breaks,
+		...(openInsideSession ? [openInsideSession] : []),
+		...(openBreak ? [openBreak] : []),
+		...anomalies,
+	].sort((left, right) => parseEventSortTime(left) - parseEventSortTime(right));
+}
+
+function buildState({ currentState, openInsideSession, openBreak, history }) {
 	if (currentState === "inside") {
 		return {
 			current: "inside",
 			since: openInsideSession?.from ?? null,
 			sinceLocal: openInsideSession?.fromLocal ?? null,
 			sinceUtc: openInsideSession?.fromUtc ?? null,
-			openSession: openInsideSession,
+			open: openInsideSession,
 		};
 	}
 
 	if (currentState === "outside") {
-		const lastBreak = [...history]
-			.reverse()
-			.find((item) => item.type === "break");
+		const latestBreak =
+			openBreak ||
+			[...history].reverse().find((item) => item.type === "break") ||
+			null;
 
 		return {
 			current: "outside",
-			since: lastBreak?.from ?? null,
-			sinceLocal: lastBreak?.fromLocal ?? null,
-			sinceUtc: lastBreak?.fromUtc ?? null,
-			openSession: null,
+			since: latestBreak?.from ?? null,
+			sinceLocal: latestBreak?.fromLocal ?? null,
+			sinceUtc: latestBreak?.fromUtc ?? null,
+			open: openBreak,
 		};
 	}
 
@@ -149,76 +218,44 @@ function buildState({ currentState, openInsideSession, history }) {
 		since: null,
 		sinceLocal: null,
 		sinceUtc: null,
-		openSession: null,
-	};
-}
-
-function buildAvailability(estimate, clusters) {
-	if (!estimate) {
-		return {
-			available: false,
-			reason: "notComputed",
-		};
-	}
-
-	if (clusters?.mode !== "directionalOnly") {
-		return {
-			available: false,
-			reason: "notDirectionalOnlyEstimate",
-		};
-	}
-
-	return {
-		available: true,
-		reason: null,
+		open: null,
 	};
 }
 
 function buildRawPunchAudit(clusters) {
-	const rawPunches = clusters?.rawLogicalPunches;
+	const punches = clusters?.rawLogicalPunches;
 
-	if (!Array.isArray(rawPunches)) return [];
+	if (!Array.isArray(punches)) return [];
 
-	return rawPunches.map((punch) => ({
-		at: formatClusterLocalTime(punch.atLocal),
+	return punches.map((punch) => ({
+		at: formatLocalDateTimeToTime(punch.atLocal),
 		atLocal: punch.atLocal ?? null,
 		atUtc: punch.atUtc ?? null,
+
 		punchState: punch.punchState ?? null,
+		punchStates: punch.punchStates ?? [],
+
 		identifiers: punch.identifiers ?? [],
 		rawRowCount: punch.rawRowCount ?? null,
 	}));
 }
 
+/**
+ * Serialize stored AttendancePresenceEstimate as the public API "presence".
+ *
+ * DB/model name may still say "PresenceEstimate" during development.
+ * API shape should say "presence" because the data is directional state/history.
+ */
 export function serializeAttendancePresenceEstimate(estimate) {
 	if (!estimate) return null;
 
 	const clusters = estimate.clusters || {};
 
-	const availability = buildAvailability(estimate, clusters);
-
-	if (!availability.available) {
-		return {
-			id: estimate.id,
-			available: false,
-			reason: availability.reason,
-
-			confidence: estimate.confidence,
-			flags: estimate.flags ?? [],
-
-			audit: {
-				algorithmVersion: estimate.algorithmVersion,
-				inputHash: estimate.inputHash,
-				computedAt: formatDateTime(estimate.computedAt),
-				updatedAt: formatDateTime(estimate.updatedAt),
-			},
-		};
-	}
-
 	const insideSessions = Array.isArray(clusters.insideSessions)
-		? clusters.insideSessions.map(normalizeCompletedInsideSession)
+		? clusters.insideSessions.map(normalizeInsideSession)
 		: [];
 
-	const outsideIntervals = Array.isArray(clusters.outsideIntervals)
+	const breaks = Array.isArray(clusters.outsideIntervals)
 		? clusters.outsideIntervals.map(normalizeBreakInterval)
 		: [];
 
@@ -226,28 +263,37 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		clusters.openInsideSession
 	);
 
+	const openBreak = normalizeOpenOutsideInterval(clusters.openOutsideInterval);
+
+	const anomalies = Array.isArray(clusters.anomalies)
+		? clusters.anomalies.map(normalizeAnomaly)
+		: [];
+
+	const history = buildHistory({
+		insideSessions,
+		breaks,
+		openInsideSession,
+		openBreak,
+		anomalies,
+	});
+
 	const currentState =
 		clusters.currentState ||
-		(openInsideSession ? "inside" : "outside");
+		(openInsideSession ? "inside" : openBreak ? "outside" : "unknown");
 
-	const history = sortHistory([
-		...insideSessions,
-		...outsideIntervals,
-		...(openInsideSession ? [openInsideSession] : []),
-	]);
-
-	const completedInsideMinutes = sumMinutes(insideSessions);
-	const completedBreakMinutes = sumMinutes(outsideIntervals);
+	const completedInsideMinutes = sumClosedMinutes(insideSessions);
+	const completedBreakMinutes = sumClosedMinutes(breaks);
 
 	return {
 		id: estimate.id,
-		available: true,
 
+		available: true,
 		confidence: estimate.confidence,
 
 		state: buildState({
 			currentState,
 			openInsideSession,
+			openBreak,
 			history,
 		}),
 
@@ -255,30 +301,49 @@ export function serializeAttendancePresenceEstimate(estimate) {
 			completedInsideMinutes,
 			completedBreakMinutes,
 
-			estimatedInsideMinutes: estimate.estimatedInsideMinutes,
-			estimatedOutsideMinutes: completedBreakMinutes,
+			insideSessionCount: insideSessions.length,
+			breakCount: breaks.length,
+			anomalyCount: anomalies.length,
+
+			/**
+			 * Null means the employee is currently inside or the current session is open.
+			 * Do not store running live minutes in DB because it becomes stale.
+			 */
+			insideMinutes: estimate.estimatedInsideMinutes,
+
+			/**
+			 * This is the sum of completed out→in break intervals only.
+			 * If the employee is currently outside, the open break is shown in state.open/history
+			 * but not counted as completed minutes yet.
+			 */
+			breakMinutes: completedBreakMinutes,
 		},
 
 		bounds: {
 			firstPunch: formatTime(estimate.firstRawPunch),
 			lastPunch: formatTime(estimate.lastRawPunch),
 
-			start: formatTime(estimate.estimatedInsideStart),
-			end: formatTime(estimate.estimatedInsideEnd),
+			insideStart: formatTime(estimate.estimatedInsideStart),
+			insideEnd: formatTime(estimate.estimatedInsideEnd),
 		},
 
 		history,
 
-		breaks: outsideIntervals,
 		insideSessions,
+		breaks,
+		anomalies,
 
 		audit: {
-			mode: clusters.mode ?? "directionalOnly",
+			mode: clusters.mode ?? "directionalState",
 			directionCoverage: clusters.directionCoverage ?? null,
-			flags: estimate.flags ?? [],
 			rawPunches: buildRawPunchAudit(clusters),
+
+			flags: estimate.flags ?? [],
+			notes: clusters.notes ?? [],
+
 			algorithmVersion: estimate.algorithmVersion,
 			inputHash: estimate.inputHash,
+
 			computedAt: formatDateTime(estimate.computedAt),
 			updatedAt: formatDateTime(estimate.updatedAt),
 		},
