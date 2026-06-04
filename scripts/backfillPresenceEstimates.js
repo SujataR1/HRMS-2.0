@@ -15,6 +15,7 @@ const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 function readArg(name, fallback = null) {
 	const prefix = `--${name}=`;
 	const found = process.argv.find((arg) => arg.startsWith(prefix));
+
 	return found ? found.slice(prefix.length) : fallback;
 }
 
@@ -22,7 +23,7 @@ function readBooleanFlag(name) {
 	return process.argv.includes(`--${name}`);
 }
 
-function readPositiveIntArg(name, fallback, { min = 1, max = 5000 } = {}) {
+function readPositiveIntArg(name, fallback, { min = 1, max = 1000 } = {}) {
 	const value = Number(readArg(name));
 
 	if (!Number.isInteger(value)) return fallback;
@@ -46,15 +47,15 @@ function parseDayArg(name) {
 	return parsed;
 }
 
-function attendanceDateToDayKey(attendanceDate) {
-	return dayjs.utc(attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD");
+function biometricTimestampToDayKey(timestamp) {
+	return dayjs.utc(timestamp).tz(TIMEZONE).format("YYYY-MM-DD");
 }
 
 function chunkArray(items, size) {
 	const chunks = [];
 
-	for (let i = 0; i < items.length; i += size) {
-		chunks.push(items.slice(i, i + size));
+	for (let index = 0; index < items.length; index += size) {
+		chunks.push(items.slice(index, index + size));
 	}
 
 	return chunks;
@@ -76,20 +77,21 @@ async function resolveDateRange() {
 	}
 
 	const [firstRow, lastRow] = await Promise.all([
-		prisma.attendanceLog.findFirst({
+		prisma.biometricLog.findFirst({
 			orderBy: {
-				attendanceDate: "asc",
+				timestamp: "asc",
 			},
 			select: {
-				attendanceDate: true,
+				timestamp: true,
 			},
 		}),
-		prisma.attendanceLog.findFirst({
+
+		prisma.biometricLog.findFirst({
 			orderBy: {
-				attendanceDate: "desc",
+				timestamp: "desc",
 			},
 			select: {
-				attendanceDate: true,
+				timestamp: true,
 			},
 		}),
 	]);
@@ -103,39 +105,43 @@ async function resolveDateRange() {
 
 	return {
 		fromDay:
-			fromArg ||
-			dayjs.utc(firstRow.attendanceDate).tz(TIMEZONE).startOf("day"),
+			fromArg || dayjs.utc(firstRow.timestamp).tz(TIMEZONE).startOf("day"),
+
 		toDay:
-			toArg ||
-			dayjs.utc(lastRow.attendanceDate).tz(TIMEZONE).startOf("day"),
+			toArg || dayjs.utc(lastRow.timestamp).tz(TIMEZONE).startOf("day"),
 	};
 }
 
-async function fetchAttendanceEmployeeDaysForDay({ day, employeeId }) {
+async function fetchBiometricEmployeeDaysForDay({ day, employeeId }) {
 	const dayStartUTC = day.startOf("day").utc().toDate();
 	const dayEndUTC = day.endOf("day").utc().toDate();
 
-	const rows = await prisma.attendanceLog.findMany({
+	const rows = await prisma.biometricLog.findMany({
 		where: {
 			...(employeeId ? { employeeId } : {}),
-			attendanceDate: {
+			timestamp: {
 				gte: dayStartUTC,
 				lte: dayEndUTC,
 			},
 		},
 		select: {
 			employeeId: true,
-			attendanceDate: true,
+			timestamp: true,
 		},
-		orderBy: {
-			employeeId: "asc",
-		},
+		orderBy: [
+			{
+				employeeId: "asc",
+			},
+			{
+				timestamp: "asc",
+			},
+		],
 	});
 
 	const unique = new Map();
 
 	for (const row of rows) {
-		const dayKey = attendanceDateToDayKey(row.attendanceDate);
+		const dayKey = biometricTimestampToDayKey(row.timestamp);
 		const key = `${row.employeeId}_${dayKey}`;
 
 		if (!unique.has(key)) {
@@ -149,57 +155,13 @@ async function fetchAttendanceEmployeeDaysForDay({ day, employeeId }) {
 	return Array.from(unique.values());
 }
 
-async function removeExistingEstimateDays(employeeDays) {
-	if (!employeeDays.length) return [];
-
-	const employeeIds = Array.from(
-		new Set(employeeDays.map((item) => item.employeeId))
-	);
-
-	const attendanceDates = Array.from(
-		new Set(
-			employeeDays.map((item) =>
-				dayjs.tz(item.date, TIMEZONE).startOf("day").utc().toISOString()
-			)
-		)
-	).map((iso) => new Date(iso));
-
-	const existing = await prisma.attendancePresenceEstimate.findMany({
-		where: {
-			employeeId: {
-				in: employeeIds,
-			},
-			attendanceDate: {
-				in: attendanceDates,
-			},
-		},
-		select: {
-			employeeId: true,
-			attendanceDate: true,
-		},
-	});
-
-	const existingKeys = new Set(
-		existing.map((estimate) => {
-			const dayKey = attendanceDateToDayKey(estimate.attendanceDate);
-			return `${estimate.employeeId}_${dayKey}`;
-		})
-	);
-
-	return employeeDays.filter((item) => {
-		const key = `${item.employeeId}_${item.date}`;
-		return !existingKeys.has(key);
-	});
-}
-
 async function main() {
-	const batchSize = readPositiveIntArg("batch-size", 100, {
+	const batchSize = readPositiveIntArg("batch-size", 50, {
 		min: 1,
-		max: 1000,
+		max: 500,
 	});
 
 	const dryRun = readBooleanFlag("dry-run");
-	const onlyMissing = readBooleanFlag("only-missing");
 	const employeeId = readArg("employee-id");
 
 	const { fromDay, toDay } = await resolveDateRange();
@@ -207,33 +169,42 @@ async function main() {
 	if (!fromDay || !toDay) {
 		console.log(
 			JSON.stringify({
-				job: "backfillPresenceEstimates",
+				job: "generatePresenceBreakData",
 				status: "nothing-to-do",
-				reason: "No AttendanceLog rows found",
+				reason: "No BiometricLog rows found",
 			})
 		);
+
 		return;
 	}
 
 	console.log(
 		JSON.stringify({
-			job: "backfillPresenceEstimates",
+			job: "generatePresenceBreakData",
 			mode: dryRun ? "dry-run" : "write",
-			source: "AttendanceLog",
+			source: "BiometricLog employee-days",
 			timezone: TIMEZONE,
 			from: fromDay.format("YYYY-MM-DD"),
 			to: toDay.format("YYYY-MM-DD"),
 			employeeId: employeeId || null,
 			batchSize,
-			onlyMissing,
+			behavior: {
+				generates: "directional presence + inside sessions + break intervals",
+				usesRawBiometricLogs: true,
+				usesAttendanceLogAsSource: false,
+				usesBreakPolicy: false,
+				usesEnvEstimatorKnobs: false,
+				usesClustering: false,
+				deletesStaleRows: false,
+				skipsWhenPunchStateMissingOrConflicting: true,
+			},
 		})
 	);
 
 	let scannedDays = 0;
 	let candidateEmployeeDays = 0;
-	let processed = 0;
-	let upserted = 0;
-	let skippedExisting = 0;
+	let processedEmployeeDays = 0;
+	let upsertedPresenceRows = 0;
 
 	for (
 		let day = fromDay.clone();
@@ -242,28 +213,22 @@ async function main() {
 	) {
 		scannedDays += 1;
 
-		let employeeDays = await fetchAttendanceEmployeeDaysForDay({
+		const employeeDays = await fetchBiometricEmployeeDaysForDay({
 			day,
 			employeeId,
 		});
 
-		const originalCount = employeeDays.length;
-		candidateEmployeeDays += originalCount;
-
-		if (onlyMissing && employeeDays.length) {
-			employeeDays = await removeExistingEstimateDays(employeeDays);
-			skippedExisting += originalCount - employeeDays.length;
-		}
+		candidateEmployeeDays += employeeDays.length;
 
 		if (!employeeDays.length) {
 			console.log(
 				JSON.stringify({
 					day: day.format("YYYY-MM-DD"),
-					candidateEmployeeDays: originalCount,
-					toProcess: 0,
-					status: "skipped",
+					candidateEmployeeDays: 0,
+					status: "skipped-no-biometric-days",
 				})
 			);
+
 			continue;
 		}
 
@@ -272,23 +237,22 @@ async function main() {
 		console.log(
 			JSON.stringify({
 				day: day.format("YYYY-MM-DD"),
-				candidateEmployeeDays: originalCount,
-				toProcess: employeeDays.length,
+				candidateEmployeeDays: employeeDays.length,
 				chunks: chunks.length,
 				status: dryRun ? "dry-run" : "processing",
 			})
 		);
 
-		for (let i = 0; i < chunks.length; i += 1) {
-			const chunk = chunks[i];
+		for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex += 1) {
+			const chunk = chunks[chunkIndex];
 
 			if (dryRun) {
-				processed += chunk.length;
+				processedEmployeeDays += chunk.length;
 
 				console.log(
 					JSON.stringify({
 						day: day.format("YYYY-MM-DD"),
-						chunk: i + 1,
+						chunk: chunkIndex + 1,
 						chunkSize: chunk.length,
 						status: "dry-run",
 					})
@@ -301,16 +265,17 @@ async function main() {
 				employeeDays: chunk,
 			});
 
-			processed += result.processed;
-			upserted += result.upserted;
+			processedEmployeeDays += result.processed;
+			upsertedPresenceRows += result.upserted;
 
 			console.log(
 				JSON.stringify({
 					day: day.format("YYYY-MM-DD"),
-					chunk: i + 1,
+					chunk: chunkIndex + 1,
 					chunkSize: chunk.length,
 					processed: result.processed,
-					upserted: result.upserted,
+					upsertedPresenceRows: result.upserted,
+					skippedOrUnchanged: result.processed - result.upserted,
 					status: "done",
 				})
 			);
@@ -319,13 +284,15 @@ async function main() {
 
 	console.log(
 		JSON.stringify({
-			job: "backfillPresenceEstimates",
+			job: "generatePresenceBreakData",
 			status: "complete",
+			source: "BiometricLog",
 			scannedDays,
 			candidateEmployeeDays,
-			processed,
-			upserted,
-			skippedExisting,
+			processedEmployeeDays,
+			upsertedPresenceRows,
+			note:
+				"Skipped/unchanged employee-days either had missing/conflicting punchState or no eligible directional presence row was produced.",
 		})
 	);
 }
@@ -335,7 +302,7 @@ try {
 } catch (error) {
 	console.error(
 		JSON.stringify({
-			job: "backfillPresenceEstimates",
+			job: "generatePresenceBreakData",
 			status: "failed",
 			message: error.message,
 			stack: error.stack,
