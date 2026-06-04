@@ -134,6 +134,10 @@ import employeeRequestAPasswordResetRoute from "./src/employee/secondary-authent
 import employeeResetPasswordRoute from "./src/employee/secondary-authentication/routes/employeeResetPasswordRoute.js";
 import employeeVerify2FAAndLoginRoute from "./src/employee/secondary-authentication/routes/employeeVerify2FAAndLoginRoute.js";
 
+import websocket from "@fastify/websocket";
+import employeeNotificationRoutes from "#src/notifications/routes/employeeNotificationRoutes.js";
+import employeeNotificationSocketRoute from "#src/notifications/routes/employeeNotificationSocketRoute.js";
+
 const app = Fastify({
 	trustProxy: true,
 	disableRequestLogging: true,
@@ -150,6 +154,12 @@ const app = Fastify({
 });
 
 app.decorate("prisma", prisma);
+
+await app.register(websocket, {
+	options: {
+		maxPayload: 1024 * 1024,
+	},
+});
 
 app.register(requestMetaPlugin);
 
@@ -308,6 +318,8 @@ await app.register(hrGetTaskStatusHistoryRoute);
 await app.register(hrGetTaskTimelineRoute);
 
 await app.register(employeeLoginRoute);
+await app.register(employeeNotificationSocketRoute);
+await app.register(employeeNotificationRoutes);
 await app.register(employeeLogoutRoute);
 await app.register(employeeChangePasswordRoute);
 await app.register(employeeGetProfileRoute);

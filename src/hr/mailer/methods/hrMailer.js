@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { SMTPClient } from "emailjs";
 import fs from "fs";
 import path from "path";
+import { notifyEmployeeFromMailer } from "#src/notifications/methods/notificationService.js";
 
 dotenv.config();
 const TEMPLATES_DIR = path.resolve("src", "hr", "mailer", "templates");
@@ -180,7 +181,7 @@ export async function sendHrMail({ to, employeeId, purpose, payload = {} }) {
 			],
 		};
 
-		return await sendAssignedThenPersonal({
+		const result = await sendAssignedThenPersonal({
 			employeeId,
 			fallbackEmail: to,
 			message,
@@ -189,6 +190,23 @@ export async function sendHrMail({ to, employeeId, purpose, payload = {} }) {
 				hasAttachments: false,
 			},
 		});
+
+		try {
+			await notifyEmployeeFromMailer({
+				employeeId,
+				source: "hr-mailer",
+				purpose,
+				payload,
+			});
+		} catch (notificationErr) {
+			console.warn("⚠️ HR live notification failed after mail send", {
+				employeeId,
+				purpose,
+				error: notificationErr?.message,
+			});
+		}
+
+		return result;
 	} catch (err) {
 		console.error("🔥 Failed to send HR mail:", err);
 		throw err;
@@ -256,7 +274,7 @@ export async function sendHrEmailWithAttachments({
 			],
 		};
 
-		return await sendAssignedThenPersonal({
+		const result = await sendAssignedThenPersonal({
 			employeeId,
 			fallbackEmail: to,
 			message,
@@ -265,6 +283,29 @@ export async function sendHrEmailWithAttachments({
 				hasAttachments: safeAttachments.length > 0,
 			},
 		});
+
+		try {
+			await notifyEmployeeFromMailer({
+				employeeId,
+				source: "hr-mailer",
+				purpose,
+				payload: {
+					...payload,
+					hasAttachments: safeAttachments.length > 0,
+				},
+			});
+		} catch (notificationErr) {
+			console.warn(
+				"⚠️ HR live notification failed after mail-with-attachments send",
+				{
+					employeeId,
+					purpose,
+					error: notificationErr?.message,
+				}
+			);
+		}
+
+		return result;
 	} catch (err) {
 		console.error("🔥 Failed to send HR mail with attachments:", err);
 		throw err;
