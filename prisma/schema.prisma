@@ -100,10 +100,35 @@ model Employee {
   updatedAt       DateTime         @updatedAt
   teamMemberships TeamMembership[]
   projectMembers  ProjectMember[]
+  notifications   Notification[]
 
   @@index([assignedEmail])
   @@index([employeeId])
   @@index([id])
+}
+
+model Notification {
+  id String @id @default(uuid())
+
+  recipientEmployeeId String
+  recipient           Employee @relation(fields: [recipientEmployeeId], references: [employeeId], onDelete: Cascade)
+
+  source  String @default("system")
+  purpose String
+  title   String
+  body    String?
+  data    Json?
+
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  deliveredAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([recipientEmployeeId, isRead, createdAt])
+  @@index([recipientEmployeeId, createdAt])
+  @@index([createdAt])
 }
 
 model EmployeeDetails {
