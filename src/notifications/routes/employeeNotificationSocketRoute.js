@@ -60,6 +60,12 @@ export default fp(async function employeeNotificationSocketRoute(fastify) {
 
 					registeredEmployeeId = decoded.employeeId;
 
+                    socket.isAlive = true;
+
+                    socket.on("pong", () => {
+                        socket.isAlive = true;
+                    });
+
 					const registration = registerEmployeeNotificationSocket({
 						employeeId: registeredEmployeeId,
 						socket,

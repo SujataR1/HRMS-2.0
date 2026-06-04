@@ -119,3 +119,54 @@ export function getNotificationSocketRegistryStats() {
 		employees,
 	};
 }
+
+export function startNotificationSocketHeartbeat({
+	intervalMs = 30000,
+	logger = console,
+} = {}) {
+	const timer = setInterval(() => {
+		for (const [employeeId, sockets] of socketsByEmployeeId.entries()) {
+			for (const socket of Array.from(sockets)) {
+				if (!isSocketOpen(socket)) {
+					unregisterEmployeeNotificationSocket(socket);
+					continue;
+				}
+
+				if (socket.isAlive === false) {
+					unregisterEmployeeNotificationSocket(socket);
+
+					try {
+						socket.terminate();
+					} catch {
+						// already gone
+					}
+
+					continue;
+				}
+
+				socket.isAlive = false;
+
+				try {
+					socket.ping();
+				} catch (err) {
+					unregisterEmployeeNotificationSocket(socket);
+
+					try {
+						socket.terminate();
+					} catch {
+						// already gone
+					}
+
+					logger.warn?.(
+						{ err, employeeId },
+						"Notification socket ping failed"
+					);
+				}
+			}
+		}
+	}, intervalMs);
+
+	timer.unref?.();
+
+	return timer;
+}

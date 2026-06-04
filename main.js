@@ -137,6 +137,7 @@ import employeeVerify2FAAndLoginRoute from "./src/employee/secondary-authenticat
 import websocket from "@fastify/websocket";
 import employeeNotificationRoutes from "#src/notifications/routes/employeeNotificationRoutes.js";
 import employeeNotificationSocketRoute from "#src/notifications/routes/employeeNotificationSocketRoute.js";
+import { startNotificationSocketHeartbeat } from "#src/notifications/methods/notificationSocketStore.js";
 
 const app = Fastify({
 	trustProxy: true,
@@ -351,6 +352,8 @@ async function shutdown(signal) {
 
 	stopExpiredSessionCleanupJob();
 
+	clearInterval(notificationSocketHeartbeat);
+
 	console.log("🧹 Flushing audit log queue...");
 	await gracefulAuditShutdown();
 
@@ -372,6 +375,11 @@ try {
 	await app.listen({ port: PORT, host: HOST });
 
 	startExpiredSessionCleanupJob({
+		logger: app.log,
+	});
+
+	const notificationSocketHeartbeat = startNotificationSocketHeartbeat({
+		intervalMs: 30000,
 		logger: app.log,
 	});
 
