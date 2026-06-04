@@ -88,7 +88,7 @@ export async function employeeGetAttendance({
 	}
 
 	let logs = [];
-	let estimateMap = new Map();
+	let presenceMap = new Map();
 
 	try {
 		logs = await prisma.attendanceLog.findMany({
@@ -107,7 +107,7 @@ export async function employeeGetAttendance({
 			},
 		});
 
-		const estimates = logs.length
+		const presenceRows = logs.length
 			? await prisma.attendancePresenceEstimate.findMany({
 					where: {
 						employeeId,
@@ -118,18 +118,19 @@ export async function employeeGetAttendance({
 				})
 			: [];
 
-		estimateMap = buildPresenceEstimateMap(estimates);
+		presenceMap = buildPresenceEstimateMap(presenceRows);
 	} catch (err) {
 		throw new Error("Database error: " + err.message);
 	}
 
 	return logs.map((log) => {
-		const estimate = estimateMap.get(
+		const presenceRow = presenceMap.get(
 			presenceEstimateDateKey(log.attendanceDate)
 		);
 
 		return {
 			id: log.id,
+			employeeId,
 			date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
 			day: log.attendanceDay,
 
@@ -146,7 +147,7 @@ export async function employeeGetAttendance({
 			flags: log.flags,
 			comments: log.comments,
 
-			presenceEstimate: serializeAttendancePresenceEstimate(estimate),
+			presence: serializeAttendancePresenceEstimate(presenceRow),
 		};
 	});
 }

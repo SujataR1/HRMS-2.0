@@ -11,17 +11,20 @@ import {
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
 /**
- * Fetch attendance logs for a given employee (or date range).
+ * Fetch attendance logs for a given employee.
  *
  * @param {Object} params
- * @param {string} params.authHeader     – "Bearer <token>"
- * @param {string} params.employeeId     – The employee’s UUID
- * @param {string} [params.date]         – "YYYY-MM-DD"
- * @param {string} [params.monthYear]    – "MM-YYYY"
- * @param {string} [params.year]         – "YYYY"
+ * @param {string} params.authHeader  - "Bearer <token>"
+ * @param {string} params.employeeId  - Employee ID
+ * @param {string} [params.date]      - "YYYY-MM-DD"
+ * @param {string} [params.monthYear] - "MM-YYYY"
+ * @param {string} [params.year]      - "YYYY"
+ *
+ * @returns {Promise<Array>} Attendance entries
  */
 export async function hrGetEmployeeAttendance({
 	authHeader,
@@ -30,21 +33,20 @@ export async function hrGetEmployeeAttendance({
 	monthYear = null,
 	year = null,
 }) {
-	if (!authHeader) throw new Error("Missing authorization token");
-	if (!employeeId) throw new Error("employeeId is required");
+	if (!authHeader) {
+		throw new Error("Missing authorization token");
+	}
 
-	/* -------------------------------------------------- *
-	 * 1️⃣  Verify HR session
-	 * -------------------------------------------------- */
-	// try {
+	if (!employeeId) {
+		throw new Error("employeeId is required");
+	}
+
+	try {
 		await verifyHrJWT(authHeader);
-	// } catch {
-	// 	throw new Error("Invalid or expired HR token");
-	// }
+	} catch {
+		throw new Error("Invalid or expired HR token");
+	}
 
-	/* -------------------------------------------------- *
-	 * 2️⃣  Derive UTC date range (if any)
-	 * -------------------------------------------------- */
 	let startDateUTC = null;
 	let endDateUTC = null;
 
@@ -52,24 +54,34 @@ export async function hrGetEmployeeAttendance({
 		if (date) {
 			const istStart = dayjs.tz(date, TIMEZONE).startOf("day");
 			const istEnd = istStart.endOf("day");
+
 			startDateUTC = istStart.utc().toDate();
 			endDateUTC = istEnd.utc().toDate();
 		} else if (monthYear) {
-			const [month, yearVal] = monthYear.split("-").map(Number);
-			if (!month || !yearVal || month < 1 || month > 12)
+			const [month, yearValue] = monthYear.split("-").map(Number);
+
+			if (!month || !yearValue || month < 1 || month > 12) {
 				throw new Error("Invalid monthYear format");
+			}
+
 			const istStart = dayjs
-				.tz(`${yearVal}-${String(month).padStart(2, "0")}-01`, TIMEZONE)
+				.tz(`${yearValue}-${String(month).padStart(2, "0")}-01`, TIMEZONE)
 				.startOf("month");
+
 			const istEnd = istStart.endOf("month");
+
 			startDateUTC = istStart.utc().toDate();
 			endDateUTC = istEnd.utc().toDate();
 		} else if (year) {
-			const y = Number(year);
-			if (isNaN(y) || y < 1900 || y > 3000)
+			const yearValue = Number(year);
+
+			if (Number.isNaN(yearValue) || yearValue < 1900 || yearValue > 3000) {
 				throw new Error("Invalid year format");
-			const istStart = dayjs.tz(`${y}-01-01`, TIMEZONE).startOf("year");
-			const istEnd = dayjs.tz(`${y}-12-31`, TIMEZONE).endOf("day");
+			}
+
+			const istStart = dayjs.tz(`${yearValue}-01-01`, TIMEZONE).startOf("year");
+			const istEnd = dayjs.tz(`${yearValue}-12-31`, TIMEZONE).endOf("day");
+
 			startDateUTC = istStart.utc().toDate();
 			endDateUTC = istEnd.utc().toDate();
 		}
@@ -77,11 +89,8 @@ export async function hrGetEmployeeAttendance({
 		throw new Error("Invalid date input: " + err.message);
 	}
 
-	/* -------------------------------------------------- *
-	 * 3️⃣  Query Prisma for logs
-	 * -------------------------------------------------- */
-	let logs;
-	let estimateMap = new Map();
+	let logs = [];
+	let presenceMap = new Map();
 
 	try {
 		logs = await prisma.attendanceLog.findMany({
@@ -95,10 +104,12 @@ export async function hrGetEmployeeAttendance({
 						},
 					}),
 			},
-			orderBy: { attendanceDate: "asc" },
+			orderBy: {
+				attendanceDate: "asc",
+			},
 		});
 
-		const estimates = logs.length
+		const presenceRows = logs.length
 			? await prisma.attendancePresenceEstimate.findMany({
 					where: {
 						employeeId,
@@ -109,18 +120,15 @@ export async function hrGetEmployeeAttendance({
 				})
 			: [];
 
-		estimateMap = buildPresenceEstimateMap(estimates);
+		presenceMap = buildPresenceEstimateMap(presenceRows);
 	} catch (err) {
 		throw new Error(
 			"Database error while fetching attendance logs: " + err.message
 		);
 	}
 
-	/* -------------------------------------------------- *
-	 * 4️⃣  Format + return
-	 * -------------------------------------------------- */
 	return logs.map((log) => {
-		const estimate = estimateMap.get(
+		const presenceRow = presenceMap.get(
 			presenceEstimateDateKey(log.attendanceDate)
 		);
 
@@ -129,17 +137,21 @@ export async function hrGetEmployeeAttendance({
 			employeeId: log.employeeId,
 			day: log.attendanceDay,
 			date: dayjs.utc(log.attendanceDate).tz(TIMEZONE).format("YYYY-MM-DD"),
+
 			punchIn: log.punchIn
 				? dayjs.utc(log.punchIn).tz(TIMEZONE).format("hh:mm:ss a")
 				: null,
+
 			punchOut: log.punchOut
 				? dayjs.utc(log.punchOut).tz(TIMEZONE).format("hh:mm:ss a")
 				: null,
+
 			durationInOfficeMinutes: log.durationInOfficeMinutes,
 			status: log.status,
 			flags: log.flags,
 			comments: log.comments,
-			presenceEstimate: serializeAttendancePresenceEstimate(estimate),
+
+			presence: serializeAttendancePresenceEstimate(presenceRow),
 		};
 	});
 }
