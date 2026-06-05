@@ -12,7 +12,7 @@ dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 8;
+const ALGORITHM_VERSION = 9;
 const PRESENCE_RECORD_WRITE_CONCURRENCY = 4;
 
 function toAttendanceDate(istDay) {
@@ -292,19 +292,6 @@ function buildOpenInsideSession(punch) {
 	};
 }
 
-function buildOpenOutsideInterval(punch) {
-	return {
-		fromUtc: punch.timestamp.utc().toISOString(),
-		fromLocal: punch.timestamp.format("YYYY-MM-DD HH:mm:ss"),
-		toUtc: null,
-		toLocal: null,
-		minutes: null,
-		status: "open",
-		source: "directionalPunchState",
-		selectionRule: "latest state is outside",
-	};
-}
-
 function buildAnomaly({
 	code,
 	atPunch,
@@ -332,9 +319,12 @@ function buildDirectionalStateHistory(punches) {
 	let currentState = null;
 	let openInsidePunch = null;
 	let openOutsidePunch = null;
+	let lastDirectionalPunch = null;
 
 	for (const punch of punches) {
 		if (punch.punchState === "in") {
+			lastDirectionalPunch = punch;
+
 			if (currentState === null) {
 				currentState = "inside";
 				openInsidePunch = punch;
@@ -350,26 +340,37 @@ function buildDirectionalStateHistory(punches) {
 						previousState: "inside",
 						currentState: "inside",
 						message:
-							"In punch occurred while already inside. Possible missed out/in or accidental repeated punch.",
+							"In punch occurred while already inside. Punch was recorded as anomaly and ignored for state mutation.",
 					})
 				);
 
-				openInsidePunch = punch;
-				openOutsidePunch = null;
 				continue;
 			}
 
 			if (currentState === "outside") {
-				const outsideInterval = buildOutsideInterval({
-					fromPunch: openOutsidePunch,
-					toPunch: punch,
-				});
+				if (openOutsidePunch) {
+					const outsideInterval = buildOutsideInterval({
+						fromPunch: openOutsidePunch,
+						toPunch: punch,
+					});
 
-				if (outsideInterval.minutes <= 0) {
-					return null;
+					if (outsideInterval.minutes > 0) {
+						outsideIntervals.push(outsideInterval);
+					} else {
+						anomalies.push(
+							buildAnomaly({
+								code: "invalidOutsideIntervalOrder",
+								atPunch: punch,
+								previousState: "outside",
+								currentState: "outside",
+								message:
+									"Out→in interval was not positive. In punch was recorded as anomaly and ignored for state mutation.",
+							})
+						);
+
+						continue;
+					}
 				}
-
-				outsideIntervals.push(outsideInterval);
 
 				currentState = "inside";
 				openInsidePunch = punch;
@@ -380,21 +381,20 @@ function buildDirectionalStateHistory(punches) {
 		}
 
 		if (punch.punchState === "out") {
+			lastDirectionalPunch = punch;
+
 			if (currentState === null) {
 				anomalies.push(
 					buildAnomaly({
 						code: "initialOutWithoutIn",
 						atPunch: punch,
 						previousState: null,
-						currentState: "outside",
+						currentState: null,
 						message:
-							"First directional punch is out. Initial in punch is missing.",
+							"First directional punch is out. Punch was recorded as anomaly and ignored for state mutation.",
 					})
 				);
 
-				currentState = "outside";
-				openOutsidePunch = punch;
-				openInsidePunch = null;
 				continue;
 			}
 
@@ -406,23 +406,47 @@ function buildDirectionalStateHistory(punches) {
 						previousState: "outside",
 						currentState: "outside",
 						message:
-							"Out punch occurred while already outside. Possible missed in/out or accidental repeated punch.",
+							"Out punch occurred while already outside. Punch was recorded as anomaly and ignored for state mutation.",
 					})
 				);
 
-				openOutsidePunch = punch;
-				openInsidePunch = null;
 				continue;
 			}
 
 			if (currentState === "inside") {
+				if (!openInsidePunch) {
+					anomalies.push(
+						buildAnomaly({
+							code: "outWithoutOpenInsideAnchor",
+							atPunch: punch,
+							previousState: "inside",
+							currentState: "inside",
+							message:
+								"Out punch occurred while state was inside, but no inside anchor existed. Punch was recorded as anomaly and ignored for state mutation.",
+						})
+					);
+
+					continue;
+				}
+
 				const insideSession = buildInsideSession({
 					fromPunch: openInsidePunch,
 					toPunch: punch,
 				});
 
 				if (insideSession.minutes <= 0) {
-					return null;
+					anomalies.push(
+						buildAnomaly({
+							code: "invalidInsideSessionOrder",
+							atPunch: punch,
+							previousState: "inside",
+							currentState: "inside",
+							message:
+								"In→out session was not positive. Punch was recorded as anomaly and ignored for state mutation.",
+						})
+					);
+
+					continue;
 				}
 
 				insideSessions.push(insideSession);
@@ -434,20 +458,26 @@ function buildDirectionalStateHistory(punches) {
 		}
 	}
 
-	const openInsideSession =
-		currentState === "inside" && openInsidePunch
-			? buildOpenInsideSession(openInsidePunch)
-			: null;
+	const currentlyIn = currentState === "inside";
 
-	const openOutsideInterval =
-		currentState === "outside" && openOutsidePunch
-			? buildOpenOutsideInterval(openOutsidePunch)
+	const openInsideSession =
+		currentlyIn && openInsidePunch
+			? buildOpenInsideSession(openInsidePunch)
 			: null;
 
 	return {
 		currentState: currentState || "unknown",
+		currentlyIn,
+		lastDirectionalPunch: lastDirectionalPunch
+			? serializePunch(lastDirectionalPunch)
+			: null,
+
 		openInsideSession,
-		openOutsideInterval,
+
+		// Intentionally never emitted.
+		// A final out means "currentlyIn=false", not "open break".
+		openOutsideInterval: null,
+
 		insideSessions,
 		outsideIntervals,
 		anomalies,
@@ -559,15 +589,11 @@ function firstUsableInsideStart({ insideSessions, openInsideSession }) {
 	return null;
 }
 
-function currentInsideEnd({ currentState, insideSessions, openOutsideInterval }) {
-	if (currentState === "inside") return null;
+function currentInsideEnd({ currentlyIn, insideSessions }) {
+	if (currentlyIn) return null;
 
 	if (insideSessions.length) {
 		return dayjs.utc(insideSessions.at(-1).toUtc).toDate();
-	}
-
-	if (openOutsideInterval?.fromUtc) {
-		return dayjs.utc(openOutsideInterval.fromUtc).toDate();
 	}
 
 	return null;
@@ -577,6 +603,8 @@ function buildClustersPayload({
 	directionCoverage,
 	rawLogicalPunches,
 	currentState,
+	currentlyIn,
+	lastDirectionalPunch,
 	openInsideSession,
 	openOutsideInterval,
 	insideSessions,
@@ -586,12 +614,21 @@ function buildClustersPayload({
 }) {
 	return {
 		mode: "directionalState",
+
+		// Stored for audit/backward compatibility only.
+		// Public API should use currentlyIn instead of exposing inside/outside state.
 		currentState,
+
+		currentlyIn,
+		lastDirectionalPunch,
 		directionCoverage,
 
 		rawLogicalPunches: rawLogicalPunches.map(serializePunch),
 
 		openInsideSession,
+
+		// Always null by design.
+		// Final out is not an open break.
 		openOutsideInterval,
 
 		insideSessions,
@@ -625,6 +662,8 @@ function buildDirectionalPresenceRecord({
 
 	const {
 		currentState,
+		currentlyIn,
+		lastDirectionalPunch,
 		openInsideSession,
 		openOutsideInterval,
 		insideSessions,
@@ -633,9 +672,7 @@ function buildDirectionalPresenceRecord({
 	} = stateHistory;
 
 	const completedInsideMinutes = sumClosedMinutes(insideSessions);
-
-	const estimatedInsideMinutes =
-		currentState === "inside" ? null : completedInsideMinutes;
+	const estimatedInsideMinutes = currentlyIn ? null : completedInsideMinutes;
 
 	const estimatedInsideStart = firstUsableInsideStart({
 		insideSessions,
@@ -643,9 +680,8 @@ function buildDirectionalPresenceRecord({
 	});
 
 	const estimatedInsideEnd = currentInsideEnd({
-		currentState,
+		currentlyIn,
 		insideSessions,
-		openOutsideInterval,
 	});
 
 	const flags = Array.from(
@@ -653,11 +689,7 @@ function buildDirectionalPresenceRecord({
 			"directionalPunchStateMode",
 			"directionalStatePresenceRecord",
 			"breaksDisplayedFromDirectionalOutInPairs",
-			currentState === "inside"
-				? "openInsideSession"
-				: currentState === "outside"
-					? "openOutsideState"
-					: "unknownState",
+			currentlyIn ? "currentlyIn" : "currentlyNotIn",
 			...(usedShiftWindow ? [] : ["missingAssignedShiftSkipped"]),
 			...anomalies.map((anomaly) => anomaly.code),
 		])
@@ -683,6 +715,8 @@ function buildDirectionalPresenceRecord({
 			directionCoverage,
 			rawLogicalPunches,
 			currentState,
+			currentlyIn,
+			lastDirectionalPunch,
 			openInsideSession,
 			openOutsideInterval,
 			insideSessions,
@@ -695,9 +729,11 @@ function buildDirectionalPresenceRecord({
 				"no boundary clustering is used",
 				"no identifier side-hints are used",
 				"shift timing only selects which punches belong to this employee-day",
-				"inside sessions are direct in→out transitions",
-				"breaks are direct out→in transitions",
-				"repeated same-direction punches create anomalies and reset current state instead of inventing missing time",
+				"inside sessions are completed in→out transitions only",
+				"breaks are completed out→in transitions only",
+				"final out means currentlyIn=false; it is not emitted as an open break",
+				"anomalous punches are recorded as audit facts and ignored for state mutation",
+				"repeated same-direction punches do not replace active anchors",
 				"null/conflict punchState employee-days are skipped without DB mutation",
 			],
 		}),

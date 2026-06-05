@@ -91,7 +91,7 @@ function normalizeInsideSession(session) {
 function normalizeBreakInterval(interval) {
 	return {
 		type: "break",
-		status: interval.status ?? "closed",
+		status: "closed",
 
 		from: formatLocalDateTimeToTime(interval.fromLocal),
 		to: formatLocalDateTimeToTime(interval.toLocal),
@@ -108,54 +108,10 @@ function normalizeBreakInterval(interval) {
 	};
 }
 
-function normalizeOpenInsideSession(openInsideSession) {
-	if (!openInsideSession) return null;
-
-	return {
-		type: "inside",
-		status: "open",
-
-		from: formatLocalDateTimeToTime(openInsideSession.fromLocal),
-		to: null,
-
-		fromLocal: openInsideSession.fromLocal ?? null,
-		toLocal: null,
-
-		fromUtc: openInsideSession.fromUtc ?? null,
-		toUtc: null,
-
-		minutes: null,
-
-		source: openInsideSession.source ?? "directionalPunchState",
-	};
-}
-
-function normalizeOpenOutsideInterval(openOutsideInterval) {
-	if (!openOutsideInterval) return null;
-
-	return {
-		type: "break",
-		status: "open",
-
-		from: formatLocalDateTimeToTime(openOutsideInterval.fromLocal),
-		to: null,
-
-		fromLocal: openOutsideInterval.fromLocal ?? null,
-		toLocal: null,
-
-		fromUtc: openOutsideInterval.fromUtc ?? null,
-		toUtc: null,
-
-		minutes: null,
-
-		source: openOutsideInterval.source ?? "directionalPunchState",
-	};
-}
-
 function normalizeAnomaly(anomaly) {
 	return {
 		type: "anomaly",
-		status: "open",
+		status: "recorded",
 
 		code: anomaly.code ?? "unknownPresenceAnomaly",
 		message: anomaly.message ?? null,
@@ -174,51 +130,18 @@ function normalizeAnomaly(anomaly) {
 function buildHistory({
 	insideSessions,
 	breaks,
-	openInsideSession,
-	openBreak,
 	anomalies,
 }) {
 	return [
 		...insideSessions,
 		...breaks,
-		...(openInsideSession ? [openInsideSession] : []),
-		...(openBreak ? [openBreak] : []),
 		...anomalies,
 	].sort((left, right) => parseEventSortTime(left) - parseEventSortTime(right));
 }
 
-function buildState({ currentState, openInsideSession, openBreak, history }) {
-	if (currentState === "inside") {
-		return {
-			current: "inside",
-			since: openInsideSession?.from ?? null,
-			sinceLocal: openInsideSession?.fromLocal ?? null,
-			sinceUtc: openInsideSession?.fromUtc ?? null,
-			open: openInsideSession,
-		};
-	}
-
-	if (currentState === "outside") {
-		const latestBreak =
-			openBreak ||
-			[...history].reverse().find((item) => item.type === "break") ||
-			null;
-
-		return {
-			current: "outside",
-			since: latestBreak?.from ?? null,
-			sinceLocal: latestBreak?.fromLocal ?? null,
-			sinceUtc: latestBreak?.fromUtc ?? null,
-			open: openBreak,
-		};
-	}
-
+function buildState({ currentlyIn }) {
 	return {
-		current: "unknown",
-		since: null,
-		sinceLocal: null,
-		sinceUtc: null,
-		open: null,
+		currentlyIn,
 	};
 }
 
@@ -243,8 +166,13 @@ function buildRawPunchAudit(clusters) {
 /**
  * Serialize stored AttendancePresenceEstimate as the public API "presence".
  *
- * DB/model name may still say "PresenceEstimate" during development.
- * API shape should say "presence" because the data is directional state/history.
+ * Public presence contract:
+ * - completed inside sessions are exposed as closed chunks
+ * - completed breaks are exposed as closed chunks
+ * - anomalies are exposed as audit events
+ * - open inside session is not exposed as a completed chunk
+ * - open outside interval is never exposed as an open break
+ * - live state exposes only whether the employee is currently in
  */
 export function serializeAttendancePresenceEstimate(estimate) {
 	if (!estimate) return null;
@@ -259,29 +187,20 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		? clusters.outsideIntervals.map(normalizeBreakInterval)
 		: [];
 
-	const openInsideSession = normalizeOpenInsideSession(
-		clusters.openInsideSession
-	);
-
-	const rawOpenBreak = normalizeOpenOutsideInterval(clusters.openOutsideInterval);
-
 	const anomalies = Array.isArray(clusters.anomalies)
 		? clusters.anomalies.map(normalizeAnomaly)
 		: [];
 
-	const openBreak = rawOpenBreak && anomalies.length > 0 ? rawOpenBreak : null;
+	const currentlyIn =
+		typeof clusters.currentlyIn === "boolean"
+			? clusters.currentlyIn
+			: Boolean(clusters.openInsideSession);
 
 	const history = buildHistory({
 		insideSessions,
 		breaks,
-		openInsideSession,
-		openBreak,
 		anomalies,
 	});
-
-	const currentState =
-		clusters.currentState ||
-		(openInsideSession ? "inside" : rawOpenBreak ? "outside" : "unknown");
 
 	const completedInsideMinutes = sumClosedMinutes(insideSessions);
 	const completedBreakMinutes = sumClosedMinutes(breaks);
@@ -293,13 +212,12 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		confidence: estimate.confidence,
 
 		state: buildState({
-			currentState,
-			openInsideSession,
-			openBreak,
-			history,
+			currentlyIn,
 		}),
 
 		totals: {
+			currentlyIn,
+
 			completedInsideMinutes,
 			completedBreakMinutes,
 
@@ -328,6 +246,11 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		audit: {
 			mode: clusters.mode ?? "directionalState",
 			directionCoverage: clusters.directionCoverage ?? null,
+
+			currentState: clusters.currentState ?? null,
+			currentlyIn,
+			lastDirectionalPunch: clusters.lastDirectionalPunch ?? null,
+
 			rawPunches: buildRawPunchAudit(clusters),
 
 			flags: estimate.flags ?? [],
