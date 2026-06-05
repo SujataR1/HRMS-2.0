@@ -12,7 +12,7 @@ dayjs.extend(isBetween);
 
 const TIMEZONE = process.env.TIMEZONE || "Asia/Kolkata";
 
-const ALGORITHM_VERSION = 9;
+const ALGORITHM_VERSION = 10;
 const PRESENCE_RECORD_WRITE_CONCURRENCY = 4;
 
 function toAttendanceDate(istDay) {
@@ -311,6 +311,14 @@ function buildAnomaly({
 	};
 }
 
+function isForwardTransition({ fromPunch, toPunch }) {
+	return Boolean(
+		fromPunch &&
+			toPunch &&
+			toPunch.timestamp.isAfter(fromPunch.timestamp)
+	);
+}
+
 function buildDirectionalStateHistory(punches) {
 	const insideSessions = [];
 	const outsideIntervals = [];
@@ -348,29 +356,34 @@ function buildDirectionalStateHistory(punches) {
 			}
 
 			if (currentState === "outside") {
-				if (openOutsidePunch) {
-					const outsideInterval = buildOutsideInterval({
-						fromPunch: openOutsidePunch,
-						toPunch: punch,
-					});
-
-					if (outsideInterval.minutes > 0) {
-						outsideIntervals.push(outsideInterval);
-					} else {
-						anomalies.push(
-							buildAnomaly({
-								code: "invalidOutsideIntervalOrder",
-								atPunch: punch,
-								previousState: "outside",
-								currentState: "outside",
-								message:
-									"Out→in interval was not positive. In punch was recorded as anomaly and ignored for state mutation.",
-							})
-						);
-
-						continue;
-					}
+				if (!openOutsidePunch) {
+					currentState = "inside";
+					openInsidePunch = punch;
+					openOutsidePunch = null;
+					continue;
 				}
+
+				if (!isForwardTransition({ fromPunch: openOutsidePunch, toPunch: punch })) {
+					anomalies.push(
+						buildAnomaly({
+							code: "invalidOutsideIntervalOrder",
+							atPunch: punch,
+							previousState: "outside",
+							currentState: "outside",
+							message:
+								"Out→in interval was not chronologically forward. In punch was recorded as anomaly and ignored for state mutation.",
+						})
+					);
+
+					continue;
+				}
+
+				const outsideInterval = buildOutsideInterval({
+					fromPunch: openOutsidePunch,
+					toPunch: punch,
+				});
+
+				outsideIntervals.push(outsideInterval);
 
 				currentState = "inside";
 				openInsidePunch = punch;
@@ -429,12 +442,7 @@ function buildDirectionalStateHistory(punches) {
 					continue;
 				}
 
-				const insideSession = buildInsideSession({
-					fromPunch: openInsidePunch,
-					toPunch: punch,
-				});
-
-				if (insideSession.minutes <= 0) {
+				if (!isForwardTransition({ fromPunch: openInsidePunch, toPunch: punch })) {
 					anomalies.push(
 						buildAnomaly({
 							code: "invalidInsideSessionOrder",
@@ -442,12 +450,17 @@ function buildDirectionalStateHistory(punches) {
 							previousState: "inside",
 							currentState: "inside",
 							message:
-								"In→out session was not positive. Punch was recorded as anomaly and ignored for state mutation.",
+								"In→out session was not chronologically forward. Punch was recorded as anomaly and ignored for state mutation.",
 						})
 					);
 
 					continue;
 				}
+
+				const insideSession = buildInsideSession({
+					fromPunch: openInsidePunch,
+					toPunch: punch,
+				});
 
 				insideSessions.push(insideSession);
 
@@ -731,6 +744,7 @@ function buildDirectionalPresenceRecord({
 				"shift timing only selects which punches belong to this employee-day",
 				"inside sessions are completed in→out transitions only",
 				"breaks are completed out→in transitions only",
+				"sub-minute valid directional transitions are accepted with minutes=0",
 				"final out means currentlyIn=false; it is not emitted as an open break",
 				"anomalous punches are recorded as audit facts and ignored for state mutation",
 				"repeated same-direction punches do not replace active anchors",
