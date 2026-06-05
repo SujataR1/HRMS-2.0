@@ -54,6 +54,7 @@ import hrEditAnAttendanceEntryRoute from "./src/hr/attendance/routes/hrEditAnAtt
 import hrMakeOrRefreshEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrMakeOrRefreshEmployeeAttendanceRoute.js";
 import hrGenerateAndSendMonthlyReportsRoute from "./src/hr/attendance/routes/hrGenerateAndSendMonthlyReportsRoute.js";
 import hrGetEmployeeAttendanceRoute from "./src/hr/attendance/routes/hrGetEmployeeAttendanceRoute.js";
+import hrGetEmployeeDayPunchesRoute from "./src/hr/attendance/routes/hrGetEmployeeDayPunchesRoute.js";
 import hrLoginRoute from "./src/hr/auth/routes/hrLoginRoute.js";
 import hrResendOTPRoute from "./src/hr/otp/routes/hrResendOTPRoute.js";
 import hrLogoutRoute from "./src/hr/auth/routes/hrLogoutRoute.js";
@@ -116,6 +117,7 @@ import hrGetTaskStatusHistoryRoute from "./src/hr/project-management/routes/hrGe
 import hrGetTaskTimelineRoute from "./src/hr/project-management/routes/hrGetTaskTimelineRoute.js";
 
 import employeeGetAttendanceRoute from "./src/employee/attendance/routes/employeeGetAttendanceRoute.js";
+import employeeGetDayPunchesRoute from "./src/employee/attendance/routes/employeeGetDayPunchesRoute.js";
 import employeeMakeOrRefreshAttendanceRoute from "./src/employee/attendance/routes/employeeMakeOrRefreshAttendanceRoute.js";
 import employeeGenerateAndSendMonthlyReportsRoute from "./src/employee/attendance/routes/employeeGenerateAndSendMonthlyReportsRoute.js";
 import employeeLoginRoute from "./src/employee/auth/routes/employeeLoginRoute.js";
