@@ -263,11 +263,13 @@ export function serializeAttendancePresenceEstimate(estimate) {
 		clusters.openInsideSession
 	);
 
-	const openBreak = normalizeOpenOutsideInterval(clusters.openOutsideInterval);
+	const rawOpenBreak = normalizeOpenOutsideInterval(clusters.openOutsideInterval);
 
 	const anomalies = Array.isArray(clusters.anomalies)
 		? clusters.anomalies.map(normalizeAnomaly)
 		: [];
+
+	const openBreak = rawOpenBreak && anomalies.length > 0 ? rawOpenBreak : null;
 
 	const history = buildHistory({
 		insideSessions,
@@ -279,7 +281,7 @@ export function serializeAttendancePresenceEstimate(estimate) {
 
 	const currentState =
 		clusters.currentState ||
-		(openInsideSession ? "inside" : openBreak ? "outside" : "unknown");
+		(openInsideSession ? "inside" : rawOpenBreak ? "outside" : "unknown");
 
 	const completedInsideMinutes = sumClosedMinutes(insideSessions);
 	const completedBreakMinutes = sumClosedMinutes(breaks);
