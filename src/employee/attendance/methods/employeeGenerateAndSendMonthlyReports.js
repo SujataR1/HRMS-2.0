@@ -51,6 +51,17 @@ const readableFlags = {
 	payDocked: "A day's pay has been docked",
 };
 
+const internalReportFlags = new Set([
+	"directionalPunchState",
+	"missingIn",
+	"missingOut",
+	"singleExit",
+	"invalidDirectionOrder",
+]);
+
+const getReportableFlags = (flags = []) =>
+	flags.filter((flag) => !internalReportFlags.has(flag));
+
 export async function EmployeeGenerateAndSendMonthlyReports({
 	authHeader,
 	monthYear,
@@ -265,6 +276,8 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			if ((log.flags || []).includes("payDocked")) stats.payDocked++;
 			if ((log.flags || []).includes("leaveDocked")) stats.leaveDocked++;
 
+			const reportableFlags = getReportableFlags(log.flags || []);
+
 			return {
 				date: dayjs
 					.utc(log.attendanceDate)
@@ -279,8 +292,8 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 					: "-",
 				status: formatStatus(log.status),
 				flags:
-					log.flags.length > 0
-						? log.flags.map((f) => readableFlags[f] || f).join("; ")
+					reportableFlags.length > 0
+						? reportableFlags.map((f) => readableFlags[f] || f).join("; ")
 						: log.status === "holiday"
 							? (() => {
 									const dateKey = dayjs
