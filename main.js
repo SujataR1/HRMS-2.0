@@ -141,6 +141,12 @@ import employeeNotificationRoutes from "#src/notifications/routes/employeeNotifi
 import employeeNotificationSocketRoute from "#src/notifications/routes/employeeNotificationSocketRoute.js";
 import { startNotificationSocketHeartbeat } from "#src/notifications/methods/notificationSocketStore.js";
 
+// Add this line right below it:
+import {
+    startBirthdayNotificationJob,
+    stopBirthdayNotificationJob,
+} from "#src/notifications/birthday-notifications/jobs/birthdayNotificationJob.js";
+
 const app = Fastify({
 	trustProxy: true,
 	disableRequestLogging: true,
@@ -356,6 +362,7 @@ async function shutdown(signal) {
 	console.log(`🛑 ${signal} received. Stopping lifecycle jobs...`);
 
 	stopExpiredSessionCleanupJob();
+	stopBirthdayNotificationJob();
 
 	if (notificationSocketHeartbeat) {
 	clearInterval(notificationSocketHeartbeat);
@@ -384,6 +391,9 @@ try {
 
 	startExpiredSessionCleanupJob({
 		logger: app.log,
+	});
+	startBirthdayNotificationJob({
+    logger: app.log,
 	});
 
 	notificationSocketHeartbeat = startNotificationSocketHeartbeat({
