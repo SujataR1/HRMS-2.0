@@ -142,7 +142,7 @@ model EmployeeDetails {
   confirmationDate                DateTime?
   phoneNumber                     String
   emergencyContactNumber          String
-  dateOfBirth                     DateTime
+  dateOfBirth                     DateTime?
   presentAddress                  String
   permanentAddress                String
   aadhaarCardNumber               String
