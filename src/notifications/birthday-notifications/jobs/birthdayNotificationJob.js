@@ -1,41 +1,45 @@
-import { sendBirthdayNotifications } from "../methods/birthdayNotificationMethods.js";
+import { sendEmployeeMilestoneNotifications } from "../methods/birthdayNotificationMethods.js";
 
-const BIRTHDAY_NOTIFICATION_HOUR = 11;
-const BIRTHDAY_NOTIFICATION_MINUTE = 0;
+const EMPLOYEE_MILESTONE_NOTIFICATION_HOUR = 12;
+const EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE = 0;
 
 let scheduleTimer = null;
 let isRunning = false;
 let isSchedulerStopped = true;
 
-async function runBirthdayNotificationSequence({ logger }) {
+async function runEmployeeMilestoneNotificationSequence({ logger }) {
 	if (isRunning) {
-		logger?.warn?.("Birthday job execution skipped; a previous sequence run is still active.");
+		logger?.warn?.("Employee milestone job execution skipped; a previous sequence run is still active.");
 		return;
 	}
 
 	isRunning = true;
 
 	try {
-		logger?.info?.("Executing daily scheduled birthday notifications check...");
-		const result = await sendBirthdayNotifications();
+		logger?.info?.("Executing daily scheduled employee milestone notifications check...");
+		const result = await sendEmployeeMilestoneNotifications();
 		
-		if (result.employeesNotifiedCount > 0) {
-			logger?.info?.(result, "Birthday notification delivery processing finished successfully.");
+		if (
+			result.birthdayEmployeesCount > 0 ||
+			result.workAnniversaryEmployeesCount > 0 ||
+			result.failuresCount > 0
+		) {
+			logger?.info?.(result, "Employee milestone notification delivery processing finished.");
 		}
 		return result;
 	} catch (err) {
-		logger?.error?.({ err }, "Birthday notification routine failed to process.");
+		logger?.error?.({ err }, "Employee milestone notification routine failed to process.");
 	} finally {
 		isRunning = false;
 	}
 }
 
-function getNextBirthdayNotificationRunAt(fromDate = new Date()) {
+function getNextEmployeeMilestoneNotificationRunAt(fromDate = new Date()) {
 	const nextRunAt = new Date(fromDate);
 
 	nextRunAt.setHours(
-		BIRTHDAY_NOTIFICATION_HOUR,
-		BIRTHDAY_NOTIFICATION_MINUTE,
+		EMPLOYEE_MILESTONE_NOTIFICATION_HOUR,
+		EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE,
 		0,
 		0
 	);
@@ -47,18 +51,18 @@ function getNextBirthdayNotificationRunAt(fromDate = new Date()) {
 	return nextRunAt;
 }
 
-function scheduleNextBirthdayNotificationRun({ logger }) {
+function scheduleNextEmployeeMilestoneNotificationRun({ logger }) {
 	const now = new Date();
-	const nextRunAt = getNextBirthdayNotificationRunAt(now);
+	const nextRunAt = getNextEmployeeMilestoneNotificationRunAt(now);
 	const delayMs = Math.max(nextRunAt.getTime() - now.getTime(), 0);
 
 	scheduleTimer = setTimeout(async () => {
 		scheduleTimer = null;
 
-		await runBirthdayNotificationSequence({ logger });
+		await runEmployeeMilestoneNotificationSequence({ logger });
 
 		if (!isSchedulerStopped) {
-			scheduleNextBirthdayNotificationRun({ logger });
+			scheduleNextEmployeeMilestoneNotificationRun({ logger });
 		}
 	}, delayMs);
 
@@ -66,13 +70,13 @@ function scheduleNextBirthdayNotificationRun({ logger }) {
 
 	logger?.info?.(
 		{ nextRunAt: nextRunAt.toISOString(), delayMs },
-		"Birthday notification job scheduled."
+		"Employee milestone notification job scheduled."
 	);
 }
 
 /**
- * Starts the automated daily birthday notification task.
- * Executes at 11:00 AM local server time every single day.
+ * Starts the automated daily employee milestone notification task.
+ * Executes at 12:00 PM local server time every single day.
  */
 export function startBirthdayNotificationJob({ logger } = {}) {
 	if (!isSchedulerStopped) {
@@ -80,9 +84,9 @@ export function startBirthdayNotificationJob({ logger } = {}) {
 	}
 
 	isSchedulerStopped = false;
-	scheduleNextBirthdayNotificationRun({ logger });
+	scheduleNextEmployeeMilestoneNotificationRun({ logger });
 
-	logger?.info?.("Birthday notifications scheduler started successfully for 11:00 AM daily.");
+	logger?.info?.("Employee milestone notifications scheduler started successfully for 12:00 PM daily.");
 	return stopBirthdayNotificationJob;
 }
 

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employee Birthday Alert</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; color: #333; }
+    .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
+    h2 { color: #2196F3; }
+    .info strong { display: inline-block; width: 160px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Employee Birthday Alert</h2>
+    <p>Today is {{ employeeName }}'s birthday.</p>
+    <div class="info"><strong>Employee ID:</strong> {{ employeeId }}</div>
+    <div class="info"><strong>Birthday:</strong> {{ eventDate }}</div>
+    <p>Please share your wishes when convenient.</p>
+  </div>
+</body>
+</html>

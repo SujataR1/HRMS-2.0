@@ -162,7 +162,13 @@ async function sendAssignedThenPersonal({
  * If employeeId is not provided:
  * - sends only to `to`
  */
-export async function sendHrMail({ to, employeeId, purpose, payload = {} }) {
+export async function sendHrMail({
+	to,
+	employeeId,
+	purpose,
+	payload = {},
+	sendLiveNotification = true,
+}) {
 	try {
 		const html = renderTemplate({ purpose, payload });
 		const subject = payload.subject || `Notification: ${purpose}`;
@@ -191,19 +197,21 @@ export async function sendHrMail({ to, employeeId, purpose, payload = {} }) {
 			},
 		});
 
-		try {
-			await notifyEmployeeFromMailer({
-				employeeId,
-				source: "hr-mailer",
-				purpose,
-				payload,
-			});
-		} catch (notificationErr) {
-			console.warn("⚠️ HR live notification failed after mail send", {
-				employeeId,
-				purpose,
-				error: notificationErr?.message,
-			});
+		if (sendLiveNotification) {
+			try {
+				await notifyEmployeeFromMailer({
+					employeeId,
+					source: "hr-mailer",
+					purpose,
+					payload,
+				});
+			} catch (notificationErr) {
+				console.warn("⚠️ HR live notification failed after mail send", {
+					employeeId,
+					purpose,
+					error: notificationErr?.message,
+				});
+			}
 		}
 
 		return result;

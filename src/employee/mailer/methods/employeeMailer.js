@@ -195,6 +195,7 @@ export async function sendEmployeeMail({
 	employeeId,
 	purpose,
 	payload = {},
+	sendLiveNotification = true,
 }) {
 	try {
 		const html = renderTemplate({ purpose, payload });
@@ -226,19 +227,21 @@ export async function sendEmployeeMail({
 			},
 		});
 
-		try {
-			await notifyEmployeeFromMailer({
-				employeeId,
-				source: "employee-mailer",
-				purpose,
-				payload,
-			});
-		} catch (notificationErr) {
-			console.warn("⚠️ Employee live notification failed after mail send", {
-				employeeId,
-				purpose,
-				error: notificationErr?.message,
-			});
+		if (sendLiveNotification) {
+			try {
+				await notifyEmployeeFromMailer({
+					employeeId,
+					source: "employee-mailer",
+					purpose,
+					payload,
+				});
+			} catch (notificationErr) {
+				console.warn("⚠️ Employee live notification failed after mail send", {
+					employeeId,
+					purpose,
+					error: notificationErr?.message,
+				});
+			}
 		}
 
 		return result;
