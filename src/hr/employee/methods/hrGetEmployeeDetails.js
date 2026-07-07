@@ -1,4 +1,5 @@
 import { prisma } from "#src/db/prisma.js";
+
 export async function hrGetEmployeeDetails(employeeId) {
 	if (!employeeId) throw new Error("employeeId is required");
 
@@ -13,6 +14,7 @@ export async function hrGetEmployeeDetails(employeeId) {
 				employmentStatus: true,
 				dateOfJoining: true,
 				confirmationDate: true,
+				dateOfBirth: true,
 				phoneNumber: true,
 				emergencyContactNumber: true,
 				presentAddress: true,

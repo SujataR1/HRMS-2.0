@@ -22,6 +22,7 @@ export const hrCreateEmployeeDetailsSchema = z.object({
 	]),
 
 	dateOfJoining: z.string().datetime(),
+	dateOfBirth: z.string().datetime().optional().nullable(),
 	confirmationDate: z.string().datetime().optional().nullable(),
 
 	phoneNumber: z.string().min(1),

@@ -16,14 +16,14 @@ export async function hrCreateEmployeeDetails(details) {
 
 	return await prisma.$transaction(async (tx) => {
 
-		const existingEmployee = await prisma.employee.findUnique({
-			where: { employeeId },
+		const existingEmployee = await tx.employee.findUnique({
+			where: { employeeId: details.employeeId },
 		});
 
 		if (!existingEmployee) {
 			throw new Error("Employee with given employeeId does not exist");
 		}
-		
+
 		const existing = await tx.employeeDetails.findUnique({
 			where: { employeeId: details.employeeId },
 		});
@@ -39,6 +39,9 @@ export async function hrCreateEmployeeDetails(details) {
 				dateOfJoining: toUTC(details.dateOfJoining),
 				confirmationDate: details.confirmationDate
 					? toUTC(details.confirmationDate)
+					: null,
+				dateOfBirth: details.dateOfBirth
+					? toUTC(details.dateOfBirth)
 					: null,
 			},
 		});
