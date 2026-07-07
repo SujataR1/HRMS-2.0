@@ -240,6 +240,7 @@ export async function employeeGetProfile(authHeader) {
 
 		personalEmail: details.personalEmail,
 		isPersonalEmailVerified: details.isPersonalEmailVerified,
+		dateOfBirth: details.dateOfBirth,
 
 		employmentType: details.employmentType,
 		employmentStatus: details.employmentStatus,
