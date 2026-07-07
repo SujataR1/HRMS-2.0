@@ -3,7 +3,7 @@ import { sendEmployeeMilestoneNotifications } from "../methods/birthdayNotificat
 const EMPLOYEE_MILESTONE_NOTIFICATION_HOUR = 12;
 const EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE = 30;
 
-let scheduleTimer = null;s
+let scheduleTimer = null;
 let isRunning = false;
 let isSchedulerStopped = true;
 
