@@ -1,8 +1,11 @@
-import cron from "node-cron";
 import { sendBirthdayNotifications } from "../methods/birthdayNotificationMethods.js";
 
-let cronScheduleToken = null;
+const BIRTHDAY_NOTIFICATION_HOUR = 11;
+const BIRTHDAY_NOTIFICATION_MINUTE = 0;
+
+let scheduleTimer = null;
 let isRunning = false;
+let isSchedulerStopped = true;
 
 async function runBirthdayNotificationSequence({ logger }) {
 	if (isRunning) {
@@ -27,26 +30,67 @@ async function runBirthdayNotificationSequence({ logger }) {
 	}
 }
 
+function getNextBirthdayNotificationRunAt(fromDate = new Date()) {
+	const nextRunAt = new Date(fromDate);
+
+	nextRunAt.setHours(
+		BIRTHDAY_NOTIFICATION_HOUR,
+		BIRTHDAY_NOTIFICATION_MINUTE,
+		0,
+		0
+	);
+
+	if (nextRunAt <= fromDate) {
+		nextRunAt.setDate(nextRunAt.getDate() + 1);
+	}
+
+	return nextRunAt;
+}
+
+function scheduleNextBirthdayNotificationRun({ logger }) {
+	const now = new Date();
+	const nextRunAt = getNextBirthdayNotificationRunAt(now);
+	const delayMs = Math.max(nextRunAt.getTime() - now.getTime(), 0);
+
+	scheduleTimer = setTimeout(async () => {
+		scheduleTimer = null;
+
+		await runBirthdayNotificationSequence({ logger });
+
+		if (!isSchedulerStopped) {
+			scheduleNextBirthdayNotificationRun({ logger });
+		}
+	}, delayMs);
+
+	scheduleTimer.unref?.();
+
+	logger?.info?.(
+		{ nextRunAt: nextRunAt.toISOString(), delayMs },
+		"Birthday notification job scheduled."
+	);
+}
+
 /**
  * Starts the automated daily birthday notification task.
- * Cron expression '0 10 * * *' executes precisely at 10:00 AM every single day.
+ * Executes at 11:00 AM local server time every single day.
  */
 export function startBirthdayNotificationJob({ logger } = {}) {
-	if (cronScheduleToken) {
+	if (!isSchedulerStopped) {
 		return stopBirthdayNotificationJob;
 	}
 
-	cronScheduleToken = cron.schedule("0 11 * * *", () => {
-		void runBirthdayNotificationSequence({ logger });
-	});
+	isSchedulerStopped = false;
+	scheduleNextBirthdayNotificationRun({ logger });
 
-	logger?.info?.("Birthday notifications cron job scheduler established successfully for 10:00 AM daily.");
+	logger?.info?.("Birthday notifications scheduler started successfully for 11:00 AM daily.");
 	return stopBirthdayNotificationJob;
 }
 
 export function stopBirthdayNotificationJob() {
-	if (!cronScheduleToken) return;
+	isSchedulerStopped = true;
 
-	cronScheduleToken.stop();
-	cronScheduleToken = null;
+	if (!scheduleTimer) return;
+
+	clearTimeout(scheduleTimer);
+	scheduleTimer = null;
 }

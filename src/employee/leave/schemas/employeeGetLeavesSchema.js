@@ -1,5 +1,19 @@
 import { z } from "zod";
-import { LeaveStatus, LeaveType } from "@prisma/client";
+
+const LEAVE_STATUSES = ["pending", "approved", "rejected", "cancelled"];
+const LEAVE_TYPES = [
+	"CASUAL",
+	"SICK",
+	"EARNED",
+	"UNPAID",
+	"PAID",
+	"COMP_OFF",
+	"MATERNITY",
+	"PATERNITY",
+	"BEREAVEMENT",
+	"LOP",
+	"OTHER",
+];
 
 export const employeeGetLeavesSchema = z.object({
 	fromDate: z
@@ -17,10 +31,10 @@ export const employeeGetLeavesSchema = z.object({
 		.optional(),
 
 	status: z
-		.enum([...Object.values(LeaveStatus)])
+		.enum(LEAVE_STATUSES)
 		.optional(),
 
 	type: z
-		.enum([...Object.values(LeaveType)])
+		.enum(LEAVE_TYPES)
 		.optional(),
 });
