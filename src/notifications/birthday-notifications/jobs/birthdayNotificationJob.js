@@ -36,7 +36,7 @@ export function startBirthdayNotificationJob({ logger } = {}) {
 		return stopBirthdayNotificationJob;
 	}
 
-	cronScheduleToken = cron.schedule("0 10 * * *", () => {
+	cronScheduleToken = cron.schedule("0 11 * * *", () => {
 		void runBirthdayNotificationSequence({ logger });
 	});
 
