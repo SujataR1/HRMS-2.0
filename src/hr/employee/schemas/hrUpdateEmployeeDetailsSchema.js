@@ -36,6 +36,7 @@ export const hrUpdateEmployeeDetailsSchema = z
 
 		dateOfJoining: dateField.optional(),
 		confirmationDate: dateField.optional().nullable(),
+		dateOfBirth: z.string().datetime().optional().nullable(),
 
 		phoneNumber: z.string().optional(),
 		emergencyContactNumber: z.string().optional(),
