@@ -1,23 +1,604 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Employee Work Anniversary Alert</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 20px; color: #333; }
-    .container { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); }
-    h2 { color: #2196F3; }
-    .info strong { display: inline-block; width: 180px; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<title>Employee Work Anniversary Alert</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Inter',sans-serif;
+}
+
+body{
+background:#EEF2F7;
+padding:40px;
+}
+
+.container{
+
+max-width:780px;
+margin:auto;
+
+background:#ffffff;
+
+border-radius:22px;
+
+overflow:hidden;
+
+border:1px solid #E6EBF2;
+
+box-shadow:
+0 30px 70px rgba(15,23,42,.08),
+0 8px 18px rgba(15,23,42,.04);
+
+}
+
+/*=============================
+        HEADER
+==============================*/
+
+.header{
+
+background:linear-gradient(135deg,#0F172A,#1E293B);
+
+padding:48px;
+
+position:relative;
+
+overflow:hidden;
+
+}
+
+.header::before{
+
+content:"";
+
+position:absolute;
+
+right:-120px;
+top:-120px;
+
+width:260px;
+height:260px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.04);
+
+}
+
+.header::after{
+
+content:"";
+
+position:absolute;
+
+left:-150px;
+bottom:-150px;
+
+width:320px;
+height:320px;
+
+border-radius:50%;
+
+background:rgba(255,255,255,.03);
+
+}
+
+.header-top{
+
+display:flex;
+justify-content:space-between;
+align-items:center;
+
+position:relative;
+z-index:2;
+
+}
+
+.logo{
+
+display:flex;
+align-items:center;
+gap:18px;
+
+}
+
+.icon{
+
+width:74px;
+height:74px;
+
+border-radius:18px;
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.12);
+
+display:flex;
+align-items:center;
+justify-content:center;
+
+font-size:34px;
+
+}
+
+.title small{
+
+display:block;
+
+color:#CBD5E1;
+
+letter-spacing:2px;
+
+font-size:12px;
+
+text-transform:uppercase;
+
+margin-bottom:8px;
+
+}
+
+.title h1{
+
+color:#ffffff;
+
+font-size:34px;
+
+margin-bottom:8px;
+
+}
+
+.title p{
+
+color:#CBD5E1;
+
+font-size:15px;
+
+}
+
+.badge{
+
+padding:10px 20px;
+
+border-radius:50px;
+
+background:rgba(255,255,255,.08);
+
+border:1px solid rgba(255,255,255,.10);
+
+color:#fff;
+
+font-size:13px;
+
+font-weight:700;
+
+letter-spacing:1px;
+
+}
+
+.gold-line{
+
+height:5px;
+
+background:linear-gradient(90deg,#B68A2E,#F2D37A,#B68A2E);
+
+}
+
+/*=============================
+      CONTENT
+==============================*/
+
+.content{
+
+padding:48px;
+
+}
+
+.message{
+
+font-size:17px;
+
+line-height:1.9;
+
+color:#475569;
+
+margin-bottom:40px;
+
+}
+
+.message strong{
+
+color:#111827;
+
+}
+
+/*=============================
+      MILESTONE CARD
+==============================*/
+
+.milestone{
+
+background:#F8FAFC;
+
+border:1px solid #E2E8F0;
+
+border-radius:18px;
+
+padding:35px;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:35px;
+
+}
+
+.years h2{
+
+font-size:54px;
+
+font-weight:800;
+
+color:#0F172A;
+
+line-height:1;
+
+}
+
+.years span{
+
+display:block;
+
+margin-top:10px;
+
+color:#64748B;
+
+font-size:14px;
+
+letter-spacing:2px;
+
+text-transform:uppercase;
+
+}
+
+.medal{
+
+font-size:70px;
+
+opacity:.15;
+
+}
+
+/*=============================
+      DETAILS
+==============================*/
+
+.details{
+
+position:relative;
+
+padding-left:26px;
+
+}
+
+.details:before{
+
+content:"";
+
+position:absolute;
+
+left:8px;
+
+top:5px;
+
+bottom:5px;
+
+width:2px;
+
+background:#CBD5E1;
+
+}
+
+.item{
+
+position:relative;
+
+padding-bottom:28px;
+
+}
+
+.item:last-child{
+
+padding-bottom:0;
+
+}
+
+.item:before{
+
+content:"";
+
+position:absolute;
+
+left:-23px;
+
+top:7px;
+
+width:10px;
+height:10px;
+
+border-radius:50%;
+
+background:#0F172A;
+
+}
+
+.label{
+
+font-size:12px;
+
+letter-spacing:1.5px;
+
+text-transform:uppercase;
+
+color:#94A3B8;
+
+margin-bottom:6px;
+
+}
+
+.value{
+
+font-size:16px;
+
+font-weight:600;
+
+color:#111827;
+
+}
+
+/*=============================
+      NOTE
+==============================*/
+
+.note{
+
+margin-top:40px;
+
+padding:28px;
+
+background:#FFFBEB;
+
+border:1px solid #FDE68A;
+
+border-radius:16px;
+
+color:#57534E;
+
+line-height:1.9;
+
+font-size:15px;
+
+}
+
+/*=============================
+      FOOTER
+==============================*/
+
+.footer{
+
+margin-top:45px;
+
+padding-top:30px;
+
+border-top:1px solid #E5E7EB;
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+}
+
+.company{
+
+font-size:18px;
+
+font-weight:700;
+
+color:#111827;
+
+}
+
+.copy{
+
+font-size:13px;
+
+color:#94A3B8;
+
+margin-top:5px;
+
+}
+
+.status{
+
+padding:10px 18px;
+
+border-radius:100px;
+
+background:#ECFDF5;
+
+border:1px solid #A7F3D0;
+
+color:#047857;
+
+font-size:13px;
+
+font-weight:700;
+
+}
+
+</style>
+
 </head>
+
 <body>
-  <div class="container">
-    <h2>Employee Work Anniversary Alert</h2>
-    <p>{{ employeeName }} completes {{ yearsCompleted }} {{ yearLabel }} with the organization today.</p>
-    <div class="info"><strong>Employee ID:</strong> {{ employeeId }}</div>
-    <div class="info"><strong>Joining Date:</strong> {{ eventDate }}</div>
-    <p>Please acknowledge the milestone when convenient.</p>
-  </div>
+
+<div class="container">
+
+<div class="header">
+
+<div class="header-top">
+
+<div class="logo">
+
+<div class="icon">
+🏆
+</div>
+
+<div class="title">
+
+<small>Employee Recognition</small>
+
+<h1>Work Anniversary Alert</h1>
+
+<p>Employee Service Milestone Notification</p>
+
+</div>
+
+</div>
+
+<div class="badge">
+TODAY
+</div>
+
+</div>
+
+</div>
+
+<div class="gold-line"></div>
+
+<div class="content">
+
+<div class="message">
+
+<strong>{{ employeeName }}</strong> has reached an important career milestone by completing
+<strong>{{ yearsCompleted }} {{ yearLabel }}</strong> with
+<strong>Transmogrify Global Pvt Ltd</strong>.
+
+Their continued commitment and contribution have been instrumental to our organization's growth. Please acknowledge this achievement and extend your appreciation.
+
+</div>
+
+<div class="milestone">
+
+<div class="years">
+
+<h2>{{ yearsCompleted }}</h2>
+
+<span>{{ yearLabel }} of Service</span>
+
+</div>
+
+<div class="medal">
+🏅
+</div>
+
+</div>
+
+<div class="details">
+
+<div class="item">
+
+<div class="label">
+Employee Name
+</div>
+
+<div class="value">
+{{ employeeName }}
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="label">
+Employee ID
+</div>
+
+<div class="value">
+{{ employeeId }}
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="label">
+Joining Date
+</div>
+
+<div class="value">
+{{ eventDate }}
+</div>
+
+</div>
+
+<div class="item">
+
+<div class="label">
+Completed Service
+</div>
+
+<div class="value">
+{{ yearsCompleted }} {{ yearLabel }}
+</div>
+
+</div>
+
+</div>
+
+<div class="note">
+
+Recognition plays a vital role in fostering employee engagement and strengthening workplace culture. Please take a moment to congratulate <strong>{{ employeeName }}</strong> on this significant service milestone and thank them for their continued dedication.
+
+</div>
+
+<div class="footer">
+
+<div>
+
+<div class="company">
+Transmogrify Global Pvt Ltd
+</div>
+
+<div class="copy">
+Employee Recognition & Engagement Platform
+</div>
+
+</div>
+
+<div class="status">
+✓ Notification Generated
+</div>
+
+</div>
+
+</div>
+
+</div>
+
 </body>
 </html>
