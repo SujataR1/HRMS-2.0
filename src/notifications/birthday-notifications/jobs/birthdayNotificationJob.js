@@ -1,7 +1,7 @@
 import { sendEmployeeMilestoneNotifications } from "../methods/birthdayNotificationMethods.js";
 
 const EMPLOYEE_MILESTONE_NOTIFICATION_HOUR = 12;
-const EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE = 30;
+const EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE = 0;
 
 let scheduleTimer = null;
 let isRunning = false;
