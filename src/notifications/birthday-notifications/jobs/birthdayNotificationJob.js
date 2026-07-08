@@ -1,48 +1,107 @@
-import { sendEmployeeMilestoneNotifications } from "../methods/birthdayNotificationMethods.js";
+import {
+	sendBirthdayNotifications,
+	sendWorkAnniversaryNotifications,
+} from "../methods/birthdayNotificationMethods.js";
 
-const EMPLOYEE_MILESTONE_NOTIFICATION_HOUR = 12;
-const EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE = 0;
+const DEFAULT_MILESTONE_NOTIFICATION_TIME = "12:00";
+const BIRTHDAY_NOTIFICATION_TIME_ENV = "BIRTHDAY_NOTIFICATION_TIME";
+const WORK_ANNIVERSARY_NOTIFICATION_TIME_ENV =
+	"WORK_ANNIVERSARY_NOTIFICATION_TIME";
 
-let scheduleTimer = null;
-let isRunning = false;
+const milestoneJobs = [
+	{
+		key: "birthday",
+		label: "Birthday",
+		envName: BIRTHDAY_NOTIFICATION_TIME_ENV,
+		run: sendBirthdayNotifications,
+	},
+	{
+		key: "work_anniversary",
+		label: "Work anniversary",
+		envName: WORK_ANNIVERSARY_NOTIFICATION_TIME_ENV,
+		run: sendWorkAnniversaryNotifications,
+	},
+];
+
+let scheduleTimers = new Map();
+let runningJobs = new Set();
 let isSchedulerStopped = true;
 
-async function runEmployeeMilestoneNotificationSequence({ logger }) {
-	if (isRunning) {
-		logger?.warn?.("Employee milestone job execution skipped; a previous sequence run is still active.");
+function parseScheduleTime({ envName, logger }) {
+	const rawValue =
+		process.env[envName] || DEFAULT_MILESTONE_NOTIFICATION_TIME;
+	const normalized = String(rawValue).trim();
+	const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(normalized);
+
+	if (!match) {
+		logger?.warn?.(
+			{
+				envName,
+				value: rawValue,
+				defaultValue: DEFAULT_MILESTONE_NOTIFICATION_TIME,
+			},
+			"Invalid milestone notification time; using default."
+		);
+
+		return {
+			value: DEFAULT_MILESTONE_NOTIFICATION_TIME,
+			hour: 12,
+			minute: 0,
+		};
+	}
+
+	return {
+		value: normalized,
+		hour: Number(match[1]),
+		minute: Number(match[2]),
+	};
+}
+
+async function runMilestoneNotificationSequence({ job, logger }) {
+	if (runningJobs.has(job.key)) {
+		logger?.warn?.(
+			{ milestone: job.key },
+			"Employee milestone job execution skipped; a previous sequence run is still active."
+		);
 		return;
 	}
 
-	isRunning = true;
+	runningJobs.add(job.key);
 
 	try {
-		logger?.info?.("Executing daily scheduled employee milestone notifications check...");
-		const result = await sendEmployeeMilestoneNotifications();
-		
+		logger?.info?.(
+			{ milestone: job.key },
+			`Executing scheduled ${job.label.toLowerCase()} notifications check...`
+		);
+
+		const result = await job.run();
+
 		if (
 			result.birthdayEmployeesCount > 0 ||
 			result.workAnniversaryEmployeesCount > 0 ||
 			result.failuresCount > 0
 		) {
-			logger?.info?.(result, "Employee milestone notification delivery processing finished.");
+			logger?.info?.(
+				{ milestone: job.key, ...result },
+				`${job.label} notification delivery processing finished.`
+			);
 		}
+
 		return result;
 	} catch (err) {
-		logger?.error?.({ err }, "Employee milestone notification routine failed to process.");
+		logger?.error?.(
+			{ err, milestone: job.key },
+			`${job.label} notification routine failed to process.`
+		);
 	} finally {
-		isRunning = false;
+		runningJobs.delete(job.key);
 	}
 }
 
-function getNextEmployeeMilestoneNotificationRunAt(fromDate = new Date()) {
+function getNextRunAt({ hour, minute, fromDate = new Date() }) {
 	const nextRunAt = new Date(fromDate);
 
-	nextRunAt.setHours(
-		EMPLOYEE_MILESTONE_NOTIFICATION_HOUR,
-		EMPLOYEE_MILESTONE_NOTIFICATION_MINUTE,
-		0,
-		0
-	);
+	nextRunAt.setHours(hour, minute, 0, 0);
 
 	if (nextRunAt <= fromDate) {
 		nextRunAt.setDate(nextRunAt.getDate() + 1);
@@ -51,32 +110,47 @@ function getNextEmployeeMilestoneNotificationRunAt(fromDate = new Date()) {
 	return nextRunAt;
 }
 
-function scheduleNextEmployeeMilestoneNotificationRun({ logger }) {
+function scheduleNextMilestoneNotificationRun({ job, logger }) {
+	const scheduleTime = parseScheduleTime({
+		envName: job.envName,
+		logger,
+	});
 	const now = new Date();
-	const nextRunAt = getNextEmployeeMilestoneNotificationRunAt(now);
+	const nextRunAt = getNextRunAt({
+		hour: scheduleTime.hour,
+		minute: scheduleTime.minute,
+		fromDate: now,
+	});
 	const delayMs = Math.max(nextRunAt.getTime() - now.getTime(), 0);
 
-	scheduleTimer = setTimeout(async () => {
-		scheduleTimer = null;
+	const timer = setTimeout(async () => {
+		scheduleTimers.delete(job.key);
 
-		await runEmployeeMilestoneNotificationSequence({ logger });
+		await runMilestoneNotificationSequence({ job, logger });
 
 		if (!isSchedulerStopped) {
-			scheduleNextEmployeeMilestoneNotificationRun({ logger });
+			scheduleNextMilestoneNotificationRun({ job, logger });
 		}
 	}, delayMs);
 
-	scheduleTimer.unref?.();
+	timer.unref?.();
+	scheduleTimers.set(job.key, timer);
 
 	logger?.info?.(
-		{ nextRunAt: nextRunAt.toISOString(), delayMs },
-		"Employee milestone notification job scheduled."
+		{
+			milestone: job.key,
+			envName: job.envName,
+			scheduleTime: scheduleTime.value,
+			nextRunAt: nextRunAt.toISOString(),
+			delayMs,
+		},
+		`${job.label} notification job scheduled.`
 	);
 }
 
 /**
- * Starts the automated daily employee milestone notification task.
- * Executes at 12:00 PM local server time every single day.
+ * Starts the automated daily employee milestone notification tasks.
+ * BIRTHDAY_NOTIFICATION_TIME and WORK_ANNIVERSARY_NOTIFICATION_TIME use HH:mm.
  */
 export function startBirthdayNotificationJob({ logger } = {}) {
 	if (!isSchedulerStopped) {
@@ -84,17 +158,24 @@ export function startBirthdayNotificationJob({ logger } = {}) {
 	}
 
 	isSchedulerStopped = false;
-	scheduleNextEmployeeMilestoneNotificationRun({ logger });
 
-	logger?.info?.("Employee milestone notifications scheduler started successfully for 12:00 PM daily.");
+	for (const job of milestoneJobs) {
+		scheduleNextMilestoneNotificationRun({ job, logger });
+	}
+
+	logger?.info?.(
+		"Employee milestone notification schedulers started successfully."
+	);
 	return stopBirthdayNotificationJob;
 }
 
 export function stopBirthdayNotificationJob() {
 	isSchedulerStopped = true;
 
-	if (!scheduleTimer) return;
+	for (const timer of scheduleTimers.values()) {
+		clearTimeout(timer);
+	}
 
-	clearTimeout(scheduleTimer);
-	scheduleTimer = null;
+	scheduleTimers = new Map();
+	runningJobs = new Set();
 }

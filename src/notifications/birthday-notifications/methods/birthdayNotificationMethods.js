@@ -262,18 +262,11 @@ async function processMilestoneEmployees({
 	}
 }
 
-export async function sendEmployeeMilestoneNotifications({ today = new Date() } = {}) {
-	const [birthdayEmployees, workAnniversaryEmployees, hrRecipients] =
-		await Promise.all([
-			getBirthdayEmployees(today),
-			getWorkAnniversaryEmployees(today),
-			getHrRecipients(),
-		]);
-
-	const result = {
+function createMilestoneResult({ hrRecipientsCount = 0 } = {}) {
+	return {
 		birthdayEmployeesCount: 0,
 		workAnniversaryEmployeesCount: 0,
-		hrRecipientsCount: hrRecipients.length,
+		hrRecipientsCount,
 		employeesNotifiedCount: 0,
 		hrsNotifiedCount: 0,
 		employeeEmailsSentCount: 0,
@@ -281,6 +274,57 @@ export async function sendEmployeeMilestoneNotifications({ today = new Date() } 
 		failures: [],
 		processedAt: new Date().toISOString(),
 	};
+}
+
+function mergeMilestoneResults(...results) {
+	return {
+		birthdayEmployeesCount: results.reduce(
+			(total, result) => total + result.birthdayEmployeesCount,
+			0
+		),
+		workAnniversaryEmployeesCount: results.reduce(
+			(total, result) => total + result.workAnniversaryEmployeesCount,
+			0
+		),
+		hrRecipientsCount: Math.max(
+			0,
+			...results.map((result) => result.hrRecipientsCount)
+		),
+		employeesNotifiedCount: results.reduce(
+			(total, result) => total + result.employeesNotifiedCount,
+			0
+		),
+		hrsNotifiedCount: results.reduce(
+			(total, result) => total + result.hrsNotifiedCount,
+			0
+		),
+		employeeEmailsSentCount: results.reduce(
+			(total, result) => total + result.employeeEmailsSentCount,
+			0
+		),
+		hrEmailsSentCount: results.reduce(
+			(total, result) => total + result.hrEmailsSentCount,
+			0
+		),
+		failures: results.flatMap((result) => result.failures),
+		failuresCount: results.reduce(
+			(total, result) => total + result.failuresCount,
+			0
+		),
+		processedAt: new Date().toISOString(),
+	};
+}
+
+export async function sendBirthdayNotifications({ today = new Date() } = {}) {
+	const [birthdayEmployees, hrRecipients] =
+		await Promise.all([
+			getBirthdayEmployees(today),
+			getHrRecipients(),
+		]);
+
+	const result = createMilestoneResult({
+		hrRecipientsCount: hrRecipients.length,
+	});
 
 	await processMilestoneEmployees({
 		employees: birthdayEmployees,
@@ -289,6 +333,22 @@ export async function sendEmployeeMilestoneNotifications({ today = new Date() } 
 		today,
 		result,
 		countKey: "birthdayEmployeesCount",
+	});
+
+	result.failuresCount = result.failures.length;
+
+	return result;
+}
+
+export async function sendWorkAnniversaryNotifications({ today = new Date() } = {}) {
+	const [workAnniversaryEmployees, hrRecipients] =
+		await Promise.all([
+			getWorkAnniversaryEmployees(today),
+			getHrRecipients(),
+		]);
+
+	const result = createMilestoneResult({
+		hrRecipientsCount: hrRecipients.length,
 	});
 
 	await processMilestoneEmployees({
@@ -305,6 +365,11 @@ export async function sendEmployeeMilestoneNotifications({ today = new Date() } 
 	return result;
 }
 
-export async function sendBirthdayNotifications() {
-	return await sendEmployeeMilestoneNotifications();
+export async function sendEmployeeMilestoneNotifications({ today = new Date() } = {}) {
+	const [birthdayResult, workAnniversaryResult] = await Promise.all([
+		sendBirthdayNotifications({ today }),
+		sendWorkAnniversaryNotifications({ today }),
+	]);
+
+	return mergeMilestoneResults(birthdayResult, workAnniversaryResult);
 }
