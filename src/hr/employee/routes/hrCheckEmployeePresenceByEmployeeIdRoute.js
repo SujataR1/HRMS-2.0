@@ -25,7 +25,7 @@ export default fp(async function adminCheckEmployeePresenceByEmployeeIdRoute(fas
         "x-auth-sign",
         "39303782fab04d0a96ccb740dbaca597 ||| 72db3803e3343e436620f80061a5577b24ef258aa3199d7626afe8d8d42b01a55f4480614c44d363f629cd6b43a5c79d"
       );
-      // per your requirement: return exactly {"presence":"true"} or {"presence":"false"}
+      // per your requirement: return exactly presence + employeeDetails flags
       return reply.code(200).send(result);
     } catch (error) {
       request.log.error({ err: error }, "❌ Failed to check employee presence");

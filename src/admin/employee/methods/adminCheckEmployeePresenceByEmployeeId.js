@@ -2,7 +2,8 @@ import { prisma } from "#src/db/prisma.js";
 import { verifyAdminJWT } from "../../admin-session-management/methods/adminSessionManagementMethods.js";
 /**
  * Admin: check if an employee exists (by employeeId).
- * Returns exactly: { presence: "true" } or { presence: "false" }
+ * Returns exactly:
+ * { presence: "true"|"false", employeeDetails: "true"|"false" }
  */
 export async function adminCheckEmployeePresenceByEmployeeId(authHeader, { employeeId }) {
   try {
@@ -21,16 +22,23 @@ export async function adminCheckEmployeePresenceByEmployeeId(authHeader, { emplo
     // Normalize input a tiny bit (trim)
     const eid = employeeId.trim();
 
-    // Existence check
-    const found = await prisma.employee.findUnique({
+    const [employee, employeeDetails] = await Promise.all([
+      prisma.employee.findUnique({
       where: { employeeId: eid },
       select: { employeeId: true },
-    });
+      }),
+      prisma.employeeDetails.findUnique({
+        where: { employeeId: eid },
+        select: { employeeId: true },
+      }),
+    ]);
 
-    return { presence: found ? "true" : "false" };
+    return {
+      presence: employee ? "true" : "false",
+      employeeDetails: employee && employeeDetails ? "true" : "false",
+    };
   } catch (err) {
     console.error("🔥 Error in adminCheckEmployeePresenceByEmployeeId:", err);
-    // keep the response shape simple per your ask
-    return { presence: "false" };
+    return { presence: "false", employeeDetails: "false" };
   }
 }

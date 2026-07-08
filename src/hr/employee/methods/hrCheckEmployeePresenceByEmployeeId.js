@@ -2,7 +2,8 @@ import { prisma } from "#src/db/prisma.js";
 import { verifyHrJWT } from "../../hr-session-management/methods/hrSessionManagementMethods.js";
 /**
  * HR: check if an employee exists (by employeeId).
- * Returns exactly: { presence: "true" } or { presence: "false" }
+ * Returns exactly:
+ * { presence: "true"|"false", employeeDetails: "true"|"false" }
  */
 export async function hrCheckEmployeePresenceByEmployeeId(authHeader, { employeeId }) {
   try {
@@ -13,7 +14,7 @@ export async function hrCheckEmployeePresenceByEmployeeId(authHeader, { employee
       throw new Error("employeeId is required");
     }
 
-    // Verify admin
+    // Verify HR
     const { hrId } = await verifyHrJWT(authHeader);
     const hr = await prisma.hr.findUnique({ where: { id: hrId } });
     if (!hr) throw new Error("HR not found");
@@ -21,16 +22,23 @@ export async function hrCheckEmployeePresenceByEmployeeId(authHeader, { employee
     // Normalize input a tiny bit (trim)
     const eid = employeeId.trim();
 
-    // Existence check
-    const found = await prisma.employee.findUnique({
+    const [employee, employeeDetails] = await Promise.all([
+      prisma.employee.findUnique({
       where: { employeeId: eid },
       select: { employeeId: true },
-    });
+      }),
+      prisma.employeeDetails.findUnique({
+        where: { employeeId: eid },
+        select: { employeeId: true },
+      }),
+    ]);
 
-    return { presence: found ? "true" : "false" };
+    return {
+      presence: employee ? "true" : "false",
+      employeeDetails: employee && employeeDetails ? "true" : "false",
+    };
   } catch (err) {
     console.error("🔥 Error in hrCheckEmployeePresenceByEmployeeId:", err);
-    // keep the response shape simple per your ask
-    return { presence: "false" };
+    return { presence: "false", employeeDetails: "false" };
   }
 }
