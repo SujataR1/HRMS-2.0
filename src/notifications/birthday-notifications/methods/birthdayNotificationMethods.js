@@ -4,20 +4,6 @@ import { sendHrMail } from "#src/hr/mailer/methods/hrMailer.js";
 import { createAndBroadcastEmployeeNotification } from "#src/notifications/methods/notificationService.js";
 
 const ACTIVE_EMPLOYMENT_STATUSES = ["EMPLOYED", "PROBATION"];
-const MILESTONE_HR_EMPLOYEE_IDS_ENV = "MILESTONE_NOTIFICATION_HR_EMPLOYEE_IDS";
-
-function getConfiguredMilestoneHrEmployeeIds() {
-	const rawValue = process.env[MILESTONE_HR_EMPLOYEE_IDS_ENV];
-
-	if (!rawValue || typeof rawValue !== "string") {
-		return [];
-	}
-
-	return rawValue
-		.split(",")
-		.map((employeeId) => employeeId.trim())
-		.filter(Boolean);
-}
 
 function getTodayParts(today = new Date()) {
 	return {
@@ -84,7 +70,7 @@ async function getWorkAnniversaryEmployees(today) {
 }
 
 async function getHrRecipients() {
-	const hrRecipients = await prisma.hr.findMany({
+	return await prisma.hr.findMany({
 		select: {
 			id: true,
 			employeeId: true,
@@ -95,22 +81,6 @@ async function getHrRecipients() {
 			name: "asc",
 		},
 	});
-
-	const configuredEmployeeIds = getConfiguredMilestoneHrEmployeeIds();
-
-	if (configuredEmployeeIds.length > 0) {
-		const configuredEmployeeIdSet = new Set(configuredEmployeeIds);
-
-		return hrRecipients.filter((hr) =>
-			configuredEmployeeIdSet.has(hr.employeeId)
-		);
-	}
-
-	if (hrRecipients.length <= 1) {
-		return hrRecipients;
-	}
-
-	return [];
 }
 
 function getBirthdayPayload(employee) {
@@ -171,7 +141,6 @@ async function notifyEmployee({ employee, payload, result }) {
 async function emailEmployee({ employee, payload, today, result }) {
 	await sendEmployeeMail({
 		to: employee.assignedEmail,
-		employeeId: employee.employeeId,
 		purpose: payload.employeeMailPurpose,
 		payload: {
 			subject: payload.employeeSubject,
