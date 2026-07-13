@@ -51,34 +51,81 @@ const readableFlags = {
 	payDocked: "A day's pay has been docked",
 };
 
+const resolveReportPeriod = ({ monthYear, year }) => {
+	if (monthYear && year) {
+		throw new Error("Provide either monthYear or year, not both");
+	}
+
+	if (monthYear) {
+		const [month, parsedYear] = monthYear.split("-").map(Number);
+		const start = dayjs
+			.tz(`${parsedYear}-${month}-01`, TIMEZONE)
+			.startOf("month");
+		const end = start.endOf("month");
+
+		return {
+			start,
+			end,
+			year: parsedYear,
+			key: monthYear,
+			label: `${start.format("MMMM")} ${parsedYear}`,
+			subject: `Monthly Attendance Reports – ${monthYear}`,
+			isYearly: false,
+		};
+	}
+
+	const parsedYear = Number(year);
+	if (
+		!Number.isInteger(parsedYear) ||
+		parsedYear < 1900 ||
+		parsedYear > 9999
+	) {
+		throw new Error("year must be a valid 4-digit year");
+	}
+
+	const start = dayjs.tz(`${parsedYear}-01-01`, TIMEZONE).startOf("year");
+	const end = start.endOf("year");
+
+	return {
+		start,
+		end,
+		year: parsedYear,
+		key: parsedYear.toString(),
+		label: parsedYear.toString(),
+		subject: `Yearly Attendance Reports – ${parsedYear}`,
+		isYearly: true,
+	};
+};
+
 export async function adminGenerateAndSendMonthlyReports({
 	authHeader,
 	shiftIds = [],
 	employeeIds = [],
 	monthYear,
+	year,
 }) {
 	if (!authHeader) throw new Error("authHeader is required");
-	if (!monthYear) throw new Error("monthYear is required");
+	const reportPeriod = resolveReportPeriod({ monthYear, year });
 
 	const decoded = await verifyAdminJWT(authHeader);
 	const adminId = decoded.adminId;
 	const admin = await prisma.admin.findUnique({ where: { id: adminId } });
 	if (!admin) throw new Error("Admin not found");
 
-	const [month, year] = monthYear.split("-").map(Number);
-	const start = dayjs.tz(`${year}-${month}-01`, TIMEZONE).startOf("month");
-	const end = start.endOf("month");
-	const monthName = start.format("MMMM");
+	const { start, end } = reportPeriod;
 
 	const outputDir = path.join(
 		process.cwd(),
 		"media",
 		"attendance-reports",
-		monthYear
+		reportPeriod.key,
 	);
 	if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-	const pdfPath = path.join(outputDir, `Attendance-of-${monthYear}.pdf`);
+	const pdfPath = path.join(
+		outputDir,
+		`Attendance-of-${reportPeriod.key}.pdf`,
+	);
 	const doc = new PDFDocument({ margin: 50, size: "A4" });
 	doc.pipe(fs.createWriteStream(pdfPath));
 
@@ -105,7 +152,7 @@ export async function adminGenerateAndSendMonthlyReports({
 					: undefined,
 		});
 	const shiftMatchedEmployeeIds = employeeDetailsWithMatchingShifts.map(
-		(d) => d.employeeId
+		(d) => d.employeeId,
 	);
 
 	const employeesById = await prisma.employee.findMany({
@@ -155,8 +202,8 @@ export async function adminGenerateAndSendMonthlyReports({
 
 	const relevantShiftIds = Array.from(
 		new Set(
-			allEmployeeDetails.map((d) => d.assignedShiftId).filter(Boolean)
-		)
+			allEmployeeDetails.map((d) => d.assignedShiftId).filter(Boolean),
+		),
 	);
 
 	const rawHolidays = await prisma.holiday.findMany({
@@ -214,10 +261,10 @@ export async function adminGenerateAndSendMonthlyReports({
 					.map(
 						(e) =>
 							employeeDetailsMap.get(e.employeeId)
-								?.assignedShiftId
+								?.assignedShiftId,
 					)
-					.filter(Boolean)
-			)
+					.filter(Boolean),
+			),
 		);
 
 		const shifts = await prisma.shift.findMany({
@@ -287,14 +334,14 @@ export async function adminGenerateAndSendMonthlyReports({
 										.tz(TIMEZONE)
 										.format("YYYY-MM-DD");
 									const shiftId = employeeDetailsMap.get(
-										emp.employeeId
+										emp.employeeId,
 									)?.assignedShiftId;
 									const holidayNames = holidayMap
 										.get(dateKey)
 										?.filter(
 											(h) =>
 												h.forShiftId === null ||
-												h.forShiftId === shiftId
+												h.forShiftId === shiftId,
 										)
 										.map((h) => h.name);
 									return `Holiday for: ${
@@ -315,7 +362,7 @@ export async function adminGenerateAndSendMonthlyReports({
 
 			doc.fontSize(16)
 				.font("Helvetica-Bold")
-				.text(`Attendance Report – ${monthName} ${year}`, {
+				.text(`Attendance Report – ${reportPeriod.label}`, {
 					align: "center",
 				});
 
@@ -335,7 +382,7 @@ export async function adminGenerateAndSendMonthlyReports({
 			doc.text(
 				isFirstPageForEmployee
 					? "Attendance:"
-					: "Attendance (contd...):"
+					: "Attendance (contd...):",
 			);
 
 			const headerY = doc.y;
@@ -384,8 +431,8 @@ export async function adminGenerateAndSendMonthlyReports({
 							align: "center",
 							font: "Helvetica",
 							fontSize: 11,
-						})
-					)
+						}),
+					),
 				) + 12;
 
 			if (currentRowY + rowHeight > maxY) drawHeader();
@@ -414,9 +461,10 @@ export async function adminGenerateAndSendMonthlyReports({
 			doc.y = currentRowY;
 		}
 
-		const totalCalendarDays = end.date();
-		const totalWorkingDays = 30;
-		const totalWorkingDaysPresent = (totalWorkingDays - stats.absent) - stats.thirdLate;
+		const totalCalendarDays = end.diff(start, "day") + 1;
+		const totalWorkingDays = reportPeriod.isYearly ? totalCalendarDays : 30;
+		const totalWorkingDaysPresent =
+			totalWorkingDays - stats.absent - stats.thirdLate;
 		const totalPartialShifts = stats.halfDay;
 
 		doc.x = startX;
@@ -433,7 +481,9 @@ export async function adminGenerateAndSendMonthlyReports({
 			.text(`• Total Approved Leaves: ${stats.approvedLeave}`)
 			.text(`• Total Days Absent: ${stats.absent}`)
 			.text(`• Total Days Late: ${stats.late}`)
-			.text(`• Total Number of complete triplets late: ${stats.thirdLate}`)
+			.text(
+				`• Total Number of complete triplets late: ${stats.thirdLate}`,
+			)
 			.text(`• Total Days with Partial Shifts: ${totalPartialShifts}`)
 			.text(`• Total Days Present: ${stats.present}`)
 			.text(`• Total Leaves Docked: ${stats.leaveDocked}`)
@@ -447,15 +497,15 @@ export async function adminGenerateAndSendMonthlyReports({
 		to: admin.email,
 		purpose: "monthlyAttendanceReports",
 		payload: {
-			monthYear,
-			year: year.toString(),
-			subject: `Monthly Attendance Reports – ${monthYear}`,
+			monthYear: reportPeriod.label,
+			year: reportPeriod.year.toString(),
+			subject: reportPeriod.subject,
 		},
 		attachments: [pdfPath],
 	});
 
 	return {
 		success: true,
-		message: `Consolidated attendance report for ${monthYear} generated and sent to admin`,
+		message: `Consolidated attendance report for ${reportPeriod.label} generated and sent to admin`,
 	};
 }

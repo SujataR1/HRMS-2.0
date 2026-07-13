@@ -62,33 +62,82 @@ const internalReportFlags = new Set([
 const getReportableFlags = (flags = []) =>
 	flags.filter((flag) => !internalReportFlags.has(flag));
 
+const resolveReportPeriod = ({ monthYear, year }) => {
+	if (monthYear && year) {
+		throw new Error("Provide either monthYear or year, not both");
+	}
+
+	if (monthYear) {
+		const [month, parsedYear] = monthYear.split("-").map(Number);
+		const start = dayjs
+			.tz(`${parsedYear}-${month}-01`, TIMEZONE)
+			.startOf("month");
+		const end = start.endOf("month");
+
+		return {
+			start,
+			end,
+			year: parsedYear,
+			key: monthYear,
+			label: `${start.format("MMMM")} ${parsedYear}`,
+			subject: `Monthly Attendance Reports – ${monthYear}`,
+			isYearly: false,
+		};
+	}
+
+	const parsedYear = Number(year);
+	if (
+		!Number.isInteger(parsedYear) ||
+		parsedYear < 1900 ||
+		parsedYear > 9999
+	) {
+		throw new Error("year must be a valid 4-digit year");
+	}
+
+	const start = dayjs.tz(`${parsedYear}-01-01`, TIMEZONE).startOf("year");
+	const end = start.endOf("year");
+
+	return {
+		start,
+		end,
+		year: parsedYear,
+		key: parsedYear.toString(),
+		label: parsedYear.toString(),
+		subject: `Yearly Attendance Reports – ${parsedYear}`,
+		isYearly: true,
+	};
+};
+
 export async function EmployeeGenerateAndSendMonthlyReports({
 	authHeader,
 	monthYear,
+	year,
 }) {
 	if (!authHeader) throw new Error("authHeader is required");
-	if (!monthYear) throw new Error("monthYear is required");
+	const reportPeriod = resolveReportPeriod({ monthYear, year });
 
 	const decoded = await verifyEmployeeJWT(authHeader);
 	const employeeId = decoded.employeeId;
-	const employee = await prisma.employee.findUnique({where: { employeeId }});
+	const employee = await prisma.employee.findUnique({
+		where: { employeeId },
+	});
 	const employeeIds = [employeeId];
 	if (!employee) throw new Error("Employee not found");
 
-	const [month, year] = monthYear.split("-").map(Number);
-	const start = dayjs.tz(`${year}-${month}-01`, TIMEZONE).startOf("month");
-	const end = start.endOf("month");
-	const monthName = start.format("MMMM");
+	const { start, end } = reportPeriod;
 
 	const outputDir = path.join(
 		process.cwd(),
 		"media",
 		"attendance-reports",
-		monthYear
+		reportPeriod.key,
 	);
 	if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-	const pdfPath = path.join(outputDir, `Attendance-of-${monthYear} for employee with ID${employeeId} (Employee Copy).pdf`);
+	const pdfPath = path.join(
+		outputDir,
+		`Attendance-of-${reportPeriod.key} for employee with ID${employeeId} (Employee Copy).pdf`,
+	);
 	const doc = new PDFDocument({ margin: 50, size: "A4" });
 	doc.pipe(fs.createWriteStream(pdfPath));
 
@@ -165,8 +214,8 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 	const relevantShiftIds = Array.from(
 		new Set(
-			allEmployeeDetails.map((d) => d.assignedShiftId).filter(Boolean)
-		)
+			allEmployeeDetails.map((d) => d.assignedShiftId).filter(Boolean),
+		),
 	);
 
 	const rawHolidays = await prisma.holiday.findMany({
@@ -224,10 +273,10 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 					.map(
 						(e) =>
 							employeeDetailsMap.get(e.employeeId)
-								?.assignedShiftId
+								?.assignedShiftId,
 					)
-					.filter(Boolean)
-			)
+					.filter(Boolean),
+			),
 		);
 
 		const shifts = await prisma.shift.findMany({
@@ -258,7 +307,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			thirdLate: 0,
 			payDocked: 0,
 			leaveDocked: 0,
-			overtime: 0
+			overtime: 0,
 		};
 
 		const rows = attendance.map((log) => {
@@ -293,7 +342,9 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 				status: formatStatus(log.status),
 				flags:
 					reportableFlags.length > 0
-						? reportableFlags.map((f) => readableFlags[f] || f).join("; ")
+						? reportableFlags
+								.map((f) => readableFlags[f] || f)
+								.join("; ")
 						: log.status === "holiday"
 							? (() => {
 									const dateKey = dayjs
@@ -301,14 +352,14 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 										.tz(TIMEZONE)
 										.format("YYYY-MM-DD");
 									const shiftId = employeeDetailsMap.get(
-										emp.employeeId
+										emp.employeeId,
 									)?.assignedShiftId;
 									const holidayNames = holidayMap
 										.get(dateKey)
 										?.filter(
 											(h) =>
 												h.forShiftId === null ||
-												h.forShiftId === shiftId
+												h.forShiftId === shiftId,
 										)
 										.map((h) => h.name);
 									return `Holiday for: ${
@@ -329,7 +380,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 			doc.fontSize(16)
 				.font("Helvetica-Bold")
-				.text(`Attendance Report – ${monthName} ${year}`, {
+				.text(`Attendance Report – ${reportPeriod.label}`, {
 					align: "center",
 				});
 
@@ -349,7 +400,7 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			doc.text(
 				isFirstPageForEmployee
 					? "Attendance:"
-					: "Attendance (contd...):"
+					: "Attendance (contd...):",
 			);
 
 			const headerY = doc.y;
@@ -398,8 +449,8 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 							align: "center",
 							font: "Helvetica",
 							fontSize: 11,
-						})
-					)
+						}),
+					),
 				) + 12;
 
 			if (currentRowY + rowHeight > maxY) drawHeader();
@@ -428,9 +479,10 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			doc.y = currentRowY;
 		}
 
-		const totalCalendarDays = end.date();
-		const totalWorkingDays = 30;
-		const totalWorkingDaysPresent = (totalWorkingDays - stats.absent) - stats.thirdLate;
+		const totalCalendarDays = end.diff(start, "day") + 1;
+		const totalWorkingDays = reportPeriod.isYearly ? totalCalendarDays : 30;
+		const totalWorkingDaysPresent =
+			totalWorkingDays - stats.absent - stats.thirdLate;
 		const totalPartialShifts = stats.halfDay;
 
 		doc.x = startX;
@@ -447,7 +499,9 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 			.text(`• Total Approved Leaves: ${stats.approvedLeave}`)
 			.text(`• Total Days Absent: ${stats.absent}`)
 			.text(`• Total Days Late: ${stats.late}`)
-			.text(`• Total Number of complete triplets late: ${stats.thirdLate}`)
+			.text(
+				`• Total Number of complete triplets late: ${stats.thirdLate}`,
+			)
 			.text(`• Total Days with Partial Shifts: ${totalPartialShifts}`)
 			.text(`• Total Days Present: ${stats.present}`)
 			.text(`• Total Overtime Instances: ${stats.overtime}`)
@@ -458,10 +512,10 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 
 	doc.end();
 
-	const employeePersonalEmail  = await prisma.employeeDetails.findFirst({
+	const employeePersonalEmail = await prisma.employeeDetails.findFirst({
 		where: { employeeId: employee.employeeId },
 		select: { personalEmail: true },
-	})
+	});
 
 	// await sendEmployeeMailWithAttachments({
 	// 	to: employee.assignedEmail,
@@ -486,42 +540,42 @@ export async function EmployeeGenerateAndSendMonthlyReports({
 	// });
 
 	setImmediate(async () => {
-	try {
-		await sendEmployeeMailWithAttachments({
-		employeeId: employee.employeeId,
-		to: employee.assignedEmail,
-		purpose: "monthlyAttendanceReports",
-		payload: {
-			monthYear,
-			year: year.toString(),
-			subject: `Monthly Attendance Reports – ${monthYear}`,
-		},
-		attachments: [pdfPath],
-		});
-	} catch (err) {
-		console.error("Failed to send office email:", err);
-	}
+		try {
+			await sendEmployeeMailWithAttachments({
+				employeeId: employee.employeeId,
+				to: employee.assignedEmail,
+				purpose: "monthlyAttendanceReports",
+				payload: {
+					monthYear: reportPeriod.label,
+					year: reportPeriod.year.toString(),
+					subject: reportPeriod.subject,
+				},
+				attachments: [pdfPath],
+			});
+		} catch (err) {
+			console.error("Failed to send office email:", err);
+		}
 	});
 
 	setImmediate(async () => {
-	try {
-		await sendEmployeeMailWithAttachments({
-		to: employeePersonalEmail?.personalEmail,
-		purpose: "monthlyAttendanceReports",
-		payload: {
-			monthYear,
-			year: year.toString(),
-			subject: `Monthly Attendance Reports – ${monthYear}`,
-		},
-		attachments: [pdfPath],
-		});
-	} catch (err) {
-		console.error("Failed to send personal email:", err);
-	}
+		try {
+			await sendEmployeeMailWithAttachments({
+				to: employeePersonalEmail?.personalEmail,
+				purpose: "monthlyAttendanceReports",
+				payload: {
+					monthYear: reportPeriod.label,
+					year: reportPeriod.year.toString(),
+					subject: reportPeriod.subject,
+				},
+				attachments: [pdfPath],
+			});
+		} catch (err) {
+			console.error("Failed to send personal email:", err);
+		}
 	});
 
 	return {
 		success: true,
-		message: `Consolidated attendance report for ${monthYear} generated and queued for email delivery.`,
+		message: `Consolidated attendance report for ${reportPeriod.label} generated and queued for email delivery.`,
 	};
 }
